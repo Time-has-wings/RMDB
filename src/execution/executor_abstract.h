@@ -15,8 +15,9 @@ See the Mulan PSL v2 for more details. */
 #include "index/ix.h"
 #include "system/sm.h"
 
-class AbstractExecutor {
-   public:
+class AbstractExecutor
+{
+public:
     Rid _abstract_rid;
 
     Context *context_;
@@ -25,7 +26,8 @@ class AbstractExecutor {
 
     virtual size_t tupleLen() const { return 0; };
 
-    virtual const std::vector<ColMeta> &cols() const {
+    virtual const std::vector<ColMeta> &cols() const
+    {
         std::vector<ColMeta> *_cols = nullptr;
         return *_cols;
     };
@@ -42,15 +44,59 @@ class AbstractExecutor {
 
     virtual std::unique_ptr<RmRecord> Next() = 0;
 
-    virtual ColMeta get_col_offset(const TabCol &target) { return ColMeta();};
+    virtual ColMeta get_col_offset(const TabCol &target) { return ColMeta(); };
 
-    std::vector<ColMeta>::const_iterator get_col(const std::vector<ColMeta> &rec_cols, const TabCol &target) {
-        auto pos = std::find_if(rec_cols.begin(), rec_cols.end(), [&](const ColMeta &col) {
-            return col.tab_name == target.tab_name && col.name == target.col_name;
-        });
-        if (pos == rec_cols.end()) {
+    std::vector<ColMeta>::const_iterator get_col(const std::vector<ColMeta> &rec_cols, const TabCol &target)
+    {
+        auto pos = std::find_if(rec_cols.begin(), rec_cols.end(), [&](const ColMeta &col)
+                                { return col.tab_name == target.tab_name && col.name == target.col_name; });
+        if (pos == rec_cols.end())
+        {
             throw ColumnNotFoundError(target.tab_name + '.' + target.col_name);
         }
         return pos;
+    }
+    Value get_value(const std::unique_ptr<RmRecord> &record, const ColMeta &col) const
+    {
+        char *data = record->data + col.offset;
+        size_t len = col.len;
+        char dat[len];
+        std::memcpy(dat, data, len);
+        Value ret;
+        if (col.type == TYPE_INT)
+            ret.set_int(*(int *)dat);
+        else if (col.type == TYPE_FLOAT)
+            ret.set_float(*(float *)dat);
+        else if (col.type == TYPE_STRING)
+        {
+            std::string tmp(data, len);
+            ret.set_str(tmp);
+        }
+        ret.init_raw(len);
+        return ret;
+    }
+
+    bool compare_value(const Value &left_value, const Value &right_value, CompOp op) const
+    {
+        if (left_value.incompatible_type_compare(right_value))
+        {
+            throw IncompatibleTypeError(coltype2str(left_value.type), coltype2str(right_value.type));
+        }
+        switch (op)
+        {
+        case OP_EQ:
+            return left_value == right_value;
+        case OP_NE:
+            return left_value != right_value;
+        case OP_LT:
+            return left_value < right_value;
+        case OP_GT:
+            return left_value > right_value;
+        case OP_LE:
+            return left_value <= right_value;
+        case OP_GE:
+            return left_value >= right_value;
+        }
+        return false;
     }
 };
