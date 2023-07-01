@@ -41,6 +41,24 @@ public:
     }
     std::unique_ptr<RmRecord> Next() override
     {
+        for (auto &clause : set_clauses_)
+        {
+            auto col = tab_.get_col(clause.lhs.col_name);
+            if (clause.rhs.type != col->type && (col->type == TYPE_STRING || clause.rhs.type == TYPE_STRING))
+            {
+                throw IncompatibleTypeError(coltype2str(col->type), coltype2str(clause.rhs.type));
+            }
+            switch (clause.rhs.type)
+            {
+            case TYPE_INT:
+            case TYPE_FLOAT:
+                clause.rhs.init_raw(4);
+                break;
+            case TYPE_STRING:
+                clause.rhs.init_raw(col->len);
+                break;
+            }
+        }
         for (auto &rid : rids_)
         {
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);

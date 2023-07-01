@@ -72,10 +72,6 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                 clause.lhs = {x->tab_name, src_clause->col_name};
                 clause.rhs = convert_sv_value(src_clause->val);
             }
-            if (clause.rhs.type == TYPE_STRING)
-                clause.rhs.init_raw(sizeof(clause.rhs.str_val));
-            else
-                clause.rhs.init_raw(4); // float and int
             query->set_clauses.push_back(clause);
         }
         get_clause(x->conds, query->conds);
@@ -129,7 +125,7 @@ TabCol Analyze::check_column(const std::vector<ColMeta> &all_cols, TabCol target
     else
     {
         if (std::all_of(all_cols.begin(), all_cols.end(), [target](const ColMeta &s)
-                         { return s.name != target.col_name; }))
+                        { return s.name != target.col_name; }))
             throw ColumnNotFoundError(target.col_name);
     }
     return target;
@@ -187,7 +183,7 @@ void Analyze::check_clause(const std::vector<std::string> &tab_names, std::vecto
         ColType rhs_type;
         if (cond.is_rhs_val)
         {
-            cond.rhs_val.init_raw(lhs_col->len);
+
             rhs_type = cond.rhs_val.type;
         }
         else
@@ -196,9 +192,13 @@ void Analyze::check_clause(const std::vector<std::string> &tab_names, std::vecto
             auto rhs_col = rhs_tab.get_col(cond.rhs_col.col_name);
             rhs_type = rhs_col->type;
         }
-        if ((lhs_type==TYPE_STRING&&rhs_type!=TYPE_STRING)||(lhs_type!=TYPE_STRING&&rhs_type==TYPE_STRING))
+        if ((lhs_type == TYPE_STRING && rhs_type != TYPE_STRING) || (lhs_type != TYPE_STRING && rhs_type == TYPE_STRING))
         {
             throw IncompatibleTypeError(coltype2str(lhs_type), coltype2str(rhs_type));
+        }
+        else
+        {
+            cond.rhs_val.init_raw(lhs_col->len);
         }
     }
 }

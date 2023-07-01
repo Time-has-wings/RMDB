@@ -95,9 +95,27 @@ struct Value
         switch (type)
         {
         case TYPE_INT:
-            return int_val > rhs.int_val;
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return int_val > rhs.int_val;
+            case TYPE_FLOAT:
+                return int_val > rhs.float_val;
+            default:
+                return false;
+            }
+            break;
         case TYPE_FLOAT:
-            return float_val > rhs.float_val;
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return float_val > rhs.int_val;
+            case TYPE_FLOAT:
+                return float_val > rhs.float_val;
+            default:
+                return false;
+            }
+            break;
         case TYPE_STRING:
             return str_val > rhs.str_val;
         }
@@ -106,16 +124,30 @@ struct Value
 
     bool operator<(const Value &rhs) const
     {
-        if (incompatible_type_compare(rhs))
-        {
-            throw IncompatibleTypeError(coltype2str(type), coltype2str(rhs.type));
-        }
         switch (type)
         {
         case TYPE_INT:
-            return int_val < rhs.int_val;
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return int_val < rhs.int_val;
+            case TYPE_FLOAT:
+                return int_val < rhs.float_val;
+            default:
+                return false;
+            }
+            break;
         case TYPE_FLOAT:
-            return float_val < rhs.float_val;
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return float_val < rhs.int_val;
+            case TYPE_FLOAT:
+                return float_val < rhs.float_val;
+            default:
+                return false;
+            }
+            break;
         case TYPE_STRING:
             return str_val < rhs.str_val;
         }
@@ -131,9 +163,27 @@ struct Value
         switch (type)
         {
         case TYPE_INT:
-            return int_val == rhs.int_val;
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return int_val == rhs.int_val;
+            case TYPE_FLOAT:
+                return int_val == rhs.float_val;
+            default:
+                return false;
+            }
+            break;
         case TYPE_FLOAT:
-            return float_val == rhs.float_val;
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return float_val == rhs.int_val;
+            case TYPE_FLOAT:
+                return float_val == rhs.float_val;
+            default:
+                return false;
+            }
+            break;
         case TYPE_STRING:
             return str_val == rhs.str_val;
         }
