@@ -165,9 +165,9 @@ namespace ast
     };
     struct BigintLit : public Value
     {
-        long long val;
+        int64_t val;
 
-        BigintLit(long long val_) : val(val_) {}
+        BigintLit(int64_t val_) : val(val_) {}
     };
 
     struct StringLit : public Value
@@ -272,7 +272,7 @@ namespace ast
     {
         int sv_int;
         int sv_invalid;
-        long long sv_bigint;
+        int64_t sv_bigint;
         float sv_float;
         std::string sv_str;
         OrderByDir sv_orderby_dir;
