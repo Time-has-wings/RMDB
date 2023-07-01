@@ -14,7 +14,7 @@
 #include "ast.h"
 #include "yacc.tab.h"
 #include <iostream>
-
+#include<charconv>
 // automatically update location
 #define YY_USER_ACTION \
     yylloc->first_line = yylloc->last_line; \
@@ -75,6 +75,7 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 "SET" { return SET; }
 "SELECT" { return SELECT; }
 "INT" { return INT; }
+"BIGINT" { return BIGINT; }
 "CHAR" { return CHAR; }
 "FLOAT" { return FLOAT; }
 "INDEX" { return INDEX; }
@@ -97,8 +98,21 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 }
     /* literals */
 {value_int} {
-    yylval->sv_int = atoi(yytext);
-    return VALUE_INT;
+    int x;
+    long long y; 
+    auto [p1, ec1] =std::from_chars(yytext, yytext + strlen(yytext),y);
+    auto [p2, ec2] =std::from_chars(yytext, yytext + strlen(yytext),x);
+    if (ec2 != std::errc::result_out_of_range){
+        yylval->sv_int = x;
+        return VALUE_INT;
+    }
+    else if(ec1 != std::errc::result_out_of_range){
+        yylval->sv_bigint = y;
+        return VALUE_BIGINT;
+    }
+    else{
+        return VALUE_INVALID;
+    }
 }
 {value_float} {
     yylval->sv_float = atof(yytext);
