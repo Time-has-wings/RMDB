@@ -97,6 +97,20 @@ struct Value
             memcpy(raw->data, str_val.c_str(), str_val.size());
         }
     }
+    void value_change(const ColType &Type)
+    {
+        if (type == TYPE_INT)
+        {
+            if (Type == TYPE_BIGINT)
+            {
+                set_bigint(int_val);
+            }
+            else if (Type == TYPE_FLOAT)
+            {
+                set_float(int_val);
+            }
+        }
+    }
     bool operator>(const Value &rhs) const
     {
         if (incompatible_type_compare(rhs))

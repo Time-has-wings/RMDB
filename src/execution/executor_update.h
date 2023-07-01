@@ -44,6 +44,7 @@ public:
         for (auto &clause : set_clauses_)
         {
             auto col = tab_.get_col(clause.lhs.col_name);
+            clause.rhs.value_change(col->type);
             if (clause.rhs.type != col->type && (col->type == TYPE_STRING || clause.rhs.type == TYPE_STRING))
             {
                 throw IncompatibleTypeError(coltype2str(col->type), coltype2str(clause.rhs.type));

@@ -183,7 +183,7 @@ void Analyze::check_clause(const std::vector<std::string> &tab_names, std::vecto
         ColType rhs_type;
         if (cond.is_rhs_val)
         {
-
+            cond.rhs_val.value_change(lhs_col->type);
             rhs_type = cond.rhs_val.type;
         }
         else
