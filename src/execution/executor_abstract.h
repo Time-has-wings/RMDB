@@ -67,6 +67,8 @@ public:
             ret.set_int(*(int *)dat);
         else if (col.type == TYPE_FLOAT)
             ret.set_float(*(float *)dat);
+        else if (col.type == TYPE_BIGINT)
+            ret.set_bigint(*(long long *)dat);
         else if (col.type == TYPE_STRING)
         {
             std::string tmp(data, len);

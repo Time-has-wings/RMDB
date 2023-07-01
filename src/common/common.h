@@ -76,7 +76,6 @@ struct Value
             assert(len == sizeof(int));
             *(int *)(raw->data) = int_val;
         }
-
         else if (type == TYPE_BIGINT)
         {
             assert(len == sizeof(long long));

@@ -56,7 +56,6 @@ public:
             val.init_raw(col.len);
             memcpy(rec.data + col.offset, val.raw->data, col.len);
         }
-        // Insert into record file
         rid_ = fh_->insert_record(rec.data, context_);
 
         // Insert into index
