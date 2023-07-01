@@ -193,6 +193,10 @@ void Analyze::check_clause(const std::vector<std::string> &tab_names, std::vecto
         if (cond.is_rhs_val)
         {
             cond.rhs_val.value_change(lhs_col->type);
+            if (cond.rhs_val.type == TYPE_INVALID)
+            {
+                throw InternalError("Overflow");
+            }
             rhs_type = cond.rhs_val.type;
         }
         else
