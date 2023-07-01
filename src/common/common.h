@@ -36,6 +36,7 @@ struct Value
     {
         int int_val;     // int value
         float float_val; // float value
+        long long bigint_val;
     };
     std::string str_val; // string value
 
@@ -49,7 +50,11 @@ struct Value
         type = TYPE_INT;
         int_val = int_val_;
     }
-
+    void set_bigint(long long bigint_val_)
+    {
+        type = TYPE_BIGINT;
+        bigint_val = bigint_val_;
+    }
     void set_float(float float_val_)
     {
         type = TYPE_FLOAT;
@@ -70,6 +75,12 @@ struct Value
         {
             assert(len == sizeof(int));
             *(int *)(raw->data) = int_val;
+        }
+
+        else if (type == TYPE_BIGINT)
+        {
+            assert(len == sizeof(long long));
+            *(long long *)(raw->data) = bigint_val;
         }
         else if (type == TYPE_FLOAT)
         {
@@ -101,6 +112,8 @@ struct Value
                 return int_val > rhs.int_val;
             case TYPE_FLOAT:
                 return int_val > rhs.float_val;
+            case TYPE_BIGINT:
+                return int_val > rhs.bigint_val;
             default:
                 return false;
             }
@@ -112,6 +125,21 @@ struct Value
                 return float_val > rhs.int_val;
             case TYPE_FLOAT:
                 return float_val > rhs.float_val;
+            case TYPE_BIGINT:
+                return float_val > rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_BIGINT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return bigint_val > rhs.int_val;
+            case TYPE_FLOAT:
+                return bigint_val > rhs.float_val;
+            case TYPE_BIGINT:
+                return bigint_val > rhs.bigint_val;
             default:
                 return false;
             }
@@ -124,6 +152,10 @@ struct Value
 
     bool operator<(const Value &rhs) const
     {
+        if (incompatible_type_compare(rhs))
+        {
+            throw IncompatibleTypeError(coltype2str(type), coltype2str(rhs.type));
+        }
         switch (type)
         {
         case TYPE_INT:
@@ -133,6 +165,8 @@ struct Value
                 return int_val < rhs.int_val;
             case TYPE_FLOAT:
                 return int_val < rhs.float_val;
+            case TYPE_BIGINT:
+                return int_val < rhs.bigint_val;
             default:
                 return false;
             }
@@ -144,6 +178,21 @@ struct Value
                 return float_val < rhs.int_val;
             case TYPE_FLOAT:
                 return float_val < rhs.float_val;
+            case TYPE_BIGINT:
+                return float_val < rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_BIGINT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return bigint_val < rhs.int_val;
+            case TYPE_FLOAT:
+                return bigint_val < rhs.float_val;
+            case TYPE_BIGINT:
+                return bigint_val < rhs.bigint_val;
             default:
                 return false;
             }
@@ -169,6 +218,8 @@ struct Value
                 return int_val == rhs.int_val;
             case TYPE_FLOAT:
                 return int_val == rhs.float_val;
+            case TYPE_BIGINT:
+                return int_val == rhs.bigint_val;
             default:
                 return false;
             }
@@ -180,6 +231,21 @@ struct Value
                 return float_val == rhs.int_val;
             case TYPE_FLOAT:
                 return float_val == rhs.float_val;
+            case TYPE_BIGINT:
+                return float_val == rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_BIGINT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return bigint_val == rhs.int_val;
+            case TYPE_FLOAT:
+                return bigint_val == rhs.float_val;
+            case TYPE_BIGINT:
+                return bigint_val == rhs.bigint_val;
             default:
                 return false;
             }
@@ -189,7 +255,6 @@ struct Value
         }
         return false;
     }
-
     bool operator!=(const Value &rhs) const
     {
         return !(*this == rhs);
