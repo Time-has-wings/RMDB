@@ -71,6 +71,10 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
             {
                 clause.lhs = {x->tab_name, src_clause->col_name};
                 clause.rhs = convert_sv_value(src_clause->val);
+                if (clause.rhs.type == TYPE_INVALID)
+                {
+                    throw InternalError("Overflow");
+                }
             }
             query->set_clauses.push_back(clause);
         }
@@ -88,7 +92,12 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
         // 处理insert 的values值
         for (auto &sv_val : x->vals)
         {
-            query->values.push_back(convert_sv_value(sv_val));
+            Value temp = convert_sv_value(sv_val);
+            if (temp.type == TYPE_INVALID)
+            {
+                throw InternalError("Overflow");
+            }
+            query->values.push_back(temp);
         }
     }
     else
@@ -221,6 +230,10 @@ Value Analyze::convert_sv_value(const std::shared_ptr<ast::Value> &sv_val)
     else if (auto str_lit = std::dynamic_pointer_cast<ast::StringLit>(sv_val))
     {
         val.set_str(str_lit->val);
+    }
+    else if (auto invalid_lit = std::dynamic_pointer_cast<ast::InvalidLit>(sv_val))
+    {
+        val.set_invalidVal(invalid_lit->val);
     }
     else
     {

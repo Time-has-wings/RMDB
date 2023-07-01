@@ -38,6 +38,7 @@ struct Value
         float float_val; // float value
         long long bigint_val;
     };
+    bool invalid_val;
     std::string str_val; // string value
 
     std::shared_ptr<RmRecord> raw; // raw record buffer
@@ -49,6 +50,11 @@ struct Value
     {
         type = TYPE_INT;
         int_val = int_val_;
+    }
+    void set_invalidVal(bool invalid_val_)
+    {
+        type = TYPE_INVALID;
+        invalid_val = invalid_val_;
     }
     void set_bigint(long long bigint_val_)
     {
@@ -80,6 +86,10 @@ struct Value
         {
             assert(len == sizeof(long long));
             *(long long *)(raw->data) = bigint_val;
+        }
+        else if (type == TYPE_INVALID)
+        {
+            return;
         }
         else if (type == TYPE_FLOAT)
         {

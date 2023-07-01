@@ -84,6 +84,10 @@ public:
         {
             throw IncompatibleTypeError(coltype2str(left_value.type), coltype2str(right_value.type));
         }
+        if (right_value.type == TYPE_INVALID)
+        {
+            return false;
+        }
         switch (op)
         {
         case OP_EQ:

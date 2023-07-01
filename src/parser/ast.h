@@ -159,9 +159,9 @@ namespace ast
     };
     struct InvalidLit : public Value
     {
-        int val;
+        bool val;
 
-        InvalidLit(int val_) : val(val_) {}
+        InvalidLit(bool val_) : val(val_) {}
     };
     struct BigintLit : public Value
     {
