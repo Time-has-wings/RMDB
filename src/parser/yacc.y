@@ -196,7 +196,7 @@ type:
     }
     |   BIGINT
     {
-        $$ = std::make_shared<TypeLen>(SV_TYPE_BIGINT, sizeof(long long));
+        $$ = std::make_shared<TypeLen>(SV_TYPE_BIGINT, sizeof(int64_t));
     }
     ;
 

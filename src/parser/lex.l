@@ -99,7 +99,7 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
     /* literals */
 {value_int} {
     int x;
-    long long y; 
+    int64_t y; 
     auto [p1, ec1] =std::from_chars(yytext, yytext + strlen(yytext),y);
     auto [p2, ec2] =std::from_chars(yytext, yytext + strlen(yytext),x);
     if (ec2 != std::errc::result_out_of_range){
