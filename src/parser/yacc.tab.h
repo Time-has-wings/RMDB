@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.5.1.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,8 +31,9 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Undocumented macros, especially those whose name start with YY_,
-   are private implementation details.  Do not rely on them.  */
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
 
 #ifndef YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED
 # define YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED
@@ -44,51 +45,59 @@
 extern int yydebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    SHOW = 258,
-    TABLES = 259,
-    CREATE = 260,
-    TABLE = 261,
-    DROP = 262,
-    DESC = 263,
-    INSERT = 264,
-    INTO = 265,
-    VALUES = 266,
-    DELETE = 267,
-    FROM = 268,
-    ASC = 269,
-    ORDER = 270,
-    BY = 271,
-    WHERE = 272,
-    UPDATE = 273,
-    SET = 274,
-    SELECT = 275,
-    INT = 276,
-    CHAR = 277,
-    FLOAT = 278,
-    INDEX = 279,
-    AND = 280,
-    JOIN = 281,
-    EXIT = 282,
-    HELP = 283,
-    TXN_BEGIN = 284,
-    TXN_COMMIT = 285,
-    TXN_ABORT = 286,
-    TXN_ROLLBACK = 287,
-    ORDER_BY = 288,
-    LEQ = 289,
-    NEQ = 290,
-    GEQ = 291,
-    T_EOF = 292,
-    IDENTIFIER = 293,
-    VALUE_STRING = 294,
-    VALUE_INT = 295,
-    VALUE_FLOAT = 296
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    SHOW = 258,                    /* SHOW  */
+    TABLES = 259,                  /* TABLES  */
+    CREATE = 260,                  /* CREATE  */
+    TABLE = 261,                   /* TABLE  */
+    DROP = 262,                    /* DROP  */
+    DESC = 263,                    /* DESC  */
+    INSERT = 264,                  /* INSERT  */
+    INTO = 265,                    /* INTO  */
+    VALUES = 266,                  /* VALUES  */
+    DELETE = 267,                  /* DELETE  */
+    FROM = 268,                    /* FROM  */
+    ASC = 269,                     /* ASC  */
+    ORDER = 270,                   /* ORDER  */
+    BY = 271,                      /* BY  */
+    WHERE = 272,                   /* WHERE  */
+    UPDATE = 273,                  /* UPDATE  */
+    SET = 274,                     /* SET  */
+    SELECT = 275,                  /* SELECT  */
+    INT = 276,                     /* INT  */
+    BIGINT = 277,                  /* BIGINT  */
+    CHAR = 278,                    /* CHAR  */
+    FLOAT = 279,                   /* FLOAT  */
+    INDEX = 280,                   /* INDEX  */
+    AND = 281,                     /* AND  */
+    JOIN = 282,                    /* JOIN  */
+    EXIT = 283,                    /* EXIT  */
+    HELP = 284,                    /* HELP  */
+    TXN_BEGIN = 285,               /* TXN_BEGIN  */
+    TXN_COMMIT = 286,              /* TXN_COMMIT  */
+    TXN_ABORT = 287,               /* TXN_ABORT  */
+    TXN_ROLLBACK = 288,            /* TXN_ROLLBACK  */
+    ORDER_BY = 289,                /* ORDER_BY  */
+    LEQ = 290,                     /* LEQ  */
+    NEQ = 291,                     /* NEQ  */
+    GEQ = 292,                     /* GEQ  */
+    T_EOF = 293,                   /* T_EOF  */
+    IDENTIFIER = 294,              /* IDENTIFIER  */
+    VALUE_STRING = 295,            /* VALUE_STRING  */
+    VALUE_INT = 296,               /* VALUE_INT  */
+    VALUE_BIGINT = 297,            /* VALUE_BIGINT  */
+    VALUE_INVALID = 298,           /* VALUE_INVALID  */
+    VALUE_FLOAT = 299              /* VALUE_FLOAT  */
   };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -109,6 +118,8 @@ struct YYLTYPE
 
 
 
+
 int yyparse (void);
+
 
 #endif /* !YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED  */
