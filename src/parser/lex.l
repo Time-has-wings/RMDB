@@ -14,7 +14,7 @@
 #include "ast.h"
 #include "yacc.tab.h"
 #include <iostream>
-#include<charconv>
+#include <stdint.h>
 // automatically update location
 #define YY_USER_ACTION \
     yylloc->first_line = yylloc->last_line; \
@@ -106,15 +106,18 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 {value_bigint} {
     int64_t temp = atoll(yytext);
     if (temp== INT64_MAX &&strcmp(yytext, "9223372036854775807")!=0 ){
+        yylval->sv_invalid = true;
         return VALUE_INVALID;
     }
     if (temp== INT64_MIN &&strcmp(yytext, "-9223372036854775808")!=0 ){
+        yylval->sv_invalid = true;
         return VALUE_INVALID;
     }
     yylval->sv_bigint = temp;
     return VALUE_BIGINT;
 }
 {value_invalid} {
+    yylval->sv_invalid = true;
     return VALUE_INVALID;
 }
 {value_float} {

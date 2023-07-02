@@ -28,7 +28,8 @@ namespace ast
         SV_TYPE_INT,
         SV_TYPE_FLOAT,
         SV_TYPE_STRING,
-        SV_TYPE_BIGINT
+        SV_TYPE_BIGINT,
+        SV_TYPE_INVALID
     };
 
     enum SvCompOp
@@ -271,7 +272,7 @@ namespace ast
     struct SemValue
     {
         int sv_int;
-        int sv_invalid;
+        bool sv_invalid;
         int64_t sv_bigint;
         float sv_float;
         std::string sv_str;

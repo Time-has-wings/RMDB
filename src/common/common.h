@@ -119,6 +119,13 @@ struct Value
                 set_float(int_val);
             }
         }
+        else if (type == TYPE_BIGINT)
+        {
+            if (Type == TYPE_INT)
+            {
+                throw InternalError("Overflow");
+            }
+        }
     }
     bool operator>(const Value &rhs) const
     {

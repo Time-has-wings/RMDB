@@ -629,7 +629,7 @@ char *yytext;
 #include "ast.h"
 #include "yacc.tab.h"
 #include <iostream>
-#include<charconv>
+#include <stdint.h>
 // automatically update location
 #define YY_USER_ACTION \
     yylloc->first_line = yylloc->last_line; \
@@ -1180,9 +1180,11 @@ YY_RULE_SETUP
 {
     int64_t temp = atoll(yytext);
     if (temp== INT64_MAX &&strcmp(yytext, "9223372036854775807")!=0 ){
+        yylval->sv_invalid = true;
         return VALUE_INVALID;
     }
     if (temp== INT64_MIN &&strcmp(yytext, "-9223372036854775808")!=0 ){
+        yylval->sv_invalid = true;
         return VALUE_INVALID;
     }
     yylval->sv_bigint = temp;
@@ -1191,14 +1193,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 118 "lex.l"
+#line 120 "lex.l"
 {
+    yylval->sv_invalid = true;
     return VALUE_INVALID;
 }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 121 "lex.l"
+#line 124 "lex.l"
 {
     yylval->sv_float = atof(yytext);
     return VALUE_FLOAT;
@@ -1207,7 +1210,7 @@ YY_RULE_SETUP
 case 48:
 /* rule 48 can match eol */
 YY_RULE_SETUP
-#line 125 "lex.l"
+#line 128 "lex.l"
 {
     yylval->sv_str = std::string(yytext + 1, strlen(yytext) - 2);
     return VALUE_STRING;
@@ -1216,21 +1219,21 @@ YY_RULE_SETUP
 /* EOF */
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(STATE_COMMENT):
-#line 130 "lex.l"
+#line 133 "lex.l"
 { return T_EOF; }
 	YY_BREAK
 /* unexpected char */
 case 49:
 YY_RULE_SETUP
-#line 132 "lex.l"
+#line 135 "lex.l"
 { std::cerr << "Lexer Error: unexpected character " << yytext[0] << std::endl; }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 133 "lex.l"
+#line 136 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1234 "lex.yy.cpp"
+#line 1237 "lex.yy.cpp"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2196,6 +2199,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 133 "lex.l"
+#line 136 "lex.l"
 
 
