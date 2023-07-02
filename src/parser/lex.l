@@ -36,7 +36,9 @@ white_space [ \t]+
 new_line "\r"|"\n"|"\r\n"
 sign "+"|"-"
 identifier {alpha}(_|{alpha}|{digit})*
-value_int {sign}?{digit}+
+value_int {sign}?{digit}{1,9}
+value_bigint {sign}?{digit}{10,19}
+value_invalid {sign}?{digit}{20,}
 value_float {sign}?{digit}+\.({digit}+)?
 value_string '[^']*'
 single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
@@ -98,21 +100,22 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 }
     /* literals */
 {value_int} {
-    int x;
-    int64_t y; 
-    auto [p1, ec1] =std::from_chars(yytext, yytext + strlen(yytext),y);
-    auto [p2, ec2] =std::from_chars(yytext, yytext + strlen(yytext),x);
-    if (ec2 != std::errc::result_out_of_range){
-        yylval->sv_int = x;
-        return VALUE_INT;
-    }
-    else if(ec1 != std::errc::result_out_of_range){
-        yylval->sv_bigint = y;
-        return VALUE_BIGINT;
-    }
-    else{
+    yylval->sv_int = atoi(yytext);
+    return VALUE_INT;
+}
+{value_bigint} {
+    int64_t temp = atoll(yytext);
+    if (temp== INT64_MAX &&strcmp(yytext, "9223372036854775807")!=0 ){
         return VALUE_INVALID;
     }
+    if (temp== INT64_MIN &&strcmp(yytext, "-9223372036854775808")!=0 ){
+        return VALUE_INVALID;
+    }
+    yylval->sv_bigint = temp;
+    return VALUE_BIGINT;
+}
+{value_invalid} {
+    return VALUE_INVALID;
 }
 {value_float} {
     yylval->sv_float = atof(yytext);
