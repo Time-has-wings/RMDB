@@ -30,14 +30,30 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                 throw TableNotFoundError(table);
             }
         }
-
+        bool has_group_all =false;
+        TabCol all_sel;
         // 处理target list，在target list中添加上表名，例如 a.id
         for (auto &sv_sel_col : x->cols)
         {
-            TabCol sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name};
+            ast::Col *temp = sv_sel_col.get();
+            TabCol sel_col;
+
+            if (typeid(*temp) == typeid(ast::GroupValue))
+            {
+                if (((ast::GroupValue *)temp)->all)
+                {
+                    has_group_all = true;
+                    sel_col = {.as_name = ((ast::GroupValue *)temp)->as_name,
+                               .groupfunc = ((ast::GroupValue *)temp)->func_name,
+                               .all = true};
+                }
+                else
+                    sel_col = {.tab_name = temp->tab_name, .col_name = temp->col_name, .as_name = ((ast::GroupValue *)temp)->as_name, .groupfunc = ((ast::GroupValue *)temp)->func_name};
+            }
+            else
+                sel_col = {.tab_name = temp->tab_name, .col_name = sv_sel_col->col_name, .as_name = "", .groupfunc = ""};
             query->cols.push_back(sel_col);
         }
-
         std::vector<ColMeta> all_cols;
         get_all_cols(query->tables, all_cols);
         if (query->cols.empty())
@@ -116,6 +132,7 @@ TabCol Analyze::check_column(const std::vector<ColMeta> &all_cols, TabCol target
         std::string tab_name;
         for (auto &col : all_cols)
         {
+            if(target.all)return target;
             if (col.name == target.col_name)
             {
                 if (!tab_name.empty())

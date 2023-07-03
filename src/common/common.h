@@ -22,7 +22,9 @@ struct TabCol
 {
     std::string tab_name;
     std::string col_name;
-
+    std::string as_name;
+    std::string groupfunc;
+    bool all;
     friend bool operator<(const TabCol &x, const TabCol &y)
     {
         return std::make_pair(x.tab_name, x.col_name) < std::make_pair(y.tab_name, y.col_name);
@@ -36,7 +38,7 @@ struct Value
     {
         int int_val;     // int value
         float float_val; // float value
-        int64_t bigint_val;
+        int64_t bigint_val; // bigint
         int64_t datetime_val; // datetime
         bool invalid_val;
     };

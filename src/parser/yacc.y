@@ -21,7 +21,7 @@ using namespace ast;
 %define parse.error verbose
 
 // keywords
-%token SHOW TABLES CREATE TABLE DROP DESC INSERT INTO VALUES DELETE FROM ASC ORDER BY
+%token SHOW TABLES CREATE TABLE DROP DESC INSERT INTO VALUES DELETE FROM ASC ORDER BY COUNT MIN MAX SUM AS 
 WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP TXN_BEGIN TXN_COMMIT TXN_ABORT TXN_ROLLBACK ORDER_BY
 // non-keywords
 %token LEQ NEQ GEQ T_EOF
@@ -43,9 +43,10 @@ WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP 
 %type <sv_expr> expr
 %type <sv_val> value
 %type <sv_vals> valueList
-%type <sv_str> tbName colName
+%type <sv_str> tbName colName asName
 %type <sv_strs> tableList colNameList
 %type <sv_col> col
+%type <sv_group_val> groupVal
 %type <sv_cols> colList selector
 %type <sv_set_clause> setClause
 %type <sv_set_clauses> setClauses
@@ -268,7 +269,30 @@ whereClause:
         $$.push_back($3);
     }
     ;
-
+groupVal:
+        COUNT '(' col ')' AS asName
+    {
+        $$ = std::make_shared<GroupValue>("COUNT", $6,$3);
+    }
+    |
+    MIN '(' col ')' AS asName
+    {
+        $$ = std::make_shared<GroupValue>("MIN", $6, $3);
+    }
+    |
+    MAX '(' col ')' AS asName
+    {
+        $$ = std::make_shared<GroupValue>("MAX", $6, $3);
+    }
+    |
+    SUM '(' col ')' AS asName
+    {
+        $$ = std::make_shared<GroupValue>("SUM", $6, $3);
+    }; 
+    |COUNT '(' '*' ')' AS asName
+    {
+        $$ = std::make_shared<GroupValue>("COUNT", $6,true);
+    }
 col:
         tbName '.' colName
     {
@@ -285,7 +309,15 @@ colList:
     {
         $$ = std::vector<std::shared_ptr<Col>>{$1};
     }
+    |  groupVal
+    {
+        $$ = std::vector<std::shared_ptr<Col>>{$1};
+    }
     |   colList ',' col
+    {
+        $$.push_back($3);
+    }
+    |   colList ',' groupVal
     {
         $$.push_back($3);
     }
@@ -394,4 +426,6 @@ opt_asc_desc:
 tbName: IDENTIFIER;
 
 colName: IDENTIFIER;
+
+asName: IDENTIFIER;
 %%

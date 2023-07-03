@@ -32,6 +32,10 @@ public:
         auto &prev_cols = prev_->cols();
         for (auto &sel_col : sel_cols)
         {
+            if (sel_col.all){
+                cols_.push_back(ColMeta());
+                continue;
+            }
             auto pos = get_col(prev_cols, sel_col);
             sel_idxs_.push_back(pos - prev_cols.begin());
             auto col = *pos;
