@@ -1,6 +1,7 @@
 #include "datetime.h"
 void strim(std::string &str, const char c)
 {
+
     int index = 0;
     if (!str.empty())
     {
@@ -42,13 +43,13 @@ bool check_invalidate(std::string &s)
     if (!CheckDate(year, month, day))
         return true;
     int time = atoi((s.substr(8, 2)).c_str());
-    if (time >= 24)
+    if (time > 23)
         return true;
     time = atoi((s.substr(10, 2)).c_str());
-    if (time > 60)
+    if (time > 59)
         return true;
     time = atoi((s.substr(12, 2)).c_str());
-    if (time > 60)
+    if (time > 59)
         return true;
     return false;
 };
