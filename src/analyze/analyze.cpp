@@ -235,6 +235,10 @@ Value Analyze::convert_sv_value(const std::shared_ptr<ast::Value> &sv_val)
     {
         val.set_str(str_lit->val);
     }
+    else if (auto datetime_lit = std::dynamic_pointer_cast<ast::DatetimeLit>(sv_val))
+    {
+        val.set_datetime(datetime_lit->val);
+    }
     else if (auto invalid_lit = std::dynamic_pointer_cast<ast::InvalidLit>(sv_val))
     {
         val.set_invalidVal(invalid_lit->val);

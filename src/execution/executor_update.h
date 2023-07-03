@@ -58,6 +58,9 @@ public:
             case TYPE_STRING:
                 clause.rhs.init_raw(col->len);
                 break;
+            case TYPE_DATETIME:
+                clause.rhs.init_raw(col->len);
+                break;
             case TYPE_BIGINT:
                 clause.rhs.init_raw(8);
                 break;

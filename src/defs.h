@@ -48,6 +48,7 @@ enum ColType
     TYPE_INT,
     TYPE_FLOAT,
     TYPE_STRING,
+    TYPE_DATETIME,
     TYPE_BIGINT,
     TYPE_INVALID
 };
@@ -59,6 +60,7 @@ inline std::string coltype2str(ColType type)
         {TYPE_FLOAT, "FLOAT"},
         {TYPE_STRING, "STRING"},
         {TYPE_INVALID, "INVALID"},
+        {TYPE_DATETIME, "DATETIME"},
         {TYPE_BIGINT, "BIGINT"}};
     return m.at(type);
 }

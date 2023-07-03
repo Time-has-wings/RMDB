@@ -69,6 +69,8 @@ public:
             ret.set_float(*(float *)dat);
         else if (col.type == TYPE_BIGINT)
             ret.set_bigint(*(int64_t *)dat);
+        else if (col.type == TYPE_DATETIME)
+            ret.set_datetime(*(int64_t *)dat);
         else if (col.type == TYPE_STRING)
         {
             std::string tmp(data, len);

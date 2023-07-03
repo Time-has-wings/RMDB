@@ -29,6 +29,7 @@ namespace ast
         SV_TYPE_FLOAT,
         SV_TYPE_STRING,
         SV_TYPE_BIGINT,
+        SV_TYPE_DATETIME,
         SV_TYPE_INVALID
     };
 
@@ -170,6 +171,11 @@ namespace ast
 
         BigintLit(int64_t val_) : val(val_) {}
     };
+    struct DatetimeLit : public Value
+    {
+        std::string val;
+        DatetimeLit(std::string val_) : val(std::move(val_)) {}
+    };
 
     struct StringLit : public Value
     {
@@ -276,6 +282,7 @@ namespace ast
         int64_t sv_bigint;
         float sv_float;
         std::string sv_str;
+        std::string sv_datetime;
         OrderByDir sv_orderby_dir;
         std::vector<std::string> sv_strs;
 
@@ -306,7 +313,6 @@ namespace ast
     };
 
     extern std::shared_ptr<ast::TreeNode> parse_tree;
-
 }
 
 #define YYSTYPE ast::SemValue

@@ -40,6 +40,7 @@ value_int {sign}?{digit}{1,9}
 value_bigint {sign}?{digit}{10,19}
 value_invalid {sign}?{digit}{20,}
 value_float {sign}?{digit}+\.({digit}+)?
+value_datetime '{digit}{4}\-{digit}{2}\-{digit}{2}{white_space}{digit}{2}\:{digit}{2}\:{digit}{2}'
 value_string '[^']*'
 single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 
@@ -78,6 +79,7 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 "SELECT" { return SELECT; }
 "INT" { return INT; }
 "BIGINT" { return BIGINT; }
+"DATETIME" { return DATETIME; }
 "CHAR" { return CHAR; }
 "FLOAT" { return FLOAT; }
 "INDEX" { return INDEX; }
@@ -105,6 +107,10 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 }
 {value_bigint} {
     int64_t temp = atoll(yytext);
+    if (temp<= INT32_MAX &&temp>= INT32_MIN){
+        yylval->sv_int = atoi(yytext);
+        return VALUE_INT;
+    }
     if (temp== INT64_MAX &&strcmp(yytext, "9223372036854775807")!=0 ){
         yylval->sv_invalid = true;
         return VALUE_INVALID;
@@ -123,6 +129,10 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 {value_float} {
     yylval->sv_float = atof(yytext);
     return VALUE_FLOAT;
+}
+{value_datetime} {
+    yylval->sv_datetime = std::string(yytext + 1, strlen(yytext) - 2);
+    return VALUE_DATETIME;
 }
 {value_string} {
     yylval->sv_str = std::string(yytext + 1, strlen(yytext) - 2);

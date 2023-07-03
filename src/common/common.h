@@ -17,7 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include <vector>
 #include "defs.h"
 #include "record/rm_defs.h"
-
+#include "sourcelib/datetime.h"
 struct TabCol
 {
     std::string tab_name;
@@ -37,10 +37,11 @@ struct Value
         int int_val;     // int value
         float float_val; // float value
         int64_t bigint_val;
+        int64_t datetime_val; // datetime
+        bool invalid_val;
     };
-    bool invalid_val;
-    std::string str_val; // string value
 
+    std::string str_val;           // string value
     std::shared_ptr<RmRecord> raw; // raw record buffer
     bool incompatible_type_compare(const Value &b) const
     {
@@ -72,7 +73,16 @@ struct Value
         type = TYPE_STRING;
         str_val = std::move(str_val_);
     }
-
+    void set_datetime(std::string datetime_val_)
+    {
+        type = TYPE_DATETIME;
+        datetime_val = datetime::datetime_trans(datetime_val_);
+    }
+    void set_datetime(int64_t datetime_val_)
+    {
+        type = TYPE_DATETIME;
+        datetime_val = datetime_val_;
+    }
     void init_raw(int len)
     {
         assert(raw == nullptr);
@@ -86,6 +96,11 @@ struct Value
         {
             assert(len == sizeof(int64_t));
             *(int64_t *)(raw->data) = bigint_val;
+        }
+        else if (type == TYPE_DATETIME)
+        {
+            assert(len == sizeof(int64_t));
+            *(int64_t *)(raw->data) = datetime_val;
         }
         else if (type == TYPE_INVALID)
         {
@@ -176,6 +191,8 @@ struct Value
             break;
         case TYPE_STRING:
             return str_val > rhs.str_val;
+        case TYPE_DATETIME:
+            return datetime_val > rhs.datetime_val;
         }
         return false;
     }
@@ -229,6 +246,8 @@ struct Value
             break;
         case TYPE_STRING:
             return str_val < rhs.str_val;
+        case TYPE_DATETIME:
+            return datetime_val < rhs.datetime_val;
         }
         return false;
     }
@@ -282,6 +301,8 @@ struct Value
             break;
         case TYPE_STRING:
             return str_val == rhs.str_val;
+        case TYPE_DATETIME:
+            return datetime_val == rhs.datetime_val;
         }
         return false;
     }
