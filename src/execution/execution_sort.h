@@ -31,7 +31,8 @@ struct value_id
             }
             else if (v.at(s).first < t.v.at(s).first)
                 return !v.at(s).second;
-            else return v.at(s).second;
+            else
+                return v.at(s).second;
         }
         return false;
     }
@@ -47,9 +48,10 @@ private:
     std::vector<size_t> used_tuple;
     std::queue<size_t> sorted_tuples;
     std::unique_ptr<RmRecord> current_tuple;
+    int limit;
 
 public:
-    SortExecutor(std::unique_ptr<AbstractExecutor> prev, const std::vector<std::pair<TabCol, bool>> &orders)
+    SortExecutor(std::unique_ptr<AbstractExecutor> prev, const std::vector<std::pair<TabCol, bool>> &orders, int limit_)
     {
         prev_ = std::move(prev);
         auto &prev_cols = prev_->cols();
@@ -63,6 +65,7 @@ public:
         }
         tuple_num = 0;
         used_tuple.clear();
+        limit = limit_;
         sort();
     }
     const std::vector<ColMeta> &cols() const
@@ -71,7 +74,7 @@ public:
     };
     bool is_end() const override
     {
-        return used_tuple.size() > tuple_num;
+        return used_tuple.size() > tuple_num || (used_tuple.size() > limit && limit != -1);
     }
     void beginTuple() override
     {

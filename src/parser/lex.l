@@ -67,6 +67,7 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 "TABLE" { return TABLE; }
 "DROP" { return DROP; }
 "DESC" { return DESC; }
+"LIMIT" {return LIMIT;}
 "INSERT" { return INSERT; }
 "INTO" { return INTO; }
 "VALUES" { return VALUES; }

@@ -21,7 +21,7 @@ using namespace ast;
 %define parse.error verbose
 
 // keywords
-%token SHOW TABLES CREATE TABLE DROP DESC INSERT INTO VALUES DELETE FROM ASC ORDER BY COUNT MIN MAX SUM AS 
+%token SHOW TABLES CREATE TABLE DROP DESC INSERT INTO VALUES DELETE FROM ASC ORDER BY COUNT MIN MAX SUM AS LIMIT
 WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP TXN_BEGIN TXN_COMMIT TXN_ABORT TXN_ROLLBACK ORDER_BY
 // non-keywords
 %token LEQ NEQ GEQ T_EOF
@@ -53,7 +53,8 @@ WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP 
 %type <sv_cond> condition
 %type <sv_conds> whereClause optWhereClause
 %type <sv_orderby>  order_clause 
-%type <sv_orders> opt_order_clause order_clauses
+%type <sv_orders> order_clauses
+%type <sv_order_clause> opt_order_clause
 %type <sv_orderby_dir> opt_asc_desc
 
 %%
@@ -405,9 +406,14 @@ tableList:
     ;
 
 opt_order_clause:
-    ORDER BY order_clauses      
+    ORDER BY order_clauses
     { 
-        $$ = $3; 
+        $$ = std::make_shared<OrderClause>($3); 
+    }
+    |
+    ORDER BY order_clauses LIMIT VALUE_INT
+    { 
+        $$ = std::make_shared<OrderClause>($3, $5);
     }
     |   /* epsilon */ { /* ignore*/ }
     ;
@@ -416,10 +422,12 @@ order_clauses:
     {
         $$ = std::vector<std::shared_ptr<OrderBy>>{$1};
     }
-    |order_clauses ',' order_clause
+    |
+    order_clauses ',' order_clause
     {
         $$.push_back($3);
     }
+    
 order_clause:
       col  opt_asc_desc 
     { 

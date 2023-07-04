@@ -19,7 +19,6 @@ See the Mulan PSL v2 for more details. */
 #include "parser/parser.h"
 #include "system/sm.h"
 #include "common/common.h"
-
 class Query{
     public:
     std::shared_ptr<ast::TreeNode> parse;
@@ -36,6 +35,7 @@ class Query{
     std::vector<Value> values;
     //orderby 的 排序所需值
     std::vector<std::pair<TabCol, bool>> orders;
+    int limit;
     Query(){}
 
 };

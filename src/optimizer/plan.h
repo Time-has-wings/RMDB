@@ -115,15 +115,17 @@ public:
 class SortPlan : public Plan
 {
 public:
-    SortPlan(PlanTag tag, std::shared_ptr<Plan> subplan, std::vector<std::pair<TabCol, bool>> orders_)
+    SortPlan(PlanTag tag, std::shared_ptr<Plan> subplan, std::vector<std::pair<TabCol, bool>> orders_, int limit_)
     {
         subplan_ = std::move(subplan);
         orders = std::move(orders_);
+        limit = limit_;
         Plan::tag = tag;
     }
     ~SortPlan() {}
     std::shared_ptr<Plan> subplan_;
     std::vector<std::pair<TabCol, bool>> orders;
+    int limit;
 };
 
 // dml语句，包括insert; delete; update; select语句　

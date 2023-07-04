@@ -223,6 +223,13 @@ namespace ast
         OrderByDir orderby_dir;
         OrderBy(std::shared_ptr<Col> col_, OrderByDir orderby_dir_) : col(std::move(col_)), orderby_dir(std::move(orderby_dir_)) {}
     };
+    struct OrderClause : public TreeNode
+    {
+        int limit;
+        std::vector<std::shared_ptr<OrderBy>> orders;
+        OrderClause(std::vector<std::shared_ptr<OrderBy>> orders_) : orders(std::move(orders_)), limit(-1) {}
+        OrderClause(std::vector<std::shared_ptr<OrderBy>> orders_, int limit_) : orders(std::move(orders_)), limit(limit_) {}
+    };
 
     struct InsertStmt : public TreeNode
     {
@@ -270,15 +277,16 @@ namespace ast
         std::vector<std::shared_ptr<JoinExpr>> jointree;
 
         bool has_sort;
-        std::vector<std::shared_ptr<OrderBy>> orders;
+        std::shared_ptr<OrderClause> order_clause;
 
         SelectStmt(std::vector<std::shared_ptr<Col>> cols_,
                    std::vector<std::string> tabs_,
                    std::vector<std::shared_ptr<BinaryExpr>> conds_,
-                   std::vector<std::shared_ptr<OrderBy>> orders_) : cols(std::move(cols_)), tabs(std::move(tabs_)), conds(std::move(conds_)),
-                                                      orders(std::move(orders_))
+                   std::shared_ptr<OrderClause> order_clause_) : cols(std::move(cols_)), tabs(std::move(tabs_)), conds(std::move(conds_)),
+                                                                 order_clause(std::move(order_clause_))
         {
-            has_sort = (bool)orders.size()>0;
+            if (auto orderclause = std::dynamic_pointer_cast<ast::OrderClause>(order_clause))
+                has_sort = (bool)order_clause->orders.size() > 0;
         }
     };
 
@@ -314,6 +322,7 @@ namespace ast
         std::vector<std::shared_ptr<OrderBy>> sv_orders;
 
         std::shared_ptr<SetClause> sv_set_clause;
+        std::shared_ptr<OrderClause> sv_order_clause;
         std::vector<std::shared_ptr<SetClause>> sv_set_clauses;
 
         std::shared_ptr<BinaryExpr> sv_cond;

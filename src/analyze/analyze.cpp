@@ -85,12 +85,16 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                 sel_col = check_column(all_cols, sel_col); // 列元数据校验
             }
         }
-        for (auto order : x->orders)
+        if (auto orderclause = std::dynamic_pointer_cast<ast::OrderClause>(x->order_clause))
         {
-            TabCol order_col = {.tab_name = order->col->tab_name, .col_name = order->col->col_name};
-            order_col = check_column(all_cols, order_col);
-            bool desc = order->orderby_dir == ast::OrderBy_DESC;
-            query->orders.emplace_back(order_col, desc);
+            for (auto order : x->order_clause->orders)
+            {
+                TabCol order_col = {.tab_name = order->col->tab_name, .col_name = order->col->col_name};
+                order_col = check_column(all_cols, order_col);
+                bool desc = order->orderby_dir == ast::OrderBy_DESC;
+                query->orders.emplace_back(order_col, desc);
+            }
+            query->limit = x->order_clause->limit;
         }
         // 处理where条件
         get_clause(x->conds, query->conds);
