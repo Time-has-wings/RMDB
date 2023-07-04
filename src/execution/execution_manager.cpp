@@ -19,7 +19,7 @@ See the Mulan PSL v2 for more details. */
 #include "executor_update.h"
 #include "index/ix.h"
 #include "record_printer.h"
-#include <float.h>
+
 const char *help_info = "Supported SQL syntax:\n"
                         "  command ;\n"
                         "command:\n"
@@ -140,7 +140,6 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
     std::string func_name;
     bool has_group = false;
     captions.reserve(sel_cols.size());
-    // group.reserve(sel_cols.size());
     for (auto &sel_col : sel_cols)
     {
         if (sel_col.isGroup)
@@ -266,55 +265,6 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
             {
                 int64_t temp = *(int64_t *)rec_buf;
                 col_str = datetime::trans_datetime(temp);
-            }
-
-            if (group.count(col.name))
-            {
-                if (group[col.name].first == "COUNT")
-                    int_map[col.name] += col_str != "" ? 1 : 0;
-                else if (group[col.name].first == "MIN")
-                {
-                    switch (col.type)
-                    {
-                    case TYPE_INT:
-                        int_map[col.name] = int_map[col.name] < *(int *)rec_buf ? int_map[col.name] : *(int *)rec_buf;
-                        break;
-                    case TYPE_FLOAT:
-                        float_map[col.name] = float_map[col.name] < *(float *)rec_buf ? float_map[col.name] : *(float *)rec_buf;
-                        break;
-                    case TYPE_STRING:
-                        string_map[col.name] = string_map[col.name] < col_str ? string_map[col.name] : col_str;
-                        break;
-                    }
-                }
-                else if (group[col.name].first == "MAX")
-                {
-                    switch (col.type)
-                    {
-                    case TYPE_INT:
-                        int_map[col.name] = int_map[col.name] > *(int *)rec_buf ? int_map[col.name] : *(int *)rec_buf;
-                        break;
-                    case TYPE_FLOAT:
-                        float_map[col.name] = float_map[col.name] > *(float *)rec_buf ? float_map[col.name] : *(float *)rec_buf;
-                        break;
-                    case TYPE_STRING:
-                        string_map[col.name] = string_map[col.name] > col_str ? string_map[col.name] : col_str;
-                        break;
-                    }
-                }
-                else if (group[col.name].first == "SUM")
-                {
-                    switch (col.type)
-                    {
-                    case TYPE_INT:
-                        int_map[col.name] += *(int *)rec_buf;
-                        break;
-                    case TYPE_FLOAT:
-                        float_map[col.name] += *(float *)rec_buf;
-                        break;
-                    }
-                }
-                continue;
             }
             columns.push_back(col_str);
         }

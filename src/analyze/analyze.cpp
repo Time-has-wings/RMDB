@@ -55,6 +55,7 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                 sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name};
             query->cols.push_back(sel_col);
         }
+
         std::vector<ColMeta> all_cols;
         get_all_cols(query->tables, all_cols);
         if (query->cols.empty())
@@ -143,6 +144,7 @@ TabCol Analyze::check_column(const std::vector<ColMeta> &all_cols, TabCol target
         std::string tab_name;
         for (auto &col : all_cols)
         {
+
             if (col.name == target.col_name)
             {
                 if (!tab_name.empty())

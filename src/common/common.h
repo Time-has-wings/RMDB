@@ -38,7 +38,7 @@ struct Value
     {
         int int_val;     // int value
         float float_val; // float value
-        int64_t bigint_val; // bigint
+        int64_t bigint_val;
         int64_t datetime_val; // datetime
         bool invalid_val;
     };
