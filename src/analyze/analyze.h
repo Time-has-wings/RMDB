@@ -34,7 +34,8 @@ class Query{
     std::vector<SetClause> set_clauses;
     //insert 的values值
     std::vector<Value> values;
-
+    //orderby 的 排序所需值
+    std::vector<std::pair<TabCol, bool>> orders;
     Query(){}
 
 };

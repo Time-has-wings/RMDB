@@ -197,11 +197,12 @@ enum yysymbol_kind_t
   YYSYMBOL_selector = 84,                  /* selector  */
   YYSYMBOL_tableList = 85,                 /* tableList  */
   YYSYMBOL_opt_order_clause = 86,          /* opt_order_clause  */
-  YYSYMBOL_order_clause = 87,              /* order_clause  */
-  YYSYMBOL_opt_asc_desc = 88,              /* opt_asc_desc  */
-  YYSYMBOL_tbName = 89,                    /* tbName  */
-  YYSYMBOL_colName = 90,                   /* colName  */
-  YYSYMBOL_asName = 91                     /* asName  */
+  YYSYMBOL_order_clauses = 87,             /* order_clauses  */
+  YYSYMBOL_order_clause = 88,              /* order_clause  */
+  YYSYMBOL_opt_asc_desc = 89,              /* opt_asc_desc  */
+  YYSYMBOL_tbName = 90,                    /* tbName  */
+  YYSYMBOL_colName = 91,                   /* colName  */
+  YYSYMBOL_asName = 92                     /* asName  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -532,16 +533,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  44
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   152
+#define YYLAST   156
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  61
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  31
+#define YYNNTS  32
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  82
+#define YYNRULES  84
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  163
+#define YYNSTATES  166
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   306
@@ -595,15 +596,15 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    60,    60,    65,    70,    75,    83,    84,    85,    86,
-      90,    94,    98,   102,   109,   116,   120,   124,   128,   132,
-     139,   143,   147,   151,   158,   162,   169,   173,   180,   187,
-     191,   195,   199,   203,   210,   214,   221,   225,   229,   233,
-     237,   241,   248,   255,   256,   263,   267,   273,   278,   283,
-     288,   293,   298,   302,   309,   313,   317,   321,   328,   332,
-     336,   340,   344,   348,   355,   359,   366,   370,   377,   384,
-     388,   392,   396,   400,   407,   411,   415,   422,   423,   424,
-     427,   429,   431
+       0,    61,    61,    66,    71,    76,    84,    85,    86,    87,
+      91,    95,    99,   103,   110,   117,   121,   125,   129,   133,
+     140,   144,   148,   152,   159,   163,   170,   174,   181,   188,
+     192,   196,   200,   204,   211,   215,   222,   226,   230,   234,
+     238,   242,   249,   256,   257,   264,   268,   274,   279,   284,
+     289,   294,   299,   303,   310,   314,   318,   322,   329,   333,
+     337,   341,   345,   349,   356,   360,   367,   371,   378,   385,
+     389,   393,   397,   401,   408,   412,   415,   419,   424,   431,
+     432,   433,   436,   438,   440
 };
 #endif
 
@@ -632,8 +633,8 @@ static const char *const yytname[] =
   "colNameList", "field", "type", "valueList", "value", "condition",
   "optWhereClause", "whereClause", "groupVal", "col", "colList", "op",
   "expr", "setClauses", "setClause", "selector", "tableList",
-  "opt_order_clause", "order_clause", "opt_asc_desc", "tbName", "colName",
-  "asName", YY_NULLPTR
+  "opt_order_clause", "order_clauses", "order_clause", "opt_asc_desc",
+  "tbName", "colName", "asName", YY_NULLPTR
 };
 
 static const char *
@@ -648,7 +649,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-81)
+#define YYTABLE_NINF (-83)
 
 #define yytable_value_is_error(Yyn) \
   0
@@ -672,8 +673,8 @@ static const yytype_int16 yypact[] =
       82,   -90,   -90,   -90,   -90,   -90,   -90,    57,   -90,   -90,
       98,    98,    98,    98,    98,   -90,   -90,   128,   -90,   -90,
      100,   -90,   -90,    63,   -90,   -90,   -90,   -90,   -90,   -90,
-     -90,   -90,   -90,   -90,    82,    91,   -90,    21,   -90,   -90,
-     -90,   -90,   -90
+     -90,   -90,   -90,   -90,    82,    91,   -90,    21,    93,   -90,
+     -90,   -90,   -90,   -90,    82,   -90
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -683,11 +684,11 @@ static const yytype_int8 yydefact[] =
 {
        0,     0,     0,     0,     0,     0,     0,     0,     0,     4,
        3,    10,    11,    12,    13,     5,     0,     0,     9,     6,
-       7,     8,    14,     0,     0,     0,     0,    80,    17,     0,
-       0,     0,     0,     0,     0,     0,    81,    69,    55,    54,
+       7,     8,    14,     0,     0,     0,     0,    82,    17,     0,
+       0,     0,     0,     0,     0,     0,    83,    69,    55,    54,
       70,     0,     0,    53,     1,     2,     0,     0,    16,     0,
        0,    43,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,    21,    81,    43,    66,     0,
+       0,     0,     0,     0,     0,    21,    83,    43,    66,     0,
        0,     0,     0,     0,     0,    57,    56,    43,    71,    52,
        0,    24,     0,     0,    26,     0,     0,    45,    44,     0,
        0,    22,     0,     0,     0,     0,     0,     0,     0,     0,
@@ -695,18 +696,18 @@ static const yytype_int8 yydefact[] =
        0,    19,    41,    36,    38,    39,    40,    37,     0,    34,
        0,    62,    61,    63,    58,    59,    60,     0,    67,    68,
        0,     0,     0,     0,     0,    73,    72,     0,    23,    25,
-       0,    27,    20,     0,    46,    64,    65,    42,    82,    51,
-      47,    48,    49,    50,     0,     0,    35,    79,    74,    30,
-      78,    77,    76
+       0,    27,    20,     0,    46,    64,    65,    42,    84,    51,
+      47,    48,    49,    50,     0,     0,    35,    81,    74,    76,
+      30,    80,    79,    78,     0,    77
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -90,   -90,   -90,   -90,   -90,   -90,   -90,   -90,    86,    47,
-     -90,   -90,   -89,    30,   -52,   -90,    95,    -8,   -90,   -90,
-     -90,   -90,    61,   -90,   -90,   -90,   -90,   -90,    -3,   -50,
-     -58
+     -90,   -90,   -90,   -90,   -90,   -90,   -90,   -90,    87,    48,
+     -90,   -90,   -89,    33,   -52,   -90,    95,    -8,   -90,   -90,
+     -90,   -90,    61,   -90,   -90,   -90,   -90,   -10,   -90,    -3,
+     -50,   -58
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
@@ -714,8 +715,8 @@ static const yytype_uint8 yydefgoto[] =
 {
        0,    16,    17,    18,    19,    20,    21,    80,    83,    81,
      108,   118,   119,    87,    65,    88,    38,    89,    40,   127,
-     147,    67,    68,    41,    77,   138,   158,   162,    42,    43,
-     149
+     147,    67,    68,    41,    77,   138,   158,   159,   163,    42,
+      43,   149
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -725,23 +726,23 @@ static const yytype_int16 yytable[] =
 {
       39,    28,    69,   129,    31,    32,    33,    34,    35,    79,
       82,    84,    84,    36,    23,    91,    25,    64,    64,    22,
-      46,    47,    48,    49,    70,   100,    50,    51,    98,   160,
-     101,   102,    27,    36,    29,   161,   109,   110,   145,    24,
+      46,    47,    48,    49,    70,   100,    50,    51,    98,   161,
+     101,   102,    27,    36,    29,   162,   109,   110,   145,    24,
       69,    26,    30,    44,    37,    71,    72,    73,    74,    76,
       99,    90,    82,    45,   156,    78,    52,     1,    53,     2,
      141,     3,     4,     5,    54,    55,     6,   111,   110,    32,
       33,    34,    35,   150,   151,   152,   153,     7,    56,     8,
-     142,   143,   121,   122,   123,   -80,    57,    58,     9,    10,
+     142,   143,   121,   122,   123,   -82,    57,    58,     9,    10,
       11,    12,    13,    14,    59,   135,   136,    36,    15,   124,
      125,   126,    36,   112,   113,   114,   115,   116,   117,   112,
      113,   114,   115,   116,   117,    60,    63,    61,    62,   146,
      103,   104,   105,   106,   107,    64,    66,    36,    86,    92,
       93,    94,    95,    96,    97,   130,   120,   131,   132,   133,
-     134,   137,   140,   148,   154,   159,   157,   155,    85,   139,
-     144,   128,    75
+     134,   137,   140,   148,   154,   160,   157,   155,   164,    85,
+     139,   128,    75,   144,   165,     0,   157
 };
 
-static const yytype_uint8 yycheck[] =
+static const yytype_int16 yycheck[] =
 {
        8,     4,    52,    92,     7,    17,    18,    19,    20,    59,
       60,    61,    62,    45,     6,    67,     6,    22,    22,     4,
@@ -757,8 +758,8 @@ static const yytype_uint8 yycheck[] =
       47,    48,    49,    50,    51,    53,    11,    53,    53,   127,
       26,    27,    28,    29,    30,    22,    45,    45,    53,    58,
       54,    54,    54,    54,    54,    21,    32,    21,    21,    21,
-      21,    15,    53,    45,    16,    54,   154,    47,    62,   102,
-     120,    90,    57
+      21,    15,    53,    45,    16,    54,   154,    47,    55,    62,
+     102,    90,    57,   120,   164,    -1,   164
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
@@ -767,21 +768,21 @@ static const yytype_int8 yystos[] =
 {
        0,     3,     5,     7,     8,     9,    12,    23,    25,    34,
       35,    36,    37,    38,    39,    44,    62,    63,    64,    65,
-      66,    67,     4,     6,    31,     6,    31,    45,    89,    10,
-      13,    89,    17,    18,    19,    20,    45,    56,    77,    78,
-      79,    84,    89,    90,     0,    52,    89,    89,    89,    89,
-      89,    89,    24,    53,    53,    53,    53,    55,    13,    57,
-      53,    53,    53,    11,    22,    75,    45,    82,    83,    90,
-      56,    78,    78,    78,    78,    77,    78,    85,    89,    90,
-      68,    70,    90,    69,    90,    69,    53,    74,    76,    78,
+      66,    67,     4,     6,    31,     6,    31,    45,    90,    10,
+      13,    90,    17,    18,    19,    20,    45,    56,    77,    78,
+      79,    84,    90,    91,     0,    52,    90,    90,    90,    90,
+      90,    90,    24,    53,    53,    53,    53,    55,    13,    57,
+      53,    53,    53,    11,    22,    75,    45,    82,    83,    91,
+      56,    78,    78,    78,    78,    77,    78,    85,    90,    91,
+      68,    70,    91,    69,    91,    69,    53,    74,    76,    78,
       55,    75,    58,    54,    54,    54,    54,    54,    33,    55,
       75,    54,    55,    26,    27,    28,    29,    30,    71,    54,
       55,    54,    46,    47,    48,    49,    50,    51,    72,    73,
       32,    41,    42,    43,    58,    59,    60,    80,    83,    73,
-      21,    21,    21,    21,    21,    89,    89,    15,    86,    70,
-      53,    90,    54,    55,    74,    73,    78,    81,    45,    91,
-      91,    91,    91,    91,    16,    47,    73,    78,    87,    54,
-       8,    14,    88
+      21,    21,    21,    21,    21,    90,    90,    15,    86,    70,
+      53,    91,    54,    55,    74,    73,    78,    81,    45,    92,
+      92,    92,    92,    92,    16,    47,    73,    78,    87,    88,
+      54,     8,    14,    89,    55,    88
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
@@ -794,8 +795,8 @@ static const yytype_int8 yyr1[] =
       73,    73,    74,    75,    75,    76,    76,    77,    77,    77,
       77,    77,    78,    78,    79,    79,    79,    79,    80,    80,
       80,    80,    80,    80,    81,    81,    82,    82,    83,    84,
-      84,    85,    85,    85,    86,    86,    87,    88,    88,    88,
-      89,    90,    91
+      84,    85,    85,    85,    86,    86,    87,    87,    88,    89,
+      89,    89,    90,    91,    92
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
@@ -808,8 +809,8 @@ static const yytype_int8 yyr2[] =
        1,     1,     3,     0,     2,     1,     3,     6,     6,     6,
        6,     6,     3,     1,     1,     1,     3,     3,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     3,     3,     1,
-       1,     1,     3,     3,     3,     0,     2,     1,     1,     0,
-       1,     1,     1
+       1,     1,     3,     3,     3,     0,     1,     3,     2,     1,
+       1,     0,     1,     1,     1
 };
 
 
@@ -1665,585 +1666,601 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* start: stmt ';'  */
-#line 61 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 62 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         parse_tree = (yyvsp[-1].sv_node);
         YYACCEPT;
     }
-#line 1674 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1675 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 3: /* start: HELP  */
-#line 66 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 67 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         parse_tree = std::make_shared<Help>();
         YYACCEPT;
     }
-#line 1683 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1684 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 4: /* start: EXIT  */
-#line 71 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 72 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         parse_tree = nullptr;
         YYACCEPT;
     }
-#line 1692 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1693 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 5: /* start: T_EOF  */
-#line 76 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 77 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         parse_tree = nullptr;
         YYACCEPT;
     }
-#line 1701 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1702 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 10: /* txnStmt: TXN_BEGIN  */
-#line 91 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 92 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<TxnBegin>();
     }
-#line 1709 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1710 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 11: /* txnStmt: TXN_COMMIT  */
-#line 95 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 96 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<TxnCommit>();
     }
-#line 1717 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1718 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 12: /* txnStmt: TXN_ABORT  */
-#line 99 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 100 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<TxnAbort>();
     }
-#line 1725 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1726 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 13: /* txnStmt: TXN_ROLLBACK  */
-#line 103 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 104 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<TxnRollback>();
     }
-#line 1733 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1734 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 14: /* dbStmt: SHOW TABLES  */
-#line 110 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 111 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<ShowTables>();
     }
-#line 1741 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1742 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 15: /* ddl: CREATE TABLE tbName '(' fieldList ')'  */
-#line 117 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 118 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<CreateTable>((yyvsp[-3].sv_str), (yyvsp[-1].sv_fields));
     }
-#line 1749 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1750 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 16: /* ddl: DROP TABLE tbName  */
-#line 121 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 122 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<DropTable>((yyvsp[0].sv_str));
     }
-#line 1757 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1758 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 17: /* ddl: DESC tbName  */
-#line 125 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 126 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<DescTable>((yyvsp[0].sv_str));
     }
-#line 1765 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1766 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 18: /* ddl: CREATE INDEX tbName '(' colNameList ')'  */
-#line 129 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 130 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<CreateIndex>((yyvsp[-3].sv_str), (yyvsp[-1].sv_strs));
     }
-#line 1773 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1774 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 19: /* ddl: DROP INDEX tbName '(' colNameList ')'  */
-#line 133 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 134 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<DropIndex>((yyvsp[-3].sv_str), (yyvsp[-1].sv_strs));
     }
-#line 1781 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1782 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 20: /* dml: INSERT INTO tbName VALUES '(' valueList ')'  */
-#line 140 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 141 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<InsertStmt>((yyvsp[-4].sv_str), (yyvsp[-1].sv_vals));
     }
-#line 1789 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1790 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 21: /* dml: DELETE FROM tbName optWhereClause  */
-#line 144 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 145 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<DeleteStmt>((yyvsp[-1].sv_str), (yyvsp[0].sv_conds));
     }
-#line 1797 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1798 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 22: /* dml: UPDATE tbName SET setClauses optWhereClause  */
-#line 148 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 149 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_node) = std::make_shared<UpdateStmt>((yyvsp[-3].sv_str), (yyvsp[-1].sv_set_clauses), (yyvsp[0].sv_conds));
     }
-#line 1805 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1806 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 23: /* dml: SELECT selector FROM tableList optWhereClause opt_order_clause  */
-#line 152 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 153 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
-        (yyval.sv_node) = std::make_shared<SelectStmt>((yyvsp[-4].sv_cols), (yyvsp[-2].sv_strs), (yyvsp[-1].sv_conds), (yyvsp[0].sv_orderby));
+        (yyval.sv_node) = std::make_shared<SelectStmt>((yyvsp[-4].sv_cols), (yyvsp[-2].sv_strs), (yyvsp[-1].sv_conds), (yyvsp[0].sv_orders));
     }
-#line 1813 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1814 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 24: /* fieldList: field  */
-#line 159 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 160 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_fields) = std::vector<std::shared_ptr<Field>>{(yyvsp[0].sv_field)};
     }
-#line 1821 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1822 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 25: /* fieldList: fieldList ',' field  */
-#line 163 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 164 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_fields).push_back((yyvsp[0].sv_field));
     }
-#line 1829 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1830 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 26: /* colNameList: colName  */
-#line 170 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 171 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_strs) = std::vector<std::string>{(yyvsp[0].sv_str)};
     }
-#line 1837 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1838 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 27: /* colNameList: colNameList ',' colName  */
-#line 174 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 175 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_strs).push_back((yyvsp[0].sv_str));
     }
-#line 1845 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1846 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 28: /* field: colName type  */
-#line 181 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 182 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_field) = std::make_shared<ColDef>((yyvsp[-1].sv_str), (yyvsp[0].sv_type_len));
     }
-#line 1853 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1854 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 29: /* type: INT  */
-#line 188 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 189 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_type_len) = std::make_shared<TypeLen>(SV_TYPE_INT, sizeof(int));
     }
-#line 1861 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1862 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 30: /* type: CHAR '(' VALUE_INT ')'  */
-#line 192 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 193 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_type_len) = std::make_shared<TypeLen>(SV_TYPE_STRING, (yyvsp[-1].sv_int));
     }
-#line 1869 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1870 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 31: /* type: FLOAT  */
-#line 196 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 197 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_type_len) = std::make_shared<TypeLen>(SV_TYPE_FLOAT, sizeof(float));
     }
-#line 1877 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1878 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 32: /* type: BIGINT  */
-#line 200 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 201 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_type_len) = std::make_shared<TypeLen>(SV_TYPE_BIGINT, sizeof(int64_t));
     }
-#line 1885 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1886 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 33: /* type: DATETIME  */
-#line 204 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 205 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_type_len) = std::make_shared<TypeLen>(SV_TYPE_DATETIME, sizeof(int64_t));
     }
-#line 1893 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1894 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 34: /* valueList: value  */
-#line 211 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 212 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_vals) = std::vector<std::shared_ptr<Value>>{(yyvsp[0].sv_val)};
     }
-#line 1901 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1902 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 35: /* valueList: valueList ',' value  */
-#line 215 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 216 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_vals).push_back((yyvsp[0].sv_val));
     }
-#line 1909 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1910 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 36: /* value: VALUE_INT  */
-#line 222 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 223 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_val) = std::make_shared<IntLit>((yyvsp[0].sv_int));
     }
-#line 1917 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1918 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 37: /* value: VALUE_FLOAT  */
-#line 226 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 227 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_val) = std::make_shared<FloatLit>((yyvsp[0].sv_float));
     }
-#line 1925 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1926 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 38: /* value: VALUE_BIGINT  */
-#line 230 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 231 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_val) = std::make_shared<BigintLit>((yyvsp[0].sv_bigint));
     }
-#line 1933 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1934 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 39: /* value: VALUE_DATETIME  */
-#line 234 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 235 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_val) = std::make_shared<DatetimeLit>((yyvsp[0].sv_datetime));
     }
-#line 1941 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1942 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 40: /* value: VALUE_INVALID  */
-#line 238 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 239 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_val) = std::make_shared<InvalidLit>((yyvsp[0].sv_invalid));
     }
-#line 1949 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1950 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 41: /* value: VALUE_STRING  */
-#line 242 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 243 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_val) = std::make_shared<StringLit>((yyvsp[0].sv_str));
     }
-#line 1957 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1958 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 42: /* condition: col op expr  */
-#line 249 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 250 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_cond) = std::make_shared<BinaryExpr>((yyvsp[-2].sv_col), (yyvsp[-1].sv_comp_op), (yyvsp[0].sv_expr));
     }
-#line 1965 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1966 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 43: /* optWhereClause: %empty  */
-#line 255 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 256 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
                       { /* ignore*/ }
-#line 1971 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1972 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 44: /* optWhereClause: WHERE whereClause  */
-#line 257 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 258 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_conds) = (yyvsp[0].sv_conds);
     }
-#line 1979 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1980 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 45: /* whereClause: condition  */
-#line 264 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 265 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_conds) = std::vector<std::shared_ptr<BinaryExpr>>{(yyvsp[0].sv_cond)};
     }
-#line 1987 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1988 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 46: /* whereClause: whereClause AND condition  */
-#line 268 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 269 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_conds).push_back((yyvsp[0].sv_cond));
     }
-#line 1995 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 1996 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 47: /* groupVal: COUNT '(' col ')' AS asName  */
-#line 274 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 275 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_group_val) = std::make_shared<GroupValue>("COUNT", (yyvsp[0].sv_str),(yyvsp[-3].sv_col));
     }
-#line 2003 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2004 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 48: /* groupVal: MIN '(' col ')' AS asName  */
-#line 279 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 280 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_group_val) = std::make_shared<GroupValue>("MIN", (yyvsp[0].sv_str), (yyvsp[-3].sv_col));
     }
-#line 2011 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2012 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 49: /* groupVal: MAX '(' col ')' AS asName  */
-#line 284 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 285 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_group_val) = std::make_shared<GroupValue>("MAX", (yyvsp[0].sv_str), (yyvsp[-3].sv_col));
     }
-#line 2019 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2020 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 50: /* groupVal: SUM '(' col ')' AS asName  */
-#line 289 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 290 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_group_val) = std::make_shared<GroupValue>("SUM", (yyvsp[0].sv_str), (yyvsp[-3].sv_col));
     }
-#line 2027 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2028 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 51: /* groupVal: COUNT '(' '*' ')' AS asName  */
-#line 294 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 295 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_group_val) = std::make_shared<GroupValue>("COUNT", (yyvsp[0].sv_str),true);
     }
-#line 2035 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2036 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 52: /* col: tbName '.' colName  */
-#line 299 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 300 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_col) = std::make_shared<Col>((yyvsp[-2].sv_str), (yyvsp[0].sv_str));
     }
-#line 2043 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2044 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 53: /* col: colName  */
-#line 303 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 304 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_col) = std::make_shared<Col>("", (yyvsp[0].sv_str));
     }
-#line 2051 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2052 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 54: /* colList: col  */
-#line 310 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 311 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_cols) = std::vector<std::shared_ptr<Col>>{(yyvsp[0].sv_col)};
     }
-#line 2059 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2060 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 55: /* colList: groupVal  */
-#line 314 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 315 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_cols) = std::vector<std::shared_ptr<Col>>{(yyvsp[0].sv_group_val)};
     }
-#line 2067 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2068 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 56: /* colList: colList ',' col  */
-#line 318 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 319 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_cols).push_back((yyvsp[0].sv_col));
     }
-#line 2075 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2076 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 57: /* colList: colList ',' groupVal  */
-#line 322 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 323 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_cols).push_back((yyvsp[0].sv_group_val));
     }
-#line 2083 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2084 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 58: /* op: '='  */
-#line 329 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 330 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_EQ;
     }
-#line 2091 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2092 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 59: /* op: '<'  */
-#line 333 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 334 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_LT;
     }
-#line 2099 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2100 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 60: /* op: '>'  */
-#line 337 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 338 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_GT;
     }
-#line 2107 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2108 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 61: /* op: NEQ  */
-#line 341 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 342 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_NE;
     }
-#line 2115 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2116 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 62: /* op: LEQ  */
-#line 345 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 346 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_LE;
     }
-#line 2123 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2124 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 63: /* op: GEQ  */
-#line 349 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 350 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_GE;
     }
-#line 2131 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2132 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 64: /* expr: value  */
-#line 356 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 357 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_expr) = std::static_pointer_cast<Expr>((yyvsp[0].sv_val));
     }
-#line 2139 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2140 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 65: /* expr: col  */
-#line 360 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 361 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_expr) = std::static_pointer_cast<Expr>((yyvsp[0].sv_col));
     }
-#line 2147 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2148 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 66: /* setClauses: setClause  */
-#line 367 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 368 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_set_clauses) = std::vector<std::shared_ptr<SetClause>>{(yyvsp[0].sv_set_clause)};
     }
-#line 2155 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2156 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 67: /* setClauses: setClauses ',' setClause  */
-#line 371 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 372 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_set_clauses).push_back((yyvsp[0].sv_set_clause));
     }
-#line 2163 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2164 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 68: /* setClause: colName '=' value  */
-#line 378 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 379 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_set_clause) = std::make_shared<SetClause>((yyvsp[-2].sv_str), (yyvsp[0].sv_val));
     }
-#line 2171 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2172 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 69: /* selector: '*'  */
-#line 385 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 386 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_cols) = {};
     }
-#line 2179 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2180 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 71: /* tableList: tbName  */
-#line 393 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 394 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_strs) = std::vector<std::string>{(yyvsp[0].sv_str)};
     }
-#line 2187 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2188 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 72: /* tableList: tableList ',' tbName  */
-#line 397 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 398 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_strs).push_back((yyvsp[0].sv_str));
     }
-#line 2195 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2196 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 73: /* tableList: tableList JOIN tbName  */
-#line 401 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 402 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     {
         (yyval.sv_strs).push_back((yyvsp[0].sv_str));
     }
-#line 2203 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2204 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
-  case 74: /* opt_order_clause: ORDER BY order_clause  */
-#line 408 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+  case 74: /* opt_order_clause: ORDER BY order_clauses  */
+#line 409 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     { 
-        (yyval.sv_orderby) = (yyvsp[0].sv_orderby); 
+        (yyval.sv_orders) = (yyvsp[0].sv_orders); 
     }
-#line 2211 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2212 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
   case 75: /* opt_order_clause: %empty  */
-#line 411 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 412 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
                       { /* ignore*/ }
-#line 2217 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2218 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
-  case 76: /* order_clause: col opt_asc_desc  */
+  case 76: /* order_clauses: order_clause  */
 #line 416 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+    {
+        (yyval.sv_orders) = std::vector<std::shared_ptr<OrderBy>>{(yyvsp[0].sv_orderby)};
+    }
+#line 2226 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+    break;
+
+  case 77: /* order_clauses: order_clauses ',' order_clause  */
+#line 420 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+    {
+        (yyval.sv_orders).push_back((yyvsp[0].sv_orderby));
+    }
+#line 2234 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+    break;
+
+  case 78: /* order_clause: col opt_asc_desc  */
+#line 425 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
     { 
         (yyval.sv_orderby) = std::make_shared<OrderBy>((yyvsp[-1].sv_col), (yyvsp[0].sv_orderby_dir));
     }
-#line 2225 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2242 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
-  case 77: /* opt_asc_desc: ASC  */
-#line 422 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+  case 79: /* opt_asc_desc: ASC  */
+#line 431 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
                  { (yyval.sv_orderby_dir) = OrderBy_ASC;     }
-#line 2231 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2248 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
-  case 78: /* opt_asc_desc: DESC  */
-#line 423 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+  case 80: /* opt_asc_desc: DESC  */
+#line 432 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
                  { (yyval.sv_orderby_dir) = OrderBy_DESC;    }
-#line 2237 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2254 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
-  case 79: /* opt_asc_desc: %empty  */
-#line 424 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+  case 81: /* opt_asc_desc: %empty  */
+#line 433 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
             { (yyval.sv_orderby_dir) = OrderBy_DEFAULT; }
-#line 2243 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2260 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
     break;
 
 
-#line 2247 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
+#line 2264 "/home/pygone/projects/db2023-one/src/parser/yacc.tab.cpp"
 
       default: break;
     }
@@ -2472,5 +2489,5 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 432 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
+#line 441 "/home/pygone/projects/db2023-one/src/parser/yacc.y"
 

@@ -219,9 +219,9 @@ namespace ast
 
     struct OrderBy : public TreeNode
     {
-        std::shared_ptr<Col> cols;
+        std::shared_ptr<Col> col;
         OrderByDir orderby_dir;
-        OrderBy(std::shared_ptr<Col> cols_, OrderByDir orderby_dir_) : cols(std::move(cols_)), orderby_dir(std::move(orderby_dir_)) {}
+        OrderBy(std::shared_ptr<Col> col_, OrderByDir orderby_dir_) : col(std::move(col_)), orderby_dir(std::move(orderby_dir_)) {}
     };
 
     struct InsertStmt : public TreeNode
@@ -270,15 +270,15 @@ namespace ast
         std::vector<std::shared_ptr<JoinExpr>> jointree;
 
         bool has_sort;
-        std::shared_ptr<OrderBy> order;
+        std::vector<std::shared_ptr<OrderBy>> orders;
 
         SelectStmt(std::vector<std::shared_ptr<Col>> cols_,
                    std::vector<std::string> tabs_,
                    std::vector<std::shared_ptr<BinaryExpr>> conds_,
-                   std::shared_ptr<OrderBy> order_) : cols(std::move(cols_)), tabs(std::move(tabs_)), conds(std::move(conds_)),
-                                                      order(std::move(order_))
+                   std::vector<std::shared_ptr<OrderBy>> orders_) : cols(std::move(cols_)), tabs(std::move(tabs_)), conds(std::move(conds_)),
+                                                      orders(std::move(orders_))
         {
-            has_sort = (bool)order;
+            has_sort = (bool)orders.size()>0;
         }
     };
 
@@ -311,6 +311,7 @@ namespace ast
         std::shared_ptr<Col> sv_col;
         std::shared_ptr<GroupValue> sv_group_val;
         std::vector<std::shared_ptr<Col>> sv_cols;
+        std::vector<std::shared_ptr<OrderBy>> sv_orders;
 
         std::shared_ptr<SetClause> sv_set_clause;
         std::vector<std::shared_ptr<SetClause>> sv_set_clauses;
