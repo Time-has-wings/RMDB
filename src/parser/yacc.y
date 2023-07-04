@@ -289,7 +289,8 @@ groupVal:
     {
         $$ = std::make_shared<GroupValue>("SUM", $6, $3);
     }; 
-    |COUNT '(' '*' ')' AS asName
+    |
+    COUNT '(' '*' ')' AS asName
     {
         $$ = std::make_shared<GroupValue>("COUNT", $6,true);
     }

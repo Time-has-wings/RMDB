@@ -137,16 +137,18 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
                             Context *context)
 {
     std::vector<std::string> captions;
-    std::unordered_map<std::string, std::pair<std::string, bool>> group;
-    // bool group = false;
+    std::string func_name;
+    bool has_group = false;
     captions.reserve(sel_cols.size());
     // group.reserve(sel_cols.size());
     for (auto &sel_col : sel_cols)
     {
-        if (sel_col.as_name != "")
+        if (sel_col.isGroup)
         {
             captions.push_back(sel_col.as_name);
-            group.emplace(sel_col.col_name, std::pair<std::string, bool>(sel_col.groupfunc, sel_col.all));
+            func_name = sel_col.func_name;
+            has_group = true;
+            break;
         }
         else
             captions.push_back(sel_col.col_name);
@@ -169,13 +171,10 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 
     // Print records
     size_t num_rec = 0;
-    std::unordered_map<std::string, int> int_map;
-    std::unordered_map<std::string, float> float_map;
-    // std::unordered_map<std::string, int> int_map;
-    std::unordered_map<std::string, std::string> string_map;
-    std::unordered_map<std::string, ColType> type_map;
+    int cnt = 0;
+    Value res;
+    Value temp;
     bool first = true;
-    bool has_group = false;
     // 执行query_plan
     for (executorTreeRoot->beginTuple(); !executorTreeRoot->is_end(); executorTreeRoot->nextTuple())
     {
@@ -183,87 +182,58 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
         std::vector<std::string> columns;
         for (auto &col : executorTreeRoot->cols())
         {
-            if (group.count(col.name))
+            if (has_group && func_name == "COUNT")
             {
-                has_group = true;
-                if (group[col.name].first == "COUNT")
-                {
-
-                    if (first)
-                    {
-                        type_map[col.name] = col.type;
-                        int_map.emplace(col.name, 1);
-                        continue;
-                    }
-                    if (group[col.name].second)
-                    {
-                        int_map[col.name] += 1;
-                        continue;
-                    }
-                }
-                else if (group[col.name].first == "MIN")
-                {
-                    if (first)
-                    {
-                        type_map[col.name] = col.type;
-                        switch (col.type)
-                        {
-                        case TYPE_INT:
-                            int_map.emplace(col.name, INT32_MAX);
-                            break;
-                        case TYPE_FLOAT:
-                            float_map.emplace(col.name, FLT_MAX);
-                            break;
-                        case TYPE_STRING:
-                            string_map.emplace(col.name, std::string(col.len, 'z'));
-                            break;
-                        }
-                    }
-                }
-                else if (group[col.name].first == "MAX")
-                {
-                    if (first)
-                    {
-                        type_map[col.name] = col.type;
-                        switch (col.type)
-                        {
-                        case TYPE_INT:
-                            int_map.emplace(col.name, INT32_MIN);
-                            break;
-                        case TYPE_FLOAT:
-                            float_map.emplace(col.name, FLT_MIN);
-                            break;
-                        case TYPE_STRING:
-                            string_map.emplace(col.name, std::string(col.len, '0'));
-                            break;
-                        }
-                    }
-                }
-                else if (group[col.name].first == "SUM")
-                {
-                    if (first)
-                    {
-                        type_map[col.name] = col.type;
-                        switch (col.type)
-                        {
-                        case TYPE_INT:
-                            int_map.emplace(col.name, 0);
-                            break;
-                        case TYPE_FLOAT:
-                            float_map.emplace(col.name, 0.0);
-                            break;
-                        }
-                    }
-                }
+                cnt++;
+                continue;
             }
             std::string col_str;
             char *rec_buf = Tuple->data + col.offset;
             if (col.type == TYPE_INT)
             {
+                if (has_group)
+                {
+                    if (first)
+                    {
+                        res.set_int(*(int *)rec_buf);
+                        first = false;
+                    }
+                    else
+                    {
+                        temp.set_int(*(int *)rec_buf);
+
+                        if (func_name == "SUM")
+                            res += temp;
+                        else if (func_name == "MAX")
+                            res.set_int(res > temp ? res.int_val : temp.int_val);
+                        else if (func_name == "MIN")
+                            res.set_int(res < temp ? res.int_val : temp.int_val);
+                    }
+                    continue;
+                }
                 col_str = std::to_string(*(int *)rec_buf);
             }
             else if (col.type == TYPE_FLOAT)
             {
+                if (has_group)
+                {
+                    if (first)
+                    {
+                        res.set_float(*(float *)rec_buf);
+                        first = false;
+                    }
+                    else
+                    {
+                        temp.set_float(*(float *)rec_buf);
+                        if (func_name == "SUM")
+                            res += temp;
+                        else if (func_name == "MAX")
+                            res.set_float(res > temp ? res.float_val : temp.float_val);
+                        else if (func_name == "MIN")
+                            res.set_float(res < temp ? res.float_val : temp.float_val);
+                    }
+                    continue;
+                }
                 col_str = std::to_string(*(float *)rec_buf);
             }
             else if (col.type == TYPE_BIGINT)
@@ -274,6 +244,23 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
             {
                 col_str = std::string((char *)rec_buf, col.len);
                 col_str.resize(strlen(col_str.c_str()));
+                if (has_group)
+                {
+                    if (first)
+                    {
+                        res.set_str(col_str);
+                        first = false;
+                    }
+                    else
+                    {
+                        temp.set_str(col_str);
+                        if (func_name == "MAX")
+                            res.set_str(res > temp ? res.str_val : temp.str_val);
+                        else if (func_name == "MIN")
+                            res.set_str(res < temp ? res.str_val : temp.str_val);
+                    }
+                    continue;
+                }
             }
             else if (col.type == TYPE_DATETIME)
             {
@@ -331,10 +318,8 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
             }
             columns.push_back(col_str);
         }
-        first = false;
-        // print record into buffer
         if (!has_group)
-        {
+        { // print record into buffer
             rec_printer.print_record(columns, context);
             // print record into file
             outfile << "|";
@@ -348,56 +333,31 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
     }
     if (has_group)
     {
-        std::vector<std::string> columns;
-        for (auto &i : group)
+        std::string ans;
+        if (func_name == "COUNT")
+            ans = std::to_string(cnt);
+        else
         {
-            outfile << "|";
-            std::string colName = i.first;
-            if (i.second.first == "COUNT")
+            switch (res.type)
             {
-                outfile << " " << int_map[colName] << " |";
-                columns.push_back(std::to_string(int_map[colName]));
+            case TYPE_INT:
+                ans = std::to_string(res.int_val);
+                break;
+            case TYPE_FLOAT:
+                ans = std::to_string(res.float_val);
+                break;
+            case TYPE_STRING:
+                ans = res.str_val;
+            default:
+                break;
             }
-            else if (i.second.first == "MIN" || i.second.first == "MAX")
-            {
-                switch (type_map[colName])
-                {
-                case TYPE_INT:
-                    outfile << " " << int_map[colName] << " |";
-                    columns.push_back(std::to_string(int_map[colName]));
-                    break;
-                case TYPE_FLOAT:
-                    outfile << " " << float_map[colName] << " |";
-                    columns.push_back(std::to_string(float_map[colName]));
-                    break;
-                case TYPE_STRING:
-                    outfile << " " << string_map[colName] << " |";
-                    columns.push_back(string_map[colName]);
-                    break;
-                default:
-                    break;
-                }
-            }
-            else if (i.second.first == "SUM")
-            {
-                switch (type_map[colName])
-                {
-                case TYPE_INT:
-                    outfile << " " << int_map[colName] << " |";
-                    columns.push_back(std::to_string(int_map[colName]));
-                    break;
-                case TYPE_FLOAT:
-                    outfile << " " << float_map[colName] << " |";
-                    columns.push_back(std::to_string(float_map[colName]));
-                    break;
-                default:
-                    break;
-                }
-            }
-            outfile << "\n";
-            num_rec++;
         }
-        rec_printer.print_record(columns, context);
+        // print record into file
+        outfile << "|";
+        outfile << " " << ans << " |";
+        outfile << "\n";
+        rec_printer.print_record(std::vector<std::string>{ans}, context);
+        num_rec++;
     }
     outfile.close();
     // Print footer into buffer

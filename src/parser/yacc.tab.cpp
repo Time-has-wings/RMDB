@@ -600,10 +600,10 @@ static const yytype_int16 yyrline[] =
      139,   143,   147,   151,   158,   162,   169,   173,   180,   187,
      191,   195,   199,   203,   210,   214,   221,   225,   229,   233,
      237,   241,   248,   255,   256,   263,   267,   273,   278,   283,
-     288,   292,   297,   301,   308,   312,   316,   320,   327,   331,
-     335,   339,   343,   347,   354,   358,   365,   369,   376,   383,
-     387,   391,   395,   399,   406,   410,   414,   421,   422,   423,
-     426,   428,   430
+     288,   293,   298,   302,   309,   313,   317,   321,   328,   332,
+     336,   340,   344,   348,   355,   359,   366,   370,   377,   384,
+     388,   392,   396,   400,   407,   411,   415,   422,   423,   424,
+     427,   429,   431
 };
 #endif
 
@@ -2027,7 +2027,7 @@ yyreduce:
     break;
 
   case 51: /* groupVal: COUNT '(' '*' ')' AS asName  */
-#line 293 "yacc.y"
+#line 294 "yacc.y"
     {
         (yyval.sv_group_val) = std::make_shared<GroupValue>("COUNT", (yyvsp[0].sv_str),true);
     }
@@ -2035,7 +2035,7 @@ yyreduce:
     break;
 
   case 52: /* col: tbName '.' colName  */
-#line 298 "yacc.y"
+#line 299 "yacc.y"
     {
         (yyval.sv_col) = std::make_shared<Col>((yyvsp[-2].sv_str), (yyvsp[0].sv_str));
     }
@@ -2043,7 +2043,7 @@ yyreduce:
     break;
 
   case 53: /* col: colName  */
-#line 302 "yacc.y"
+#line 303 "yacc.y"
     {
         (yyval.sv_col) = std::make_shared<Col>("", (yyvsp[0].sv_str));
     }
@@ -2051,7 +2051,7 @@ yyreduce:
     break;
 
   case 54: /* colList: col  */
-#line 309 "yacc.y"
+#line 310 "yacc.y"
     {
         (yyval.sv_cols) = std::vector<std::shared_ptr<Col>>{(yyvsp[0].sv_col)};
     }
@@ -2059,7 +2059,7 @@ yyreduce:
     break;
 
   case 55: /* colList: groupVal  */
-#line 313 "yacc.y"
+#line 314 "yacc.y"
     {
         (yyval.sv_cols) = std::vector<std::shared_ptr<Col>>{(yyvsp[0].sv_group_val)};
     }
@@ -2067,7 +2067,7 @@ yyreduce:
     break;
 
   case 56: /* colList: colList ',' col  */
-#line 317 "yacc.y"
+#line 318 "yacc.y"
     {
         (yyval.sv_cols).push_back((yyvsp[0].sv_col));
     }
@@ -2075,7 +2075,7 @@ yyreduce:
     break;
 
   case 57: /* colList: colList ',' groupVal  */
-#line 321 "yacc.y"
+#line 322 "yacc.y"
     {
         (yyval.sv_cols).push_back((yyvsp[0].sv_group_val));
     }
@@ -2083,7 +2083,7 @@ yyreduce:
     break;
 
   case 58: /* op: '='  */
-#line 328 "yacc.y"
+#line 329 "yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_EQ;
     }
@@ -2091,7 +2091,7 @@ yyreduce:
     break;
 
   case 59: /* op: '<'  */
-#line 332 "yacc.y"
+#line 333 "yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_LT;
     }
@@ -2099,7 +2099,7 @@ yyreduce:
     break;
 
   case 60: /* op: '>'  */
-#line 336 "yacc.y"
+#line 337 "yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_GT;
     }
@@ -2107,7 +2107,7 @@ yyreduce:
     break;
 
   case 61: /* op: NEQ  */
-#line 340 "yacc.y"
+#line 341 "yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_NE;
     }
@@ -2115,7 +2115,7 @@ yyreduce:
     break;
 
   case 62: /* op: LEQ  */
-#line 344 "yacc.y"
+#line 345 "yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_LE;
     }
@@ -2123,7 +2123,7 @@ yyreduce:
     break;
 
   case 63: /* op: GEQ  */
-#line 348 "yacc.y"
+#line 349 "yacc.y"
     {
         (yyval.sv_comp_op) = SV_OP_GE;
     }
@@ -2131,7 +2131,7 @@ yyreduce:
     break;
 
   case 64: /* expr: value  */
-#line 355 "yacc.y"
+#line 356 "yacc.y"
     {
         (yyval.sv_expr) = std::static_pointer_cast<Expr>((yyvsp[0].sv_val));
     }
@@ -2139,7 +2139,7 @@ yyreduce:
     break;
 
   case 65: /* expr: col  */
-#line 359 "yacc.y"
+#line 360 "yacc.y"
     {
         (yyval.sv_expr) = std::static_pointer_cast<Expr>((yyvsp[0].sv_col));
     }
@@ -2147,7 +2147,7 @@ yyreduce:
     break;
 
   case 66: /* setClauses: setClause  */
-#line 366 "yacc.y"
+#line 367 "yacc.y"
     {
         (yyval.sv_set_clauses) = std::vector<std::shared_ptr<SetClause>>{(yyvsp[0].sv_set_clause)};
     }
@@ -2155,7 +2155,7 @@ yyreduce:
     break;
 
   case 67: /* setClauses: setClauses ',' setClause  */
-#line 370 "yacc.y"
+#line 371 "yacc.y"
     {
         (yyval.sv_set_clauses).push_back((yyvsp[0].sv_set_clause));
     }
@@ -2163,7 +2163,7 @@ yyreduce:
     break;
 
   case 68: /* setClause: colName '=' value  */
-#line 377 "yacc.y"
+#line 378 "yacc.y"
     {
         (yyval.sv_set_clause) = std::make_shared<SetClause>((yyvsp[-2].sv_str), (yyvsp[0].sv_val));
     }
@@ -2171,7 +2171,7 @@ yyreduce:
     break;
 
   case 69: /* selector: '*'  */
-#line 384 "yacc.y"
+#line 385 "yacc.y"
     {
         (yyval.sv_cols) = {};
     }
@@ -2179,7 +2179,7 @@ yyreduce:
     break;
 
   case 71: /* tableList: tbName  */
-#line 392 "yacc.y"
+#line 393 "yacc.y"
     {
         (yyval.sv_strs) = std::vector<std::string>{(yyvsp[0].sv_str)};
     }
@@ -2187,7 +2187,7 @@ yyreduce:
     break;
 
   case 72: /* tableList: tableList ',' tbName  */
-#line 396 "yacc.y"
+#line 397 "yacc.y"
     {
         (yyval.sv_strs).push_back((yyvsp[0].sv_str));
     }
@@ -2195,7 +2195,7 @@ yyreduce:
     break;
 
   case 73: /* tableList: tableList JOIN tbName  */
-#line 400 "yacc.y"
+#line 401 "yacc.y"
     {
         (yyval.sv_strs).push_back((yyvsp[0].sv_str));
     }
@@ -2203,7 +2203,7 @@ yyreduce:
     break;
 
   case 74: /* opt_order_clause: ORDER BY order_clause  */
-#line 407 "yacc.y"
+#line 408 "yacc.y"
     { 
         (yyval.sv_orderby) = (yyvsp[0].sv_orderby); 
     }
@@ -2211,13 +2211,13 @@ yyreduce:
     break;
 
   case 75: /* opt_order_clause: %empty  */
-#line 410 "yacc.y"
+#line 411 "yacc.y"
                       { /* ignore*/ }
 #line 2217 "yacc.tab.cpp"
     break;
 
   case 76: /* order_clause: col opt_asc_desc  */
-#line 415 "yacc.y"
+#line 416 "yacc.y"
     { 
         (yyval.sv_orderby) = std::make_shared<OrderBy>((yyvsp[-1].sv_col), (yyvsp[0].sv_orderby_dir));
     }
@@ -2225,19 +2225,19 @@ yyreduce:
     break;
 
   case 77: /* opt_asc_desc: ASC  */
-#line 421 "yacc.y"
+#line 422 "yacc.y"
                  { (yyval.sv_orderby_dir) = OrderBy_ASC;     }
 #line 2231 "yacc.tab.cpp"
     break;
 
   case 78: /* opt_asc_desc: DESC  */
-#line 422 "yacc.y"
+#line 423 "yacc.y"
                  { (yyval.sv_orderby_dir) = OrderBy_DESC;    }
 #line 2237 "yacc.tab.cpp"
     break;
 
   case 79: /* opt_asc_desc: %empty  */
-#line 423 "yacc.y"
+#line 424 "yacc.y"
             { (yyval.sv_orderby_dir) = OrderBy_DEFAULT; }
 #line 2243 "yacc.tab.cpp"
     break;
@@ -2472,5 +2472,5 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 431 "yacc.y"
+#line 432 "yacc.y"
 
