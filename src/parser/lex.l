@@ -43,7 +43,6 @@ value_float {sign}?{digit}+\.({digit}+)?
 value_datetime '{digit}{4}\-{digit}{2}\-{digit}{2}{white_space}{digit}{2}\:{digit}{2}\:{digit}{2}'
 value_string '[^']*'
 single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
-
 %x STATE_COMMENT
 
 %%
@@ -90,6 +89,11 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 "ORDER" { return ORDER; }
 "BY" {  return BY;  }
 "ASC" { return ASC; }
+"COUNT" { return COUNT; }
+"MIN" { return MIN; }
+"MAX" { return MAX; }
+"SUM" { return SUM; }
+"AS" {return AS;}
     /* operators */
 ">=" { return GEQ; }
 "<=" { return LEQ; }

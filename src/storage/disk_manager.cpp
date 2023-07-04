@@ -177,7 +177,7 @@ void DiskManager::close_file(int fd)
     // 注意不能关闭未打开的文件，并且需要更新文件打开列表
     if (fd2path_.count(fd))
     {
-        int r = close(fd);
+        close(fd);
         std::string &path = fd2path_[fd];
         path2fd_.erase(path);
         fd2path_.erase(fd);

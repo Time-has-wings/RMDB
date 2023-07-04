@@ -30,11 +30,29 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                 throw TableNotFoundError(table);
             }
         }
-
+        bool group_all = false;
+        std::string as_name;
+        std::string func_name;
         // 处理target list，在target list中添加上表名，例如 a.id
         for (auto &sv_sel_col : x->cols)
         {
-            TabCol sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name};
+            TabCol sel_col;
+            if (auto group = std::dynamic_pointer_cast<ast::GroupValue>(sv_sel_col))
+            {
+                if (!group->all)
+                {
+                    sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name, .as_name = group->as_name, .func_name = group->func_name, .isGroup = true};
+                }
+                else
+                {
+                    group_all = true;
+                    as_name = group->as_name;
+                    func_name = group->func_name;
+                    continue;
+                }
+            }
+            else
+                sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name};
             query->cols.push_back(sel_col);
         }
 
@@ -45,8 +63,18 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
             // select all columns
             for (auto &col : all_cols)
             {
-                TabCol sel_col = {.tab_name = col.tab_name, .col_name = col.name};
-                query->cols.push_back(sel_col);
+                TabCol sel_col;
+                if (group_all)
+                {
+                    sel_col = {.tab_name = col.tab_name, .col_name = col.name, .as_name = as_name, .func_name = func_name, .isGroup = true};
+                    query->cols.push_back(sel_col);
+                    break;
+                }
+                else
+                {
+                    sel_col = {.tab_name = col.tab_name, .col_name = col.name};
+                    query->cols.push_back(sel_col);
+                }
             }
         }
         else
@@ -116,6 +144,7 @@ TabCol Analyze::check_column(const std::vector<ColMeta> &all_cols, TabCol target
         std::string tab_name;
         for (auto &col : all_cols)
         {
+
             if (col.name == target.col_name)
             {
                 if (!tab_name.empty())
@@ -123,6 +152,8 @@ TabCol Analyze::check_column(const std::vector<ColMeta> &all_cols, TabCol target
                     throw AmbiguousColumnError(target.col_name);
                 }
                 tab_name = col.tab_name;
+                if (col.type == TYPE_STRING && target.func_name == "SUM")
+                    throw InvalidValueCountError();
             }
         }
         if (tab_name.empty())

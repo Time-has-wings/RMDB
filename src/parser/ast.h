@@ -188,8 +188,16 @@ namespace ast
     {
         std::string tab_name;
         std::string col_name;
-
+        Col() {}
         Col(std::string tab_name_, std::string col_name_) : tab_name(std::move(tab_name_)), col_name(std::move(col_name_)) {}
+    };
+    struct GroupValue : public Col
+    {
+        std::string func_name;
+        std::string as_name;
+        bool all = false;
+        GroupValue(std::string Func_, std::string as_name_, std::shared_ptr<Col> &col) : Col(*std::move(col)), func_name(std::move(Func_)), as_name(std::move(as_name_)) {}
+        GroupValue(std::string Func_, std::string as_name_, bool all_) : func_name(std::move(Func_)), as_name(std::move(as_name_)), all(all_) {}
     };
 
     struct SetClause : public TreeNode
@@ -301,6 +309,7 @@ namespace ast
         std::vector<std::shared_ptr<Value>> sv_vals;
 
         std::shared_ptr<Col> sv_col;
+        std::shared_ptr<GroupValue> sv_group_val;
         std::vector<std::shared_ptr<Col>> sv_cols;
 
         std::shared_ptr<SetClause> sv_set_clause;

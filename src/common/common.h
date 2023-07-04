@@ -22,7 +22,9 @@ struct TabCol
 {
     std::string tab_name;
     std::string col_name;
-
+    std::string as_name;
+    std::string func_name;
+    bool isGroup = false;
     friend bool operator<(const TabCol &x, const TabCol &y)
     {
         return std::make_pair(x.tab_name, x.col_name) < std::make_pair(y.tab_name, y.col_name);
@@ -319,6 +321,20 @@ struct Value
     bool operator<=(const Value &rhs) const
     {
         return (*this == rhs || *this < rhs);
+    }
+    void operator+=(const Value &rhs)
+    {
+        switch (type)
+        {
+        case TYPE_INT:
+            int_val += rhs.int_val;
+            break;
+        case TYPE_FLOAT:
+            float_val += rhs.float_val;
+            break;
+        default:
+            break;
+        }
     }
 };
 

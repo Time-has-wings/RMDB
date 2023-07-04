@@ -137,10 +137,20 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
                             Context *context)
 {
     std::vector<std::string> captions;
+    std::string func_name;
+    bool has_group = false;
     captions.reserve(sel_cols.size());
     for (auto &sel_col : sel_cols)
     {
-        captions.push_back(sel_col.col_name);
+        if (sel_col.isGroup)
+        {
+            captions.push_back(sel_col.as_name);
+            func_name = sel_col.func_name;
+            has_group = true;
+            break;
+        }
+        else
+            captions.push_back(sel_col.col_name);
     }
 
     // Print header into buffer
@@ -160,6 +170,10 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 
     // Print records
     size_t num_rec = 0;
+    int cnt = 0;
+    Value res;
+    Value temp;
+    bool first = true;
     // 执行query_plan
     for (executorTreeRoot->beginTuple(); !executorTreeRoot->is_end(); executorTreeRoot->nextTuple())
     {
@@ -167,14 +181,58 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
         std::vector<std::string> columns;
         for (auto &col : executorTreeRoot->cols())
         {
+            if (has_group && func_name == "COUNT")
+            {
+                cnt++;
+                continue;
+            }
             std::string col_str;
             char *rec_buf = Tuple->data + col.offset;
             if (col.type == TYPE_INT)
             {
+                if (has_group)
+                {
+                    if (first)
+                    {
+                        res.set_int(*(int *)rec_buf);
+                        first = false;
+                    }
+                    else
+                    {
+                        temp.set_int(*(int *)rec_buf);
+
+                        if (func_name == "SUM")
+                            res += temp;
+                        else if (func_name == "MAX")
+                            res.set_int(res > temp ? res.int_val : temp.int_val);
+                        else if (func_name == "MIN")
+                            res.set_int(res < temp ? res.int_val : temp.int_val);
+                    }
+                    continue;
+                }
                 col_str = std::to_string(*(int *)rec_buf);
             }
             else if (col.type == TYPE_FLOAT)
             {
+                if (has_group)
+                {
+                    if (first)
+                    {
+                        res.set_float(*(float *)rec_buf);
+                        first = false;
+                    }
+                    else
+                    {
+                        temp.set_float(*(float *)rec_buf);
+                        if (func_name == "SUM")
+                            res += temp;
+                        else if (func_name == "MAX")
+                            res.set_float(res > temp ? res.float_val : temp.float_val);
+                        else if (func_name == "MIN")
+                            res.set_float(res < temp ? res.float_val : temp.float_val);
+                    }
+                    continue;
+                }
                 col_str = std::to_string(*(float *)rec_buf);
             }
             else if (col.type == TYPE_BIGINT)
@@ -185,6 +243,23 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
             {
                 col_str = std::string((char *)rec_buf, col.len);
                 col_str.resize(strlen(col_str.c_str()));
+                if (has_group)
+                {
+                    if (first)
+                    {
+                        res.set_str(col_str);
+                        first = false;
+                    }
+                    else
+                    {
+                        temp.set_str(col_str);
+                        if (func_name == "MAX")
+                            res.set_str(res > temp ? res.str_val : temp.str_val);
+                        else if (func_name == "MIN")
+                            res.set_str(res < temp ? res.str_val : temp.str_val);
+                    }
+                    continue;
+                }
             }
             else if (col.type == TYPE_DATETIME)
             {
@@ -193,15 +268,45 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
             }
             columns.push_back(col_str);
         }
-        // print record into buffer
-        rec_printer.print_record(columns, context);
+        if (!has_group)
+        { // print record into buffer
+            rec_printer.print_record(columns, context);
+            // print record into file
+            outfile << "|";
+            for (int i = 0; i < columns.size(); ++i)
+            {
+                outfile << " " << columns[i] << " |";
+            }
+            outfile << "\n";
+            num_rec++;
+        }
+    }
+    if (has_group)
+    {
+        std::string ans;
+        if (func_name == "COUNT")
+            ans = std::to_string(cnt);
+        else
+        {
+            switch (res.type)
+            {
+            case TYPE_INT:
+                ans = std::to_string(res.int_val);
+                break;
+            case TYPE_FLOAT:
+                ans = std::to_string(res.float_val);
+                break;
+            case TYPE_STRING:
+                ans = res.str_val;
+            default:
+                break;
+            }
+        }
         // print record into file
         outfile << "|";
-        for (int i = 0; i < columns.size(); ++i)
-        {
-            outfile << " " << columns[i] << " |";
-        }
+        outfile << " " << ans << " |";
         outfile << "\n";
+        rec_printer.print_record(std::vector<std::string>{ans}, context);
         num_rec++;
     }
     outfile.close();
