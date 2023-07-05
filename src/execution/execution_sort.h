@@ -18,7 +18,7 @@ See the Mulan PSL v2 for more details. */
 struct value_id
 {
     std::vector<std::pair<Value, bool>> v;
-    size_t id;
+    std::unique_ptr<RmRecord> id;
     bool operator<(const value_id &t)
     {
         size_t s = 0;
@@ -46,9 +46,10 @@ private:
     size_t tuple_num;
     std::vector<bool> is_descs_;
     std::vector<size_t> used_tuple;
-    std::queue<size_t> sorted_tuples;
+    std::vector<std::unique_ptr<RmRecord>> sorted_tuples;
     std::unique_ptr<RmRecord> current_tuple;
     int limit;
+    size_t idx = 0;
 
 public:
     SortExecutor(std::unique_ptr<AbstractExecutor> prev, const std::vector<std::pair<TabCol, bool>> &orders, int limit_)
@@ -74,27 +75,25 @@ public:
     };
     bool is_end() const override
     {
-        return used_tuple.size() > tuple_num || (used_tuple.size() > limit && limit != -1);
+        return idx >tuple_num || (idx > limit && limit != -1);
     }
     void beginTuple() override
     {
-        search();
+        idx++;
     }
 
     void nextTuple() override
     {
-        search();
+        idx++;
     }
 
     std::unique_ptr<RmRecord> Next() override
     {
-        assert(!is_end());
-        return std::move(current_tuple);
+        return std::move(sorted_tuples.at(idx-1));
     }
     void sort()
     {
         std::vector<value_id> v;
-        size_t id = 0;
         prev_->beginTuple();
         while (!prev_->is_end())
         {
@@ -106,34 +105,13 @@ public:
                 auto val = prev_->get_value(rec, cols_.at(i));
                 vec.emplace_back(val, is_descs_.at(i));
             }
-            v.push_back({vec, id++});
+            v.push_back({vec, std::move(rec)});
             prev_->nextTuple();
         }
         std::sort(v.begin(), v.end());
-        for (auto i : v)
+        for (int i = 0; i < v.size(); i++)
         {
-            sorted_tuples.push(i.id);
-        }
-    }
-    void search()
-    {
-        prev_->beginTuple();
-        size_t id = 0;
-        auto x = sorted_tuples.front();
-        sorted_tuples.pop();
-        used_tuple.push_back(x);
-        while (!prev_->is_end())
-        {
-            if (id++ != x)
-            {
-                prev_->nextTuple();
-                continue;
-            }
-            else
-            {
-                current_tuple = prev_->Next();
-                break;
-            }
+            sorted_tuples.push_back(std::move(v.at(i).id));
         }
     }
     Rid &rid() override { return _abstract_rid; }
