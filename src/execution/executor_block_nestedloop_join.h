@@ -104,7 +104,7 @@ public:
     std::unique_ptr<RmRecord> Next() override
     {
         assert(idx != -1);
-        auto left_record = *blocks.at(idx++).first;
+        auto left_record = *blocks.at(idx - 1).first;
         auto right_record = right_->Next();
         auto ret = std::make_unique<RmRecord>(len_);
         memcpy(ret->data, left_record.data, left_record.size);
@@ -158,7 +158,7 @@ private:
 
                 if (left_rec != blocks.end())
                 {
-                    idx = left_rec - blocks.begin();
+                    idx = left_rec - blocks.begin() + 1;
                     return;
                 }
                 else
