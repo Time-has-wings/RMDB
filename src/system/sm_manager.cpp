@@ -242,6 +242,48 @@ void SmManager::drop_table(const std::string &tab_name, Context *context)
  */
 void SmManager::create_index(const std::string &tab_name, const std::vector<std::string> &col_names, Context *context)
 {
+    // my update
+
+    int col_sum_len = 0;
+    std::vector<ColMeta> cols;
+    TabMeta &tab = db_.get_table(tab_name);
+    if (tab.is_index(col_names)) {
+        throw IndexExistsError(tab_name, col_names);
+    }
+    IndexMeta index_tab;
+    for (auto &col_name : col_names)
+    {
+        auto col = tab.get_col(col_name);
+        col->index = true;
+        cols.push_back(*col);
+        index_tab.cols.push_back(*col);
+        col_sum_len += col->len;
+    }
+    index_tab.tab_name = tab_name;
+    index_tab.col_num = col_names.size();
+    index_tab.col_tot_len = col_sum_len;
+    // Create index file
+    ix_manager_->create_index(tab_name, cols);  // 这里调用了
+    // Open index file
+    auto ih = ix_manager_->open_index(tab_name, cols);
+    // Get record file handle
+    auto file_handle = fhs_.at(tab_name).get();
+    // Index all records into index
+    for (RmScan rm_scan(file_handle); !rm_scan.is_end(); rm_scan.next()) {
+        auto rec = file_handle->get_record(rm_scan.rid(), context);  // rid是record的存储位置，作为value插入到索引里
+        char *key = rec->data;
+        for (auto &col : cols)
+        key = key + col.offset;
+        // record data里以各个属性的offset进行分隔，属性的长度为col len，record里面每个属性的数据作为key插入索引里
+        ih->insert_entry(key, rm_scan.rid(), context->txn_);
+    }
+    // Store index handle
+    auto index_name = ix_manager_->get_index_name(tab_name, cols);
+    assert(ihs_.count(index_name) == 0);
+    // ihs_[index_name] = std::move(ih);
+    ihs_.emplace(index_name, std::move(ih));
+    // Mark column index as created
+    tab.indexes.push_back(index_tab);
 }
 
 /**
@@ -252,6 +294,21 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
  */
 void SmManager::drop_index(const std::string &tab_name, const std::vector<std::string> &col_names, Context *context)
 {
+    TabMeta &tab = db_.tabs_[tab_name];
+    std::vector<ColMeta> cols;
+    for (auto &col_name : col_names)
+    {
+        auto col = tab.get_col(col_name);
+        col->index = false;
+        cols.push_back(*col);
+    }
+    if (!tab.is_index(col_names)) {
+        throw IndexExistsError(tab_name, col_names);
+    }
+    auto index_name = ix_manager_->get_index_name(tab_name, col_names);
+    ix_manager_->close_index(ihs_.at(index_name).get());
+    ix_manager_->destroy_index(tab_name, col_names);
+    ihs_.erase(index_name);
 }
 
 /**
@@ -262,4 +319,12 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
  */
 void SmManager::drop_index(const std::string &tab_name, const std::vector<ColMeta> &cols, Context *context)
 {
+    std::vector<std::string> col_names;
+    int i = 0;
+    for (auto &col : cols)
+    {
+        col_names[i] = col.name;
+        i++;
+    }
+    drop_index(tab_name,col_names,context);
 }

@@ -108,6 +108,8 @@ class IxNodeHandle {
 
     void set_rid(int rid_idx, const Rid &rid) { rids[rid_idx] = rid; }
 
+    void set_rid(int rid_idx, const Rid* rid) {memcpy(rids + rid_idx * (int)sizeof(Rid), rid, (int)sizeof(Rid));}
+
     int lower_bound(const char *target) const;
 
     int upper_bound(const char *target) const;
@@ -118,6 +120,11 @@ class IxNodeHandle {
 
     bool leaf_lookup(const char *key, Rid **value);
 
+    bool leaf_lookup(const char *key) { //重载函数 用于
+        int idx = lower_bound(key);
+        if (idx == page_hdr->num_key || ix_compare(get_key(idx), key, file_hdr->col_types_, file_hdr->col_lens_) != 0) return false;
+        else return true;
+    }
     int insert(const char *key, const Rid &value);
 
     // 用于在结点中的指定位置插入单个键值对
