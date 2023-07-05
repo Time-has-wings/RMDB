@@ -121,10 +121,8 @@ private:
         while (!left_->is_end())
         {
             // 取两边的record
-            auto left_record = left_->Next();
             while (!right_->is_end())
             {
-                auto right_record = right_->Next();
                 bool is_fit = std::all_of(fed_conds_.begin(), fed_conds_.end(), [&](const Condition &cond)
                                           { return eval_cond(cond); });
 
