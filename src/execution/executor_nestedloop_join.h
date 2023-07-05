@@ -63,6 +63,7 @@ public:
     {
         left_->beginTuple();
         right_->beginTuple();
+        isend = false;
         valid_tuple();
     }
 

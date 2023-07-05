@@ -90,6 +90,7 @@ public:
         left_->beginTuple();
         right_->beginTuple();
         idx = 0;
+        isend = false;
         rec_size = left_->Next()->size;
         nextBlock();
         valid_tuple();
@@ -179,6 +180,5 @@ private:
             nextBlock();
             right_->beginTuple();
         }
-        isend = true;
     }
 };
