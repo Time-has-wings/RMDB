@@ -158,6 +158,31 @@ void SmManager::show_tables(Context *context)
     outfile.close();
 }
 
+void SmManager::show_indexes(const std::string& tab_name, Context *context)
+{
+    std::fstream outfile;
+    outfile.open("output.txt", std::ios::out | std::ios::app);
+    TabMeta &tab = db_.get_table(tab_name);
+    for (auto &index : tab.indexes)
+    {
+        outfile << "| " << tab.name << " | " << "unique" << " | (";
+        RecordPrinter printer(1);
+        printer.print_separator(context);
+        printer.print_record({tab_name}, context);
+        printer.print_separator(context);
+        printer.print_record_index(index.cols, context);
+        int i = 0;
+        for (auto &col : index.cols)
+            {if (i+1 == index.cols.size()) outfile << col.name;
+            else outfile << col.name << ",";
+            i++;}
+        printer.print_separator(context);
+    }
+    outfile.close();
+}
+
+
+
 /**
  * @description: 显示表的元数据
  * @param {string&} tab_name 表名称

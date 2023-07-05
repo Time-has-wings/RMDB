@@ -39,4 +39,9 @@ struct TxnAbort : public TreeNode {
 struct TxnRollback : public TreeNode {
 };
 
+struct ShowIndexes : public TreeNode {
+    std::string tab_name;
+    ShowIndexes(std::string tab_name_) : tab_name(std::move(tab_name_)) {}
+};
+
 }
