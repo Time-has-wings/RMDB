@@ -23,17 +23,56 @@ See the Mulan PSL v2 for more details. */
 #include "record_printer.h"
 
 // 目前的索引匹配规则为：完全匹配索引字段，且全部为单点查询，不会自动调整where条件的顺序
-bool Planner::get_index_cols(std::string tab_name, std::vector<Condition> curr_conds, std::vector<std::string> &index_col_names)
+bool Planner::get_index_cols(std::string tab_name, std::vector<Condition> &curr_conds, std::vector<std::string> &index_col_names)
 {
-    index_col_names.clear();
+
+    std::vector<std::string> temp;
     for (auto &cond : curr_conds)
     {
         if (cond.is_rhs_val && cond.op == OP_EQ && cond.lhs_col.tab_name.compare(tab_name) == 0)
-            index_col_names.push_back(cond.lhs_col.col_name);
+            temp.push_back(cond.lhs_col.col_name);
     }
     TabMeta &tab = sm_manager_->db_.get_table(tab_name);
-    if (tab.is_index(index_col_names))
+    std::vector<std::string> t;
+    for (auto &index : tab.indexes)
+    {
+        t.clear();
+        bool first = true, flag = false;
+        for (auto &index_col : index.cols)
+        {
+            if (first)
+            {
+                first = false;
+                auto s = std::find_if(temp.begin(), temp.end(), [&](const std::string &s)
+                                      { return s == index_col.name; });
+                if (s != temp.end())
+                    flag = true;
+            }
+            if (flag)
+                t.push_back(index_col.name);
+            else
+                break;
+        }
+        if (t.size() > index_col_names.size())
+        {
+            index_col_names.resize(t.size());
+            std::copy(t.begin(), t.end(), index_col_names.begin());
+        }
+    }
+    if (index_col_names.size() > 0)
+    {
+        for (int i = 0; i < index_col_names.size(); i++)
+        {
+            for (int j = 0; j < curr_conds.size(); j++)
+            {
+                if (curr_conds[j].lhs_col.col_name == index_col_names[i])
+                {
+                    std::iter_swap(curr_conds.begin() + i, curr_conds.begin() + j);
+                }
+            }
+        }
         return true;
+    }
     return false;
 }
 

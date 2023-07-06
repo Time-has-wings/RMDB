@@ -101,22 +101,40 @@ public:
         Iid lower = ih->leaf_begin();
         Iid upper = ih->leaf_end();
         std::vector<std::string> s;
-        for (auto &cond : fed_conds_)
+        for (int i = 0; i < fed_conds_.size(); i++)
         {
+            auto cond = fed_conds_[i];
             char *rhs_key = cond.rhs_val.raw->data;
-            lower = ih->lower_bound(rhs_key);
-            upper = ih->upper_bound(rhs_key);
-            break;
+            if (cond.is_rhs_val && cond.op != OP_NE && cond.lhs_col.col_name == index_col_names_[i])
+            {
+                char *rhs_key = cond.rhs_val.raw->data;
+                if (cond.op == OP_EQ)
+                {
+                    lower = ih->lower_bound(rhs_key);
+                    upper = ih->upper_bound(rhs_key);
+                }
+                else if (cond.op == OP_LT)
+                    upper = ih->lower_bound(rhs_key);
+                else if (cond.op == OP_GT)
+                    lower = ih->upper_bound(rhs_key);
+                else if (cond.op == OP_LE)
+                    upper = ih->upper_bound(rhs_key);
+                else if (cond.op == OP_GE)
+                    lower = ih->lower_bound(rhs_key);
+                else
+                    throw InternalError("Unexpected op type");
+                break;
+            }
         }
         scan_ = std::make_unique<IxScan>(ih, lower, upper, sm_manager_->get_bpm());
         while (!scan_->is_end())
         {
-            rid_ = scan_->rid();
-            auto rec = fh_->get_record(rid_, context_);
+            auto rec = fh_->get_record(scan_->rid(), context_);
             if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rec); }))
             {
+                rid_ = scan_->rid();
                 break;
             }
             scan_->next();
@@ -127,12 +145,12 @@ public:
     {
         for (scan_->next(); !scan_->is_end(); scan_->next())
         {
-            rid_ = scan_->rid();
-            auto rec = fh_->get_record(rid_, context_);
+            auto rec = fh_->get_record(scan_->rid(), context_);
             if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rec); }))
             {
+                rid_ = scan_->rid();
                 break;
             }
         }
