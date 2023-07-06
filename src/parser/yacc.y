@@ -114,7 +114,7 @@ dbStmt:
     }
     |   SHOW INDEX FROM tbName
     {
-        $$ = std::make_shared<ShowIndexes>($3);
+        $$ = std::make_shared<ShowIndex>($4);
     }
     ;
 

@@ -158,14 +158,16 @@ void SmManager::show_tables(Context *context)
     outfile.close();
 }
 
-void SmManager::show_indexes(const std::string& tab_name, Context *context)
+void SmManager::show_indexes(const std::string &tab_name, Context *context)
 {
     std::fstream outfile;
     outfile.open("output.txt", std::ios::out | std::ios::app);
     TabMeta &tab = db_.get_table(tab_name);
     for (auto &index : tab.indexes)
     {
-        outfile << "| " << tab.name << " | " << "unique" << " | (";
+        outfile << "| " << tab.name << " | "
+                << "unique"
+                << " | (";
         RecordPrinter printer(1);
         printer.print_separator(context);
         printer.print_record({tab_name}, context);
@@ -173,15 +175,18 @@ void SmManager::show_indexes(const std::string& tab_name, Context *context)
         printer.print_record_index(index.cols, context);
         int i = 0;
         for (auto &col : index.cols)
-            {if (i+1 == index.cols.size()) outfile << col.name;
-            else outfile << col.name << ",";
-            i++;}
+        {
+            if (i + 1 == index.cols.size())
+                outfile << col.name;
+            else
+                outfile << col.name << ",";
+            i++;
+        }
+        outfile << ") |\n";
         printer.print_separator(context);
     }
     outfile.close();
 }
-
-
 
 /**
  * @description: 显示表的元数据
@@ -272,7 +277,8 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
     int col_sum_len = 0;
     std::vector<ColMeta> cols;
     TabMeta &tab = db_.get_table(tab_name);
-    if (tab.is_index(col_names)) {
+    if (tab.is_index(col_names))
+    {
         throw IndexExistsError(tab_name, col_names);
     }
     IndexMeta index_tab;
@@ -288,17 +294,18 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
     index_tab.col_num = col_names.size();
     index_tab.col_tot_len = col_sum_len;
     // Create index file
-    ix_manager_->create_index(tab_name, cols);  // 这里调用了
+    ix_manager_->create_index(tab_name, cols); // 这里调用了
     // Open index file
     auto ih = ix_manager_->open_index(tab_name, cols);
     // Get record file handle
     auto file_handle = fhs_.at(tab_name).get();
     // Index all records into index
-    for (RmScan rm_scan(file_handle); !rm_scan.is_end(); rm_scan.next()) {
-        auto rec = file_handle->get_record(rm_scan.rid(), context);  // rid是record的存储位置，作为value插入到索引里
+    for (RmScan rm_scan(file_handle); !rm_scan.is_end(); rm_scan.next())
+    {
+        auto rec = file_handle->get_record(rm_scan.rid(), context); // rid是record的存储位置，作为value插入到索引里
         char *key = rec->data;
         for (auto &col : cols)
-        key = key + col.offset;
+            key = key + col.offset;
         // record data里以各个属性的offset进行分隔，属性的长度为col len，record里面每个属性的数据作为key插入索引里
         ih->insert_entry(key, rm_scan.rid(), context->txn_);
     }
@@ -327,7 +334,8 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
         col->index = false;
         cols.push_back(*col);
     }
-    if (!tab.is_index(col_names)) {
+    if (!tab.is_index(col_names))
+    {
         throw IndexExistsError(tab_name, col_names);
     }
     auto index_name = ix_manager_->get_index_name(tab_name, col_names);
@@ -351,5 +359,5 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<ColMet
         col_names[i] = col.name;
         i++;
     }
-    drop_index(tab_name,col_names,context);
+    drop_index(tab_name, col_names, context);
 }
