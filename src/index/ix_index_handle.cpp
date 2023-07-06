@@ -606,7 +606,11 @@ Rid IxIndexHandle::get_rid(const Iid &iid) const {
  */
 Iid IxIndexHandle::lower_bound(const char *key) {
 
-    return Iid{-1, -1};
+    IxNodeHandle* node = find_leaf_page(key, Operation::FIND, nullptr, false).first;
+    int idx = node->lower_bound(key);
+    Iid iid ={.page_no = node->get_page_no(), .slot_no = idx};
+    buffer_pool_manager_->unpin_page(node->get_page_id(), false);
+    return iid;
 }
 
 /**
@@ -617,7 +621,17 @@ Iid IxIndexHandle::lower_bound(const char *key) {
  */
 Iid IxIndexHandle::upper_bound(const char *key) {
     
-    return Iid{-1, -1};
+    IxNodeHandle* node = find_leaf_page(key, Operation::FIND, nullptr, false).first;
+    int idx = node->upper_bound(key);
+    Iid iid;
+    if(idx == node->get_size()) { //表示没有找到
+        iid = leaf_end();
+    }
+    else {
+        iid = {.page_no = node->get_page_no(), .slot_no = idx};
+    }
+    buffer_pool_manager_->unpin_page(node->get_page_id(), false);
+    return iid;
 }
 
 /**

@@ -72,18 +72,75 @@ public:
         }
         fed_conds_ = conds_;
     }
-
+    const std::vector<ColMeta> &cols() const
+    {
+        return cols_;
+    };
+    bool is_end() const override { return scan_->is_end(); }
+    size_t tupleLen() const { return len_; };
+    std::string getType() { return "SeqScanExecutor"; };
+    bool eval_cond(const std::vector<ColMeta> &rec_cols, const Condition &cond, std::unique_ptr<RmRecord> &target)
+    {
+        auto lhs_col = get_col(rec_cols, cond.lhs_col);
+        auto lhs_val = get_value(target, *lhs_col);
+        Value rhs_val;
+        if (!cond.is_rhs_val)
+        {
+            ColMeta rhs_col = *get_col(rec_cols, cond.rhs_col);
+            rhs_val = get_value(target, rhs_col);
+        }
+        else
+        {
+            rhs_val = cond.rhs_val;
+        }
+        return compare_value(lhs_val, rhs_val, cond.op);
+    }
     void beginTuple() override
     {
+        auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index_col_names_)).get();
+        Iid lower = ih->leaf_begin();
+        Iid upper = ih->leaf_end();
+        std::vector<std::string> s;
+        for (auto &cond : fed_conds_)
+        {
+            char *rhs_key = cond.rhs_val.raw->data;
+            lower = ih->lower_bound(rhs_key);
+            upper = ih->upper_bound(rhs_key);
+            break;
+        }
+        scan_ = std::make_unique<IxScan>(ih, lower, upper, sm_manager_->get_bpm());
+        while (!scan_->is_end())
+        {
+            rid_ = scan_->rid();
+            auto rec = fh_->get_record(rid_, context_);
+            if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
+                            [&](const Condition &cond)
+                            { return eval_cond(cols_, cond, rec); }))
+            {
+                break;
+            }
+            scan_->next();
+        }
     }
 
     void nextTuple() override
     {
+        for (scan_->next(); !scan_->is_end(); scan_->next())
+        {
+            rid_ = scan_->rid();
+            auto rec = fh_->get_record(rid_, context_);
+            if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
+                            [&](const Condition &cond)
+                            { return eval_cond(cols_, cond, rec); }))
+            {
+                break;
+            }
+        }
     }
 
     std::unique_ptr<RmRecord> Next() override
     {
-        return nullptr;
+        return fh_->get_record(rid_, context_);
     }
 
     Rid &rid() override { return rid_; }

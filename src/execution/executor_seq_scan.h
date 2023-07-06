@@ -43,7 +43,6 @@ public:
         len_ = cols_.back().offset + cols_.back().len;
         context_ = context;
         fed_conds_ = conds_;
-        check_runtime_conds();
     }
     const std::vector<ColMeta> &cols() const
     {
@@ -72,7 +71,6 @@ public:
     void beginTuple() override
     {
         scan_ = std::make_unique<RmScan>(fh_);
-
         while (!scan_->is_end())
         {
             auto rmd = fh_->get_record(scan_->rid(), context_);
@@ -109,15 +107,4 @@ public:
         return fh_->get_record(rid_, context_);
     }
     Rid &rid() override { return rid_; }
-    void check_runtime_conds()
-    {
-        for (auto &cond : fed_conds_)
-        {
-            assert(cond.lhs_col.tab_name == tab_name_);
-            if (!cond.is_rhs_val)
-            {
-                assert(cond.rhs_col.tab_name == tab_name_);
-            }
-        }
-    }
 };
