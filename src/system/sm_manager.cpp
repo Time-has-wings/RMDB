@@ -158,36 +158,6 @@ void SmManager::show_tables(Context *context)
     outfile.close();
 }
 
-void SmManager::show_indexes(const std::string &tab_name, Context *context)
-{
-    std::fstream outfile;
-    outfile.open("output.txt", std::ios::out | std::ios::app);
-    TabMeta &tab = db_.get_table(tab_name);
-    for (auto &index : tab.indexes)
-    {
-        outfile << "| " << tab.name << " | "
-                << "unique"
-                << " | (";
-        RecordPrinter printer(1);
-        printer.print_separator(context);
-        printer.print_record({tab_name}, context);
-        printer.print_separator(context);
-        printer.print_record_index(index.cols, context);
-        int i = 0;
-        for (auto &col : index.cols)
-        {
-            if (i + 1 == index.cols.size())
-                outfile << col.name;
-            else
-                outfile << col.name << ",";
-            i++;
-        }
-        outfile << ") |\n";
-        printer.print_separator(context);
-    }
-    outfile.close();
-}
-
 /**
  * @description: 显示表的元数据
  * @param {string&} tab_name 表名称
@@ -260,6 +230,8 @@ void SmManager::drop_table(const std::string &tab_name, Context *context)
     TabMeta &tab = db_.get_table(tab_name);
     rm_manager_->close_file(fhs_.at(tab_name).get());
     rm_manager_->destroy_file(tab_name);
+    drop_index(tab_name, tab.cols, context);
+    tab.indexes.clear();
     db_.tabs_.erase(tab_name);
     fhs_.erase(tab_name);
 }
@@ -336,8 +308,11 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
     }
     if (!tab.is_index(col_names))
     {
-        throw IndexExistsError(tab_name, col_names);
+        throw IndexNotFoundError(tab_name, col_names);
     }
+    auto s = tab.get_index_meta(col_names);
+    tab.indexes.erase(s);
+    // auto de = std::find_if(tab.indexes.begin(),tab.indexes.end(),[&](const IndexMeta& s){return s.})
     auto index_name = ix_manager_->get_index_name(tab_name, col_names);
     ix_manager_->close_index(ihs_.at(index_name).get());
     ix_manager_->destroy_index(tab_name, col_names);
@@ -353,11 +328,41 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
 void SmManager::drop_index(const std::string &tab_name, const std::vector<ColMeta> &cols, Context *context)
 {
     std::vector<std::string> col_names;
-    int i = 0;
     for (auto &col : cols)
     {
-        col_names[i] = col.name;
-        i++;
+        if (col.index)
+            col_names.push_back(col.name);
     }
-    drop_index(tab_name, col_names, context);
+    if (col_names.size() > 0)
+        drop_index(tab_name, col_names, context);
+}
+void SmManager::show_indexes(const std::string &tab_name, Context *context)
+{
+    std::fstream outfile;
+    outfile.open("output.txt", std::ios::out | std::ios::app);
+    TabMeta &tab = db_.get_table(tab_name);
+    // if (!tab.)
+    for (auto &index : tab.indexes)
+    {
+        outfile << "| " << tab.name << " | "
+                << "unique"
+                << " | (";
+        RecordPrinter printer(1);
+        printer.print_separator(context);
+        printer.print_record({tab_name}, context);
+        printer.print_separator(context);
+        printer.print_record_index(index.cols, context);
+        int i = 0;
+        for (auto &col : index.cols)
+        {
+            if (i + 1 == index.cols.size())
+                outfile << col.name;
+            else
+                outfile << col.name << ",";
+            i++;
+        }
+        outfile << ") |\n";
+        printer.print_separator(context);
+    }
+    outfile.close();
 }
