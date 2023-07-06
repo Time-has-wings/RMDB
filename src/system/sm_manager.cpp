@@ -228,10 +228,13 @@ void SmManager::create_table(const std::string &tab_name, const std::vector<ColD
 void SmManager::drop_table(const std::string &tab_name, Context *context)
 {
     TabMeta &tab = db_.get_table(tab_name);
+    for (auto &index : tab.indexes)
+    {
+        drop_index(tab_name, index.cols, context);
+    }
+    tab.indexes.clear();
     rm_manager_->close_file(fhs_.at(tab_name).get());
     rm_manager_->destroy_file(tab_name);
-    drop_index(tab_name, tab.cols, context);
-    tab.indexes.clear();
     db_.tabs_.erase(tab_name);
     fhs_.erase(tab_name);
 }
