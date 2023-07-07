@@ -101,10 +101,22 @@ void SmManager::open_db(const std::string &db_name)
         throw UnixError();
     std::ifstream ifs(DB_META_NAME);
     ifs >> db_;
-    for (auto &[Name, Tab] : db_.tabs_)
+    for (auto &itab : db_.tabs_)
     {
-        auto &tab = Tab;
+        auto &tab = itab.second;
         fhs_.emplace(tab.name, rm_manager_->open_file(tab.name));
+        std::vector<std::string> s;
+        for (size_t i = 0; i < tab.cols.size(); i++)
+        {
+            auto &col = tab.cols[i];
+            if (col.index)
+            {
+                s.push_back(col.name);
+            }
+        }
+        auto index_name = ix_manager_->get_index_name(tab.name, s);
+        assert(ihs_.count(index_name) == 0);
+        ihs_.emplace(index_name, ix_manager_->open_index(tab.name, tab.cols));
     }
 }
 
@@ -129,6 +141,8 @@ void SmManager::close_db()
     db_.tabs_.clear();
     for (auto &entry : fhs_)
         rm_manager_->close_file(entry.second.get());
+    for (auto &entry : ihs_)
+        ix_manager_->close_index(entry.second.get());
     fhs_.clear();
     ihs_.clear();
     if (chdir("..") < 0)
@@ -248,7 +262,6 @@ void SmManager::drop_table(const std::string &tab_name, Context *context)
 void SmManager::create_index(const std::string &tab_name, const std::vector<std::string> &col_names, Context *context)
 {
     // my update
-
     int col_sum_len = 0;
     std::vector<ColMeta> cols;
     TabMeta &tab = db_.get_table(tab_name);
@@ -268,28 +281,25 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
     index_tab.tab_name = tab_name;
     index_tab.col_num = col_names.size();
     index_tab.col_tot_len = col_sum_len;
-    // Create index file
-    ix_manager_->create_index(tab_name, cols); // 这里调用了
-    // Open index file
+    ix_manager_->create_index(tab_name, cols);
     auto ih = ix_manager_->open_index(tab_name, cols);
-    // Get record file handle
     auto file_handle = fhs_.at(tab_name).get();
-    // Index all records into index
     for (RmScan rm_scan(file_handle); !rm_scan.is_end(); rm_scan.next())
     {
-        auto rec = file_handle->get_record(rm_scan.rid(), context); // rid是record的存储位置，作为value插入到索引里
-        char *key = rec->data;
-        for (auto &col : cols)
-            key = key + col.offset;
-        // record data里以各个属性的offset进行分隔，属性的长度为col len，record里面每个属性的数据作为key插入索引里
+        auto rec = file_handle->get_record(rm_scan.rid(), context);
+        char key[index_tab.col_tot_len];
+        char *data = rec->data;
+        int offset = 0;
+        for (size_t i = 0; i < cols.size(); i++)
+        {
+            std::memcpy(key + offset, data + cols[i].offset, cols[i].len);
+            offset += cols[i].len;
+        }
         ih->insert_entry(key, rm_scan.rid(), context->txn_);
     }
-    // Store index handle
     auto index_name = ix_manager_->get_index_name(tab_name, cols);
     assert(ihs_.count(index_name) == 0);
-    // ihs_[index_name] = std::move(ih);
     ihs_.emplace(index_name, std::move(ih));
-    // Mark column index as created
     tab.indexes.push_back(index_tab);
 }
 
@@ -302,12 +312,10 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 void SmManager::drop_index(const std::string &tab_name, const std::vector<std::string> &col_names, Context *context)
 {
     TabMeta &tab = db_.tabs_[tab_name];
-    std::vector<ColMeta> cols;
     for (auto &col_name : col_names)
     {
         auto col = tab.get_col(col_name);
         col->index = false;
-        cols.push_back(*col);
     }
     if (!tab.is_index(col_names))
     {
@@ -319,6 +327,7 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
     auto index_name = ix_manager_->get_index_name(tab_name, col_names);
     ix_manager_->close_index(ihs_.at(index_name).get());
     ix_manager_->destroy_index(tab_name, col_names);
+    ihs_.at(index_name).~unique_ptr();
     ihs_.erase(index_name);
 }
 

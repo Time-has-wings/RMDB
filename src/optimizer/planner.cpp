@@ -29,7 +29,7 @@ bool Planner::get_index_cols(std::string tab_name, std::vector<Condition> &curr_
     std::vector<std::string> temp;
     for (auto &cond : curr_conds)
     {
-        if (cond.is_rhs_val && cond.op == OP_EQ && cond.lhs_col.tab_name.compare(tab_name) == 0)
+        if (cond.is_rhs_val && cond.op != OP_NE && cond.lhs_col.tab_name.compare(tab_name) == 0)
             temp.push_back(cond.lhs_col.col_name);
     }
     TabMeta &tab = sm_manager_->db_.get_table(tab_name);
@@ -53,10 +53,12 @@ bool Planner::get_index_cols(std::string tab_name, std::vector<Condition> &curr_
             else
                 break;
         }
-        if (t.size() > index_col_names.size())
+        if (t.size() > index_col_names.size() || t.size() == curr_conds.size())
         {
             index_col_names.resize(t.size());
             std::copy(t.begin(), t.end(), index_col_names.begin());
+            if (t.size() == curr_conds.size())
+                break;
         }
     }
     if (index_col_names.size() > 0)

@@ -100,19 +100,19 @@ public:
         auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index_col_names_)).get();
         Iid lower = ih->leaf_begin();
         Iid upper = ih->leaf_end();
-        std::vector<std::string> s;
+        char rhs_key[index_meta_.col_tot_len];
+        std::memset(rhs_key, 0, sizeof(char) * index_meta_.col_tot_len);
+        int off_set = 0;
+        bool all_eq = true;
         for (int i = 0; i < fed_conds_.size(); i++)
         {
             auto cond = fed_conds_[i];
-            char *rhs_key = cond.rhs_val.raw->data;
             if (cond.is_rhs_val && cond.op != OP_NE && cond.lhs_col.col_name == index_col_names_[i])
             {
-                char *rhs_key = cond.rhs_val.raw->data;
+                std::memcpy(rhs_key + off_set, cond.rhs_val.raw->data, cond.rhs_val.raw->size);
+                off_set += cond.rhs_val.raw->size;
                 if (cond.op == OP_EQ)
-                {
-                    lower = ih->lower_bound(rhs_key);
-                    upper = ih->upper_bound(rhs_key);
-                }
+                    continue;
                 else if (cond.op == OP_LT)
                     upper = ih->lower_bound(rhs_key);
                 else if (cond.op == OP_GT)
@@ -123,8 +123,15 @@ public:
                     lower = ih->lower_bound(rhs_key);
                 else
                     throw InternalError("Unexpected op type");
+                all_eq = false;
                 break;
             }
+            break;
+        }
+        if (all_eq)
+        {
+            lower = ih->lower_bound(rhs_key);
+            upper = ih->upper_bound(rhs_key);
         }
         scan_ = std::make_unique<IxScan>(ih, lower, upper, sm_manager_->get_bpm());
         while (!scan_->is_end())

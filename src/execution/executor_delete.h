@@ -41,8 +41,15 @@ public:
     virtual std::string getType() { return "DeleteExecutor"; };
     std::unique_ptr<RmRecord> Next() override
     {
-       for(auto rid : rids_) {
+        for (auto rid : rids_)
+        {
             fh_->delete_record(rid, context_);
+            auto rec = fh_->get_record(rid, context_);
+            for (auto &index : tab_.indexes)
+            {
+                auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+                ihs->delete_entry(rec->data, context_->txn_);
+            }
         }
         return nullptr;
     }
