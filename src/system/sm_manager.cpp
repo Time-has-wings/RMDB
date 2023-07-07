@@ -114,9 +114,12 @@ void SmManager::open_db(const std::string &db_name)
                 s.push_back(col.name);
             }
         }
-        auto index_name = ix_manager_->get_index_name(tab.name, s);
-        assert(ihs_.count(index_name) == 0);
-        ihs_.emplace(index_name, ix_manager_->open_index(tab.name, tab.cols));
+        if (s.size() > 0)
+        {
+            auto index_name = ix_manager_->get_index_name(tab.name, s);
+            assert(ihs_.count(index_name) == 0);
+            ihs_.emplace(index_name, ix_manager_->open_index(tab.name, s));
+        }
     }
 }
 
@@ -263,7 +266,6 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 {
     // my update
     int col_sum_len = 0;
-    std::vector<ColMeta> cols;
     TabMeta &tab = db_.get_table(tab_name);
     if (tab.is_index(col_names))
     {
@@ -274,15 +276,14 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
     {
         auto col = tab.get_col(col_name);
         col->index = true;
-        cols.push_back(*col);
         index_tab.cols.push_back(*col);
         col_sum_len += col->len;
     }
     index_tab.tab_name = tab_name;
     index_tab.col_num = col_names.size();
     index_tab.col_tot_len = col_sum_len;
-    ix_manager_->create_index(tab_name, cols);
-    auto ih = ix_manager_->open_index(tab_name, cols);
+    ix_manager_->create_index(tab_name, index_tab.cols);
+    auto ih = ix_manager_->open_index(tab_name, index_tab.cols);
     auto file_handle = fhs_.at(tab_name).get();
     for (RmScan rm_scan(file_handle); !rm_scan.is_end(); rm_scan.next())
     {
@@ -290,14 +291,14 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
         char key[index_tab.col_tot_len];
         char *data = rec->data;
         int offset = 0;
-        for (size_t i = 0; i < cols.size(); i++)
+        for (size_t i = 0; i < index_tab.cols.size(); i++)
         {
-            std::memcpy(key + offset, data + cols[i].offset, cols[i].len);
-            offset += cols[i].len;
+            std::memcpy(key + offset, data + index_tab.cols[i].offset, index_tab.cols[i].len);
+            offset += index_tab.cols[i].len;
         }
         ih->insert_entry(key, rm_scan.rid(), context->txn_);
     }
-    auto index_name = ix_manager_->get_index_name(tab_name, cols);
+    auto index_name = ix_manager_->get_index_name(tab_name, index_tab.cols);
     assert(ihs_.count(index_name) == 0);
     ihs_.emplace(index_name, std::move(ih));
     tab.indexes.push_back(index_tab);
@@ -312,18 +313,17 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 void SmManager::drop_index(const std::string &tab_name, const std::vector<std::string> &col_names, Context *context)
 {
     TabMeta &tab = db_.tabs_[tab_name];
+    if (!tab.is_index(col_names))
+    {
+        throw IndexNotFoundError(tab_name, col_names);
+    }
     for (auto &col_name : col_names)
     {
         auto col = tab.get_col(col_name);
         col->index = false;
     }
-    if (!tab.is_index(col_names))
-    {
-        throw IndexNotFoundError(tab_name, col_names);
-    }
     auto s = tab.get_index_meta(col_names);
     tab.indexes.erase(s);
-    // auto de = std::find_if(tab.indexes.begin(),tab.indexes.end(),[&](const IndexMeta& s){return s.})
     auto index_name = ix_manager_->get_index_name(tab_name, col_names);
     ix_manager_->close_index(ihs_.at(index_name).get());
     ix_manager_->destroy_index(tab_name, col_names);
@@ -342,11 +342,9 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<ColMet
     std::vector<std::string> col_names;
     for (auto &col : cols)
     {
-        if (col.index)
-            col_names.push_back(col.name);
+        col_names.push_back(col.name);
     }
-    if (col_names.size() > 0)
-        drop_index(tab_name, col_names, context);
+    drop_index(tab_name, col_names, context);
 }
 void SmManager::show_indexes(const std::string &tab_name, Context *context)
 {
