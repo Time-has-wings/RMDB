@@ -1,1 +1,1 @@
-./build/bin/rmdb ./database/test
+./build/bin/rmdb test

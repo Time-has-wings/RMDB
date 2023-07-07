@@ -17,7 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include <unordered_set>
 
 #include "txn_defs.h"
-
+#include <memory>
 class Transaction {
    public:
     explicit Transaction(txn_id_t txn_id, IsolationLevel isolation_level = IsolationLevel::SERIALIZABLE)

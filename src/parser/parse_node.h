@@ -39,4 +39,7 @@ struct TxnAbort : public TreeNode {
 struct TxnRollback : public TreeNode {
 };
 
+struct ShowIndex : public TreeNode {
+};
+
 }

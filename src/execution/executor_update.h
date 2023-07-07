@@ -69,12 +69,29 @@ public:
         for (auto &rid : rids_)
         {
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
+            for (auto &index : tab_.indexes)
+            {
+                auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+                ihs->delete_entry(rec->data, context_->txn_);
+            }
             for (auto &clause : set_clauses_)
             {
                 auto col = tab_.get_col(clause.lhs.col_name);
                 memcpy(rec->data + col->offset, clause.rhs.raw->data, col->len);
             }
             fh_->update_record(rid, rec->data, context_);
+            for (auto &index : tab_.indexes)
+            {
+                auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+                char *key = new char[index.col_tot_len];
+                int offset = 0;
+                for (size_t i = 0; i < index.col_num; ++i)
+                {
+                    memcpy(key + offset, rec->data + index.cols[i].offset, index.cols[i].len);
+                    offset += index.cols[i].len;
+                }
+                ihs->insert_entry(key, rid, context_->txn_);
+            }
         }
         return nullptr;
     }

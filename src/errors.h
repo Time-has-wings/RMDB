@@ -82,6 +82,11 @@ class IndexEntryNotFoundError : public RMDBError {
     IndexEntryNotFoundError() : RMDBError("Index entry not found") {}
 };
 
+class IndexEnrtyExistsError  : public RMDBError { //lgm:新增
+    public:
+        IndexEnrtyExistsError() : RMDBError("Index entry exists") {}
+};
+
 // SM errors
 class DatabaseNotFoundError : public RMDBError {
    public:

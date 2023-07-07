@@ -50,6 +50,30 @@ public:
         }
     }
 
+    void print_record_index(const std::vector<ColMeta> &cols, Context *context) const {
+        for (auto col: cols) {
+            if (col.name.size() > COL_WIDTH) {
+                col.name = col.name.substr(0, COL_WIDTH - 3) + "...";
+            }
+            // std::cout << "(" << std::setw(COL_WIDTH) << col << ',';
+            std::stringstream ss;
+            ss << "(" << std::setw(COL_WIDTH) << col.name << ",";
+            if(context->ellipsis_ == false && *context->offset_ + RECORD_COUNT_LENGTH + ss.str().length() < BUFFER_LENGTH) {
+                memcpy(context->data_send_ + *(context->offset_), ss.str().c_str(), ss.str().length());
+                *(context->offset_) = *(context->offset_) + ss.str().length();
+            }
+            else {
+                context->ellipsis_ = true;
+            }
+        }
+        // std::cout << ")";
+        std::string str = ")";
+        if(context->ellipsis_ == false && *context->offset_ + RECORD_COUNT_LENGTH + str.length() < BUFFER_LENGTH) {
+            memcpy(context->data_send_ + *(context->offset_), str.c_str(), str.length());
+            *(context->offset_) = *(context->offset_) + str.length();
+        }
+    }
+
     void print_record(const std::vector<std::string> &rec_str, Context *context) const {
         assert(rec_str.size() == num_cols);
         for (auto col: rec_str) {
