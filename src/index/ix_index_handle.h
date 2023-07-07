@@ -175,7 +175,7 @@ public:
         int rid_idx;
         for (rid_idx = 0; rid_idx < page_hdr->num_key; rid_idx++)
         {
-            if (get_rid(rid_idx)->page_no == child->get_page_no())
+            if (value_at(rid_idx) == child->get_page_no())
             {
                 break;
             }

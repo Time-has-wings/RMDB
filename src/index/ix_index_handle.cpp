@@ -249,9 +249,9 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
     {
         next_page_id = ret->internal_lookup(key);
         buffer_pool_manager_->unpin_page(ret->get_page_id(), false);
-         ret = fetch_node(next_page_id);
+        ret = fetch_node(next_page_id);
     }
-   
+
     return std::make_pair(ret, root_latch_.try_lock());
 }
 
@@ -361,8 +361,8 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
         root->page_hdr->num_key = 0; // 初始化
         old_node->set_parent_page_no(root->get_page_no());
         new_node->set_parent_page_no(root->get_page_no());
-        root->insert_pairs(0, old_node->get_key(0), old_node->get_rid(0), 1);
-        root->insert_pairs(1, new_node->get_key(0), new_node->get_rid(0), 1);
+        root->insert_pair(0, old_node->get_key(0), {old_node->get_page_no(), -1});
+        root->insert_pair(1, new_node->get_key(0), {new_node->get_page_no(), -1});
         file_hdr_->root_page_ = root->get_page_no();
         buffer_pool_manager_->unpin_page(new_node->get_page_id(), true);
         return; // 结束递归
@@ -370,7 +370,7 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
     else
     {
         // 取出父结点
-        IxNodeHandle *fa = fetch_node(old_node->get_page_no());
+        IxNodeHandle *fa = fetch_node(old_node->get_parent_page_no());
         // 插入
         int pos = fa->find_child(old_node);
         Rid *rid = new Rid();
@@ -404,7 +404,7 @@ page_id_t IxIndexHandle::insert_entry(const char *key, const Rid &value, Transac
     IxNodeHandle *leaf_node = find_leaf_page(key, Operation::INSERT, transaction, false).first;
     int num = leaf_node->page_hdr->num_key;
     bool re = (num != leaf_node->insert(key, value));
-    if (re && leaf_node->get_size() >= leaf_node->get_max_size())
+    if (re && leaf_node->get_size() > leaf_node->get_max_size())
     {
         IxNodeHandle *new_node = split(leaf_node);
         if (file_hdr_->last_leaf_ == leaf_node->get_page_no())
@@ -412,7 +412,7 @@ page_id_t IxIndexHandle::insert_entry(const char *key, const Rid &value, Transac
         insert_into_parent(leaf_node, new_node->get_key(0), new_node, transaction);
         buffer_pool_manager_->unpin_page(new_node->get_page_id(), true);
     }
-    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), true);
+    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), re);
     // 需要考虑分裂后 插入的结点可能有变化
     if (!(leaf_node->get_size() >= leaf_node->get_max_size()))
         return leaf_node->get_page_no();
@@ -638,10 +638,6 @@ bool IxIndexHandle::coalesce(IxNodeHandle **neighbor_node, IxNodeHandle **node, 
 Rid IxIndexHandle::get_rid(const Iid &iid) const
 {
     IxNodeHandle *node = fetch_node(iid.page_no);
-    if (iid.slot_no >= node->get_size())
-    {
-        throw IndexEntryNotFoundError();
-    }
     buffer_pool_manager_->unpin_page(node->get_page_id(), false); // unpin it!
     return *node->get_rid(iid.slot_no);
 }
