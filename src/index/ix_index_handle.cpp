@@ -664,7 +664,9 @@ Iid IxIndexHandle::lower_bound(const char *key)
     int idx = node->lower_bound(key);
     Iid iid;
     if (idx == node->get_size())
-    { // 表示没有找到
+    { 
+    if (node->get_page_no() == file_hdr_->last_leaf_)
+            return leaf_end();
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
@@ -688,7 +690,9 @@ Iid IxIndexHandle::upper_bound(const char *key)
     int idx = node->upper_bound(key);
     Iid iid;
     if (idx == node->get_size())
-    { // 表示没有找到
+    {
+        if (node->get_page_no() == file_hdr_->last_leaf_)
+            return leaf_end();
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
