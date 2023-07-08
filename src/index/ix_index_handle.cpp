@@ -277,9 +277,11 @@ bool IxIndexHandle::get_value(const char *key, std::vector<Rid> *result, Transac
         return false; // 没有包含key的叶子结点
     Rid *value = nullptr;
     bool re = leaf_node->leaf_lookup(key, &value);
-    if (re)
+    if (re && result != nullptr)
+    {
         result->push_back(*value);
-    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), false);
+    }
+    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), re);
     return re;
 }
 

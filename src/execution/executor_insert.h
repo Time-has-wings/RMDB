@@ -56,9 +56,9 @@ public:
             val.init_raw(col.len);
             memcpy(rec.data + col.offset, val.raw->data, col.len);
         }
-        rid_ = fh_->insert_record(rec.data, context_);
 
         // Insert into index
+        bool first = true;
         for (size_t i = 0; i < tab_.indexes.size(); ++i)
         {
             auto &index = tab_.indexes[i];
@@ -69,6 +69,13 @@ public:
             {
                 memcpy(key + offset, rec.data + index.cols[i].offset, index.cols[i].len);
                 offset += index.cols[i].len;
+            }
+            if (ih->get_value(key, nullptr, nullptr))
+                throw IndexEnrtyExistsError();
+            if (first)
+            {
+                rid_ = fh_->insert_record(rec.data, context_);
+                first = false;
             }
             ih->insert_entry(key, rid_, context_->txn_);
         }

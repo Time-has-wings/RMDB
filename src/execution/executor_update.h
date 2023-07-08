@@ -66,19 +66,60 @@ public:
                 break;
             }
         }
+        int cnt = 0;
         for (auto &rid : rids_)
         {
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
             for (auto &index : tab_.indexes)
             {
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
-                ihs->delete_entry(rec->data, context_->txn_);
+                char key[index.col_tot_len];
+                char *data = rec->data;
+                int offset = 0;
+                for (auto &col : index.cols)
+                {
+                    bool index_change = false;
+                    for (auto &clause : set_clauses_)
+                    {
+                        auto Col = tab_.get_col(clause.lhs.col_name);
+                        if (Col->name == col.name)
+                        {
+                            std::memcpy(key + offset, clause.rhs.raw->data, col.len);
+                            offset += col.len;
+                            index_change = true;
+                            break;
+                        }
+                    }
+                    if (!index_change)
+                    {
+                        std::memcpy(key + offset, data + col.offset, col.len);
+                        offset += col.len;
+                    }
+                }
+                if (ihs->get_value(key, nullptr, nullptr))
+                {
+                    if (++cnt == 2)
+                        throw IndexEnrtyExistsError();
+                }
             }
-            for (auto &clause : set_clauses_)
+        }
+        for (auto &rid : rids_)
+        {
+            std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
+            for (auto &index : tab_.indexes)
             {
-                auto col = tab_.get_col(clause.lhs.col_name);
-                memcpy(rec->data + col->offset, clause.rhs.raw->data, col->len);
+                auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+                char key[index.col_tot_len];
+                char *data = rec->data;
+                int offset = 0;
+                for (size_t i = 0; i < index.cols.size(); i++)
+                {
+                    std::memcpy(key + offset, data + index.cols[i].offset, index.cols[i].len);
+                    offset += index.cols[i].len;
+                }
+                ihs->delete_entry(key, context_->txn_);
             }
+
             fh_->update_record(rid, rec->data, context_);
             for (auto &index : tab_.indexes)
             {
@@ -93,8 +134,13 @@ public:
                 ihs->insert_entry(key, rid, context_->txn_);
             }
         }
+
         return nullptr;
     }
 
-    Rid &rid() override { return _abstract_rid; }
+    Rid &
+    rid() override
+    {
+        return _abstract_rid;
+    }
 };
