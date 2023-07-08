@@ -120,7 +120,7 @@ void IxNodeHandle::insert_pairs(int pos, const char *key, const Rid *rid, int n)
     // 不合法 不做处理 直接返回
     if (pos < 0 || pos > page_hdr->num_key)
         return;
-    int mv_size = page_hdr->num_key - pos+n;
+    int mv_size = page_hdr->num_key - pos + n - 1;
     if (mv_size > 0)
     {
         char *k = get_key(pos);
@@ -131,8 +131,8 @@ void IxNodeHandle::insert_pairs(int pos, const char *key, const Rid *rid, int n)
     int off_set = 0;
     for (int i = 0; i < n; i++)
     {
-        set_key(pos + i, key+ off_set);
-        set_rid(pos + i, rid+i);
+        set_key(pos + i, key + off_set);
+        set_rid(pos + i, rid + i);
         off_set += file_hdr->col_tot_len_;
     }
     // 更新
@@ -253,7 +253,6 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
         buffer_pool_manager_->unpin_page(ret->get_page_id(), false);
         ret = fetch_node(next_page_id);
     }
-
     return std::make_pair(ret, root_latch_.try_lock());
 }
 
