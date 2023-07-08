@@ -120,7 +120,7 @@ void IxNodeHandle::insert_pairs(int pos, const char *key, const Rid *rid, int n)
     // 不合法 不做处理 直接返回
     if (pos < 0 || pos > page_hdr->num_key)
         return;
-    int mv_size = page_hdr->num_key - pos;
+    int mv_size = page_hdr->num_key - pos+n;
     if (mv_size > 0)
     {
         char *k = get_key(pos);
@@ -128,10 +128,12 @@ void IxNodeHandle::insert_pairs(int pos, const char *key, const Rid *rid, int n)
         Rid *r = get_rid(pos);
         std::memmove(r + n, r, mv_size * sizeof(Rid));
     }
+    int off_set = 0;
     for (int i = 0; i < n; i++)
     {
-        set_key(pos + i, key);
-        set_rid(pos + i, rid);
+        set_key(pos + i, key+ off_set);
+        set_rid(pos + i, rid+i);
+        off_set += file_hdr->col_tot_len_;
     }
     // 更新
     page_hdr->num_key += n;
@@ -362,7 +364,7 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
         old_node->set_parent_page_no(root->get_page_no());
         new_node->set_parent_page_no(root->get_page_no());
         root->insert_pair(0, old_node->get_key(0), {old_node->get_page_no(), -1});
-        root->insert_pair(1, new_node->get_key(0), {new_node->get_page_no(), -1});
+        root->insert_pair(1, key, {new_node->get_page_no(), -1});
         file_hdr_->root_page_ = root->get_page_no();
         buffer_pool_manager_->unpin_page(new_node->get_page_id(), true);
         return; // 结束递归
@@ -404,7 +406,7 @@ page_id_t IxIndexHandle::insert_entry(const char *key, const Rid &value, Transac
     IxNodeHandle *leaf_node = find_leaf_page(key, Operation::INSERT, transaction, false).first;
     int num = leaf_node->page_hdr->num_key;
     bool re = (num != leaf_node->insert(key, value));
-    if (re && leaf_node->get_size() > leaf_node->get_max_size())
+    if (re && leaf_node->get_size() >= leaf_node->get_max_size())
     {
         IxNodeHandle *new_node = split(leaf_node);
         if (file_hdr_->last_leaf_ == leaf_node->get_page_no())
@@ -638,6 +640,10 @@ bool IxIndexHandle::coalesce(IxNodeHandle **neighbor_node, IxNodeHandle **node, 
 Rid IxIndexHandle::get_rid(const Iid &iid) const
 {
     IxNodeHandle *node = fetch_node(iid.page_no);
+    if (iid.slot_no >= node->get_size())
+    {
+        throw IndexEntryNotFoundError();
+    }
     buffer_pool_manager_->unpin_page(node->get_page_id(), false); // unpin it!
     return *node->get_rid(iid.slot_no);
 }
