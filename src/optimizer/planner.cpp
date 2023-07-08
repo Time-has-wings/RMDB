@@ -67,6 +67,7 @@ bool Planner::get_index_cols(std::string tab_name, std::vector<Condition> &curr_
         {
             for (int j = 0; j < curr_conds.size(); j++)
             {
+                if (i>= curr_conds.size())break;
                 if (curr_conds[j].lhs_col.col_name == index_col_names[i])
                 {
                     std::iter_swap(curr_conds.begin() + i, curr_conds.begin() + j);

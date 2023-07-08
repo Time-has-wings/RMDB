@@ -296,6 +296,8 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
             std::memcpy(key + offset, data + index_tab.cols[i].offset, index_tab.cols[i].len);
             offset += index_tab.cols[i].len;
         }
+        if (*(int *)key == 194)
+            std::cout<< 1;
         ih->insert_entry(key, rm_scan.rid(), context->txn_);
     }
     auto index_name = ix_manager_->get_index_name(tab_name, index_tab.cols);

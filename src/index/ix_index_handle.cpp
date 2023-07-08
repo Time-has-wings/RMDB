@@ -681,7 +681,7 @@ Iid IxIndexHandle::upper_bound(const char *key)
     Iid iid;
     if (idx == node->get_size())
     { // 表示没有找到
-        iid = leaf_end();
+        iid =  {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
     {
