@@ -662,7 +662,15 @@ Iid IxIndexHandle::lower_bound(const char *key)
 
     IxNodeHandle *node = find_leaf_page(key, Operation::FIND, nullptr, false).first;
     int idx = node->lower_bound(key);
-    Iid iid = {.page_no = node->get_page_no(), .slot_no = idx};
+    Iid iid;
+    if (idx == node->get_size())
+    { // 表示没有找到
+        iid = {.page_no = node->get_prev_leaf(), .slot_no = node->get_size() - 1};
+    }
+    else
+    {
+        iid = {.page_no = node->get_page_no(), .slot_no = idx};
+    }
     buffer_pool_manager_->unpin_page(node->get_page_id(), false);
     return iid;
 }
@@ -681,7 +689,7 @@ Iid IxIndexHandle::upper_bound(const char *key)
     Iid iid;
     if (idx == node->get_size())
     { // 表示没有找到
-        iid =  {.page_no = node->get_next_leaf(), .slot_no = 0};
+        iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
     {
