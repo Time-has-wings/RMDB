@@ -72,7 +72,7 @@ bool IxNodeHandle::leaf_lookup(const char *key, Rid **value)
     // 3. 如果存在，获取key对应的Rid，并赋值给传出参数value
     // 提示：可以调用lower_bound()和get_rid()函数。
     int idx = lower_bound(key);
-    if (idx == page_hdr->num_key)
+    if (idx == page_hdr->num_key || ix_compare(get_key(idx), key, file_hdr->col_types_, file_hdr->col_lens_) != 0)
         return false;
     else
     {

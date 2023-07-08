@@ -56,7 +56,11 @@ public:
             val.init_raw(col.len);
             memcpy(rec.data + col.offset, val.raw->data, col.len);
         }
-
+        if (tab_.indexes.size() == 0)
+        {
+            rid_ = fh_->insert_record(rec.data, context_);
+            return nullptr;
+        }
         // Insert into index
         bool first = true;
         for (size_t i = 0; i < tab_.indexes.size(); ++i)
