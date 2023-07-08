@@ -51,7 +51,7 @@ inline int ix_compare(const char *a, const char *b, const std::vector<ColType> &
     for (size_t i = 0; i < col_types.size(); ++i)
     {
         int res = ix_compare(a + offset, b + offset, col_types[i], col_lens[i]);
-        if (res != 0 || ((b + col_lens[i]) == nullptr))
+        if (res != 0 || (b + col_lens[i]) == nullptr || (*(b + col_lens[i]) == '\0'))
             return res;
         offset += col_lens[i];
     }
