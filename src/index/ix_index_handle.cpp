@@ -253,7 +253,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
         buffer_pool_manager_->unpin_page(ret->get_page_id(), false);
         ret = fetch_node(next_page_id);
     }
-    return std::make_pair(ret, root_latch_.try_lock());
+    return std::make_pair(ret, false);
 }
 
 /**
