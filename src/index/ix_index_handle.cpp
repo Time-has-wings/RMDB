@@ -154,7 +154,7 @@ int IxNodeHandle::insert(const char *key, const Rid &value)
     // 3. 如果key不重复则插入键值对
     // 4. 返回完成插入操作之后的键值对数量
     int pos = lower_bound(key);
-    if (pos != page_hdr->num_key && ix_compare(get_key(pos), key,  file_hdr->col_types_, file_hdr->col_lens_) == 0)
+    if (pos != page_hdr->num_key && ix_compare(get_key(pos), key, file_hdr->col_types_, file_hdr->col_lens_) == 0)
     { // 重复值 不插入
         return page_hdr->num_key;
     }
@@ -252,7 +252,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
         if (find_first)
         {
             auto s = ret->lower_bound(key);
-            if (s == ret->get_size())
+            if (ix_compare(ret->get_key(s), key, ret->file_hdr->col_types_, ret->file_hdr->col_lens_) > 0 || s == ret->get_size())
                 s--;
             next_page_id = ret->value_at(s);
         }
