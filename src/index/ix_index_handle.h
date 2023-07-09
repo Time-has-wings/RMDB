@@ -44,15 +44,28 @@ inline int ix_compare(const char *a, const char *b, ColType type, int col_len)
         throw InternalError("Unexpected data type");
     }
 }
-
+inline bool check_null(const char *st, int len)
+{
+    for (int i = 0; i < len; i++)
+    {
+        if (*(st + i) != '\0')
+            return false;
+    }
+    return true;
+}
 inline int ix_compare(const char *a, const char *b, const std::vector<ColType> &col_types, const std::vector<int> &col_lens)
 {
     int offset = 0;
     for (size_t i = 0; i < col_types.size(); ++i)
     {
         int res = ix_compare(a + offset, b + offset, col_types[i], col_lens[i]);
-        if (res != 0 || (b +offset+ col_lens[i]) == nullptr || (*(b+offset + col_lens[i]) == '\0'))
+        if (res != 0)
             return res;
+        if (i < col_types.size() - 1)
+        {
+            if (check_null(b + offset + col_lens[i], col_lens[i + 1]))
+                return res;
+        }
         offset += col_lens[i];
     }
     return 0;

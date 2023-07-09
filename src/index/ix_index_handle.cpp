@@ -154,7 +154,7 @@ int IxNodeHandle::insert(const char *key, const Rid &value)
     // 3. 如果key不重复则插入键值对
     // 4. 返回完成插入操作之后的键值对数量
     int pos = lower_bound(key);
-    if (pos != page_hdr->num_key && ix_compare(key, get_key(pos), file_hdr->col_types_, file_hdr->col_lens_) == 0)
+    if (pos != page_hdr->num_key && ix_compare(get_key(pos), key,  file_hdr->col_types_, file_hdr->col_lens_) == 0)
     { // 重复值 不插入
         return page_hdr->num_key;
     }
@@ -249,7 +249,15 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
     page_id_t next_page_id;
     while (!ret->is_leaf_page())
     {
-        next_page_id = ret->internal_lookup(key);
+        if (find_first)
+        {
+            auto s = ret->lower_bound(key);
+            if (s == ret->get_size())
+                s--;
+            next_page_id = ret->value_at(s);
+        }
+        else
+            next_page_id = ret->internal_lookup(key);
         buffer_pool_manager_->unpin_page(ret->get_page_id(), false);
         ret = fetch_node(next_page_id);
     }
@@ -272,7 +280,7 @@ bool IxIndexHandle::get_value(const char *key, std::vector<Rid> *result, Transac
     // 3. 把rid存入result参数中
     // 提示：使用完buffer_pool提供的page之后，记得unpin page；记得处理并发的上锁
     std::scoped_lock lock{root_latch_};
-    IxNodeHandle *leaf_node = find_leaf_page(key, Operation::FIND, transaction, true).first;
+    IxNodeHandle *leaf_node = find_leaf_page(key, Operation::FIND, transaction, false).first;
     if (leaf_node == nullptr)
         return false; // 没有包含key的叶子结点
     Rid *value = nullptr;
@@ -660,13 +668,13 @@ Rid IxIndexHandle::get_rid(const Iid &iid) const
 Iid IxIndexHandle::lower_bound(const char *key)
 {
 
-    IxNodeHandle *node = find_leaf_page(key, Operation::FIND, nullptr, false).first;
+    IxNodeHandle *node = find_leaf_page(key, Operation::FIND, nullptr, true).first;
     int idx = node->lower_bound(key);
     Iid iid;
     if (idx == node->get_size())
-    { 
-    if (node->get_page_no() == file_hdr_->last_leaf_)
-            return leaf_end();
+    {
+        if (node->get_page_no() == file_hdr_->last_leaf_)
+            return leaf_begin();
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
