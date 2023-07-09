@@ -114,6 +114,11 @@ public:
         for (auto &rid : rids_)
         {
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
+            RmRecord origin_record{rec->size};
+            memcpy(origin_record.data, rec->data, rec->size);
+            //modify wset
+            WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, origin_record);
+            context_->txn_->append_write_record(wrec);
             char dat[rec->size];
             memcpy(dat, rec->data, rec->size);
             for (auto &clause : set_clauses_)

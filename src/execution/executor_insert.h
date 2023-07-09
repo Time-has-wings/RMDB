@@ -59,6 +59,9 @@ public:
         if (tab_.indexes.size() == 0)
         {
             rid_ = fh_->insert_record(rec.data, context_);
+            // modify wset
+            WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
+            context_->txn_->append_write_record(wrec);
             return nullptr;
         }
         // Insert into index
@@ -77,6 +80,9 @@ public:
                 throw IndexEnrtyExistsError();
         }
         rid_ = fh_->insert_record(rec.data, context_);
+        // modify wset
+        WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
+        context_->txn_->append_write_record(wrec);
         for (size_t i = 0; i < tab_.indexes.size(); ++i)
         {
             auto &index = tab_.indexes[i];

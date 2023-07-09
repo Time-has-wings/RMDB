@@ -26,8 +26,12 @@ Transaction * TransactionManager::begin(Transaction* txn, LogManager* log_manage
     // 2. 如果为空指针，创建新事务
     // 3. 把开始事务加入到全局事务表中
     // 4. 返回当前事务指针
-    
-    return nullptr;
+    if (!txn) {
+        txn = new Transaction(next_txn_id_);
+        next_txn_id_ ++; //自增
+    }
+    txn_map[txn->get_transaction_id()] = txn; //加入全局事务表
+    return txn; // 4
 }
 
 /**
@@ -42,7 +46,21 @@ void TransactionManager::commit(Transaction* txn, LogManager* log_manager) {
     // 3. 释放事务相关资源，eg.锁集
     // 4. 把事务日志刷入磁盘中
     // 5. 更新事务状态
-
+    //提交所有写操作
+    auto write_set = txn->get_write_set();
+    while (write_set->size())
+        write_set->pop_back();
+    //释放所有锁
+    auto lock_set = txn->get_lock_set();
+    for (auto i = lock_set->begin(); i != lock_set->end(); i++) {
+        lock_manager_->unlock(txn, *i);
+    }
+    //释放资源
+    lock_set->clear();
+    //刷入磁盘
+    log_manager->flush_log_to_disk();
+    //更新事务状态
+    txn->set_state(TransactionState::COMMITTED);
 }
 
 /**
@@ -57,5 +75,30 @@ void TransactionManager::abort(Transaction * txn, LogManager *log_manager) {
     // 3. 清空事务相关资源，eg.锁集
     // 4. 把事务日志刷入磁盘中
     // 5. 更新事务状态
-    
+    //回滚
+    auto write_set = txn->get_write_set();
+    while (write_set->size()) {
+        Context* context = new Context(lock_manager_, log_manager, txn);
+        WType& cur_type = write_set->back()->GetWriteType();
+        if (cur_type == WType::INSERT_TUPLE) {
+            sm_manager_->rollback_insert(write_set->back()->GetTableName(), write_set->back()->GetRid(), context);
+        }
+        else if (cur_type == WType::DELETE_TUPLE) {
+            sm_manager_->rollback_delete(write_set->back()->GetTableName(), write_set->back()->GetRid(), write_set->back()->GetRecord(), context);
+        }
+        else if(cur_type == WType::UPDATE_TUPLE) {
+            sm_manager_->rollback_update(write_set->back()->GetTableName(), write_set->back()->GetRid(), write_set->back()->GetRecord(), context);
+        }
+        write_set->pop_back(); //删除
+    }
+    //释放锁
+    auto lock_set = txn->get_lock_set();
+    for(auto it = lock_set->begin(); it != lock_set->end(); it++) 
+        lock_manager_->unlock(txn, *it);
+    //清空
+    lock_set->clear();
+    //刷入
+    log_manager->flush_log_to_disk();
+    //更新
+    txn->set_state(TransactionState::ABORTED);
 }

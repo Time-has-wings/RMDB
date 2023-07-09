@@ -50,6 +50,11 @@ public:
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
                 ihs->delete_entry(rec->data, context_->txn_);
             }
+            RmRecord delete_record(rec->size);
+            memcpy(delete_record.data, rec->data, rec->size);
+            // modify wset
+            WriteRecord *wrec = new WriteRecord(WType::DELETE_TUPLE, tab_name_, rid, delete_record);
+            context_->txn_->append_write_record(wrec);
             fh_->delete_record(rid, context_);
         }
         return nullptr;
