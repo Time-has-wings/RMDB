@@ -79,4 +79,11 @@ class SmManager {
     void drop_index(const std::string& tab_name, const std::vector<ColMeta>& col_names, Context* context);
 
     void show_indexes(const std::string& tab_name, Context* context);
+
+    void rollback_delete(const std::string &tab_name, const Rid& tuple_rid, const RmRecord &record, Context *context);
+
+    void rollback_insert(const std::string& tab_name, const Rid& tuple_rid, Context* context);
+
+    void rollback_update(const std::string &tab_name, const Rid &tuple_rid, const RmRecord &record, Context *context);
+
 };

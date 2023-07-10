@@ -376,3 +376,72 @@ void SmManager::show_indexes(const std::string &tab_name, Context *context)
     }
     outfile.close();
 }
+
+void SmManager::rollback_delete(const std::string &tab_name, const Rid& tuple_rid, const RmRecord &record, Context *context) {
+    auto tab = db_.get_table(tab_name); //获取表元数据
+    //索引文件插入key
+    for (IndexMeta& index : tab.indexes) {
+        std::vector<ColMeta> index_cols = index.cols; //索引包含的字段
+        std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); //获得索引所在文件名
+        char* key = new char [index.col_tot_len];//索引字段下的key
+        char* data = record.data; //这条记录的序列化数据
+        int offset = 0;
+        for (size_t i = 0; i < index_cols.size(); i++) { //获取record下的key
+            std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
+            offset += index_cols[i].len;
+        }
+        ihs_.at(index_file_name).get()->insert_entry(key,tuple_rid, context->txn_); //删除
+    }
+    //表文件插入记录
+    //fhs_.at(tab_name).get()->insert_record(record.data, context);
+    fhs_.at(tab_name).get()->insert_record(tuple_rid, record.data);
+}
+
+void SmManager::rollback_insert(const std::string& tab_name, const Rid& tuple_rid, Context* context) {
+    auto tab = db_.get_table(tab_name); //获取表元数据
+    //索引文件删除key
+    for (IndexMeta& index :tab.indexes) {
+        std::vector<ColMeta> index_cols = index.cols; //索引包含的字段
+        std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); //获得索引所在文件名
+        char* key = new char [index.col_tot_len];//索引字段下的key
+        char* data = fhs_.at(tab_name).get()->get_record(tuple_rid, context).get()->data; //这条记录的序列化数据
+        int offset = 0;
+        for (size_t i = 0; i < index_cols.size(); i++) { //获取record下的key
+            std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
+            offset += index_cols[i].len;
+        }
+        ihs_.at(index_file_name).get()->delete_entry(key, nullptr); //删除
+    }
+    //表文件删除记录
+    fhs_.at(tab_name).get()->delete_record(tuple_rid, context); 
+}
+
+void SmManager::rollback_update(const std::string &tab_name, const Rid &tuple_rid, const RmRecord &record, Context *context) {
+    auto tab = db_.get_table(tab_name); //获取表元数据
+    //索引文件更新key
+    for (IndexMeta& index : tab.indexes) {
+        std::vector<ColMeta> index_cols = index.cols; //索引包含的字段
+        std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); //获得索引所在文件名
+        char* key = new char [index.col_tot_len];//索引字段下的key
+        char* data = fhs_.at(tab_name).get()->get_record(tuple_rid, context).get()->data; //这条记录的序列化数据
+        int offset = 0;
+        for (size_t i = 0; i < index_cols.size(); i++) { //获取record下的key
+            std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
+            offset += index_cols[i].len;
+        }
+        ihs_.at(index_file_name).get()->delete_entry(key, nullptr); 
+    }
+    fhs_.at(tab_name).get()->update_record(tuple_rid, record.data, context);
+    for (IndexMeta& index : tab.indexes) {
+        std::vector<ColMeta> index_cols = index.cols; //索引包含的字段
+        std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); //获得索引所在文件名
+        char *key = new char [index.col_tot_len];
+        char *data = record.data; //这条记录的序列化数据
+        int offset = 0;
+        for (size_t i = 0; i < index_cols.size(); i++) { //获取record下的key
+            std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
+            offset += index_cols[i].len;
+        }
+        ihs_.at(index_file_name).get()->insert_entry(key,tuple_rid, context->txn_);
+    }
+}
