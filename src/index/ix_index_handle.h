@@ -126,7 +126,6 @@ public:
     void set_prev_leaf(page_id_t page_no) { page_hdr->prev_leaf = page_no; }
 
     void set_parent_page_no(page_id_t parent) { page_hdr->parent = parent; }
-
     char *get_key(int key_idx) const { return keys + key_idx * file_hdr->col_tot_len_; }
 
     Rid *get_rid(int rid_idx) const { return &rids[rid_idx]; }

@@ -251,9 +251,9 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
     {
         if (find_first)
         {
-            auto s = ret->lower_bound(key);
-            if (ix_compare(ret->get_key(s), key, ret->file_hdr->col_types_, ret->file_hdr->col_lens_) > 0 || s == ret->get_size())
-                s--;
+            auto s1 = ret->lower_bound(key);
+            auto s2 = ret->upper_bound(key) - 1;
+            int s = s1 <= s2 ? s1 : s2;
             next_page_id = ret->value_at(s);
         }
         else
