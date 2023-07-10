@@ -43,12 +43,18 @@ public:
     {
         for (auto rid : rids_)
         {
-            
             auto rec = fh_->get_record(rid, context_);
             for (auto &index : tab_.indexes)
             {
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
-                ihs->delete_entry(rec->data, context_->txn_);
+                char key[index.col_tot_len];
+                int offset = 0;
+                for (size_t i = 0; i < index.cols.size(); i++) 
+                {
+                    memcpy(key + offset, rec->data + index.cols[i].offset, index.cols[i].len);
+                    offset += index.cols[i].len;
+                }
+                ihs->delete_entry(key, context_->txn_);
             }
             RmRecord delete_record(rec->size);
             memcpy(delete_record.data, rec->data, rec->size);
