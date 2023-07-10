@@ -143,6 +143,13 @@ struct Value
                 throw InternalError("Overflow");
             }
         }
+        else if (type == TYPE_DATETIME)
+        {
+            if (Type == TYPE_STRING)
+            {
+                set_str(datetime::trans_datetime(datetime_val));
+            }
+        }
     }
     bool operator>(const Value &rhs) const
     {
