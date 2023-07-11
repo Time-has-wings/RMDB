@@ -42,12 +42,12 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
     // 3. 将buf复制到空闲slot位置
     // 4. 更新page_handle.page_hdr中的数据结构
     // 注意考虑插入一条记录后页面已满的情况，需要更新file_hdr_.first_free_page_no
+    bool res = (context->lock_mgr_->lock_exclusive_on_table(context->txn_, fd_));
+    if (res == false)
+        throw TransactionAbortException(context->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
     RmPageHandle page_handle = create_page_handle();
     int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
     page_id_t pageNo = page_handle.page->get_page_id().page_no;
-    bool res = (context->lock_mgr_->lock_exclusive_on_record(context->txn_, Rid{pageNo, free_slot_no}, fd_));
-    if (res == false)
-        throw TransactionAbortException(context->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
     this->insert_record(Rid{pageNo, free_slot_no}, buf);
     return Rid{pageNo, free_slot_no};
 }
