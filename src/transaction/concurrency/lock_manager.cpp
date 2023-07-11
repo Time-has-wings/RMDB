@@ -17,9 +17,32 @@ See the Mulan PSL v2 for more details. */
  * @param {Rid&} rid 加锁的目标记录ID 记录所在的表的fd
  * @param {int} tab_fd
  */
-bool LockManager::lock_shared_on_record(Transaction* txn, const Rid& rid, int tab_fd) {
-    
-    return true;
+bool LockManager::lock_shared_on_record(Transaction *txn, const Rid &rid, int tab_fd)
+{
+    std::unique_lock<std::mutex> lock{latch_};
+    txn->set_state(TransactionState::GROWING);
+    LockDataId newid(tab_fd, rid, LockDataType::RECORD);
+    if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
+    {
+        lock.unlock();
+        return true;
+    }
+    if (!(lock_table_[newid].group_lock_mode_ != GroupLockMode::S &&
+          lock_table_[newid].group_lock_mode_ != GroupLockMode::IS &&
+          lock_table_[newid].group_lock_mode_ != GroupLockMode::NON_LOCK))
+    {
+        txn->get_lock_set()->insert(newid);
+        LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
+        lock_table_[newid].request_queue_.push_back(*newquest);
+        newquest->granted_ = true;
+        lock.unlock();
+        return true;
+    }
+    else
+    {
+        txn->set_state(TransactionState::ABORTED);
+        return false;
+    }
 }
 
 /**
@@ -29,9 +52,36 @@ bool LockManager::lock_shared_on_record(Transaction* txn, const Rid& rid, int ta
  * @param {Rid&} rid 加锁的目标记录ID
  * @param {int} tab_fd 记录所在的表的fd
  */
-bool LockManager::lock_exclusive_on_record(Transaction* txn, const Rid& rid, int tab_fd) {
+bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int tab_fd)
+{
 
-    return true;
+    std::unique_lock<std::mutex> lock{latch_};
+    txn->set_state(TransactionState::GROWING);
+    LockDataId newid(tab_fd, rid, LockDataType::RECORD);
+    if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
+    {
+        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+            if (i->txn_id_ == txn->get_transaction_id())
+                lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
+        lock.unlock();
+        return true;
+    }
+
+    if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
+    {
+        txn->get_lock_set()->insert(newid);
+        LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
+        lock_table_[newid].request_queue_.push_back(*newquest);
+        newquest->granted_ = true;
+        lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
+        lock.unlock();
+        return true;
+    }
+    else
+    {
+        txn->set_state(TransactionState::ABORTED);
+        return false;
+    }
 }
 
 /**
@@ -40,9 +90,46 @@ bool LockManager::lock_exclusive_on_record(Transaction* txn, const Rid& rid, int
  * @param {Transaction*} txn 要申请锁的事务对象指针
  * @param {int} tab_fd 目标表的fd
  */
-bool LockManager::lock_shared_on_table(Transaction* txn, int tab_fd) {
-    
-    return true;
+bool LockManager::lock_shared_on_table(Transaction *txn, int tab_fd)
+{
+
+    std::unique_lock<std::mutex> lock{latch_};
+    txn->set_state(TransactionState::GROWING);
+    LockDataId newid(tab_fd, LockDataType::TABLE);
+    if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
+    {
+        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+            if (i->txn_id_ == txn->get_transaction_id())
+            {
+                if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IX)
+                    lock_table_[newid].group_lock_mode_ = GroupLockMode::SIX;
+                else if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IS || lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
+                    lock_table_[newid].group_lock_mode_ = GroupLockMode::S;
+            }
+        lock.unlock();
+        return true;
+    }
+
+    if (!(lock_table_[newid].group_lock_mode_ != GroupLockMode::S &&
+          lock_table_[newid].group_lock_mode_ != GroupLockMode::IS &&
+          lock_table_[newid].group_lock_mode_ != GroupLockMode::NON_LOCK))
+    {
+        txn->get_lock_set()->insert(newid);
+        LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
+        lock_table_[newid].request_queue_.push_back(*newquest);
+        newquest->granted_ = true;
+        if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IX)
+            lock_table_[newid].group_lock_mode_ = GroupLockMode::SIX;
+        else if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IS || lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
+            lock_table_[newid].group_lock_mode_ = GroupLockMode::S;
+        lock.unlock();
+        return true;
+    }
+    else
+    {
+        txn->set_state(TransactionState::ABORTED);
+        return false;
+    }
 }
 
 /**
@@ -51,9 +138,37 @@ bool LockManager::lock_shared_on_table(Transaction* txn, int tab_fd) {
  * @param {Transaction*} txn 要申请锁的事务对象指针
  * @param {int} tab_fd 目标表的fd
  */
-bool LockManager::lock_exclusive_on_table(Transaction* txn, int tab_fd) {
-    
-    return true;
+bool LockManager::lock_exclusive_on_table(Transaction *txn, int tab_fd)
+{
+
+    std::unique_lock<std::mutex> lock{latch_}; // 1
+    txn->set_state(TransactionState::GROWING);
+    LockDataId newid(tab_fd, LockDataType::TABLE);
+    if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
+    { // 3
+        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+            if (i->txn_id_ == txn->get_transaction_id())
+                lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
+
+        lock.unlock();
+        return true;
+    }
+    if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK) // 4.2&5 group mode judgement
+    {
+        txn->get_lock_set()->insert(newid); // 4.1 put into lock_table
+        LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
+        lock_table_[newid].request_queue_.push_back(*newquest);
+        newquest->granted_ = true;
+        lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
+        lock_table_[newid].cv_.notify_all();
+        lock.unlock();
+        return true;
+    }
+    else
+    {
+        txn->set_state(TransactionState::ABORTED);
+        return false;
+    }
 }
 
 /**
@@ -62,9 +177,40 @@ bool LockManager::lock_exclusive_on_table(Transaction* txn, int tab_fd) {
  * @param {Transaction*} txn 要申请锁的事务对象指针
  * @param {int} tab_fd 目标表的fd
  */
-bool LockManager::lock_IS_on_table(Transaction* txn, int tab_fd) {
-    
-    return true;
+bool LockManager::lock_IS_on_table(Transaction *txn, int tab_fd)
+{
+
+    std::unique_lock<std::mutex> lock{latch_}; // 1
+    txn->set_state(TransactionState::GROWING);
+    LockDataId newid(tab_fd, LockDataType::TABLE);
+    if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
+    { // 3
+        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+            if (i->txn_id_ == txn->get_transaction_id())
+            {
+                if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
+                    lock_table_[newid].group_lock_mode_ = GroupLockMode::IS;
+            }
+        lock.unlock();
+        return true;
+    }
+
+    if (lock_table_[newid].group_lock_mode_ != GroupLockMode::X) // 4.2&5 group mode judgement
+    {
+        txn->get_lock_set()->insert(newid); // 4.1 put into lock_table
+        LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
+        lock_table_[newid].request_queue_.push_back(*newquest);
+        newquest->granted_ = true;
+        if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
+            lock_table_[newid].group_lock_mode_ = GroupLockMode::IS;
+        lock.unlock();
+        return true;
+    }
+    else
+    {
+        txn->set_state(TransactionState::ABORTED);
+        return false;
+    }
 }
 
 /**
@@ -73,9 +219,47 @@ bool LockManager::lock_IS_on_table(Transaction* txn, int tab_fd) {
  * @param {Transaction*} txn 要申请锁的事务对象指针
  * @param {int} tab_fd 目标表的fd
  */
-bool LockManager::lock_IX_on_table(Transaction* txn, int tab_fd) {
-    
-    return true;
+bool LockManager::lock_IX_on_table(Transaction *txn, int tab_fd)
+{
+
+    std::unique_lock<std::mutex> lock{latch_}; // 1
+    txn->set_state(TransactionState::GROWING);
+    LockDataId newid(tab_fd, LockDataType::TABLE);
+
+    if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
+    { // 3
+        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+            if (i->txn_id_ == txn->get_transaction_id())
+            {
+                if (lock_table_[newid].group_lock_mode_ == GroupLockMode::S)
+                    lock_table_[newid].group_lock_mode_ = GroupLockMode::SIX;
+                else if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IS || lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
+                    lock_table_[newid].group_lock_mode_ = GroupLockMode::IX;
+            }
+        lock.unlock();
+        return true;
+    }
+
+    if (!(lock_table_[newid].group_lock_mode_ == GroupLockMode::X &&
+          lock_table_[newid].group_lock_mode_ == GroupLockMode::S &&
+          lock_table_[newid].group_lock_mode_ == GroupLockMode::SIX)) // 4.2&5 group mode judgement
+    {
+        txn->get_lock_set()->insert(newid); // 4.1 put into lock_table
+        LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
+        lock_table_[newid].request_queue_.push_back(*newquest);
+        newquest->granted_ = true;
+        if (lock_table_[newid].group_lock_mode_ == GroupLockMode::S)
+            lock_table_[newid].group_lock_mode_ = GroupLockMode::SIX;
+        else if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IS || lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
+            lock_table_[newid].group_lock_mode_ = GroupLockMode::IX;
+        lock.unlock();
+        return true;
+    }
+    else
+    {
+        txn->set_state(TransactionState::ABORTED);
+        return false;
+    }
 }
 
 /**
@@ -84,7 +268,37 @@ bool LockManager::lock_IX_on_table(Transaction* txn, int tab_fd) {
  * @param {Transaction*} txn 要释放锁的事务对象指针
  * @param {LockDataId} lock_data_id 要释放的锁ID
  */
-bool LockManager::unlock(Transaction* txn, LockDataId lock_data_id) {
-   
-    return true;
+bool LockManager::unlock(Transaction *txn, LockDataId lock_data_id)
+{
+    std::unique_lock<std::mutex> lock(latch_);
+    txn->set_state(TransactionState::SHRINKING);
+    if (txn->get_lock_set()->find(lock_data_id) != txn->get_lock_set()->end())
+    {
+        GroupLockMode mode = GroupLockMode::NON_LOCK;
+        for (auto i = lock_table_[lock_data_id].request_queue_.begin(); i != lock_table_[lock_data_id].request_queue_.end(); i++)
+        {
+            if (i->granted_)
+            {
+                if (i->lock_mode_ == LockMode::EXLUCSIVE)
+                    mode = GroupLockMode::X;
+                else if (i->lock_mode_ == LockMode::SHARED && mode != GroupLockMode::SIX)
+                    mode = mode == GroupLockMode::IX ? GroupLockMode::SIX : GroupLockMode::S;
+                else if (i->lock_mode_ == LockMode::S_IX)
+                    mode = GroupLockMode::SIX;
+                else if (i->lock_mode_ == LockMode::INTENTION_EXCLUSIVE && mode != GroupLockMode::SIX)
+                    mode = mode == GroupLockMode::S ? GroupLockMode::SIX : GroupLockMode::IX;
+                else if (i->lock_mode_ == LockMode::INTENTION_SHARED)
+                    mode = mode == GroupLockMode::NON_LOCK ? GroupLockMode::IS : mode == GroupLockMode::IS ? GroupLockMode::IS
+                                                                                                           : mode;
+            }
+        }
+        lock_table_[lock_data_id].group_lock_mode_ = mode;
+        lock.unlock();
+        return true;
+    }
+    else
+    {
+        lock.unlock();
+        return false;
+    }
 }

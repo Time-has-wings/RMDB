@@ -127,7 +127,6 @@ class TransactionAbortException : public std::exception {
    public:
     explicit TransactionAbortException(txn_id_t txn_id, AbortReason abort_reason)
         : txn_id_(txn_id), abort_reason_(abort_reason) {}
-
     txn_id_t get_transaction_id() { return txn_id_; }
     AbortReason GetAbortReason() { return abort_reason_; }
     std::string GetInfo() {

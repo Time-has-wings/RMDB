@@ -21,6 +21,9 @@ std::unique_ptr<RmRecord> RmFileHandle::get_record(const Rid &rid, Context *cont
     // Todo:
     // 1. 获取指定记录所在的page handle
     // 2. 初始化一个指向RmRecord的指针（赋值其内部的data和size）
+    bool res = (context->lock_mgr_->lock_shared_on_record(context->txn_, rid, fd_));
+    if (res == false)
+        throw TransactionAbortException(context->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
     RmPageHandle page_handle = fetch_page_handle(rid.page_no);
     return std::unique_ptr<RmRecord>(new RmRecord({file_hdr_.record_size, page_handle.get_slot(rid.slot_no)}));
 }
@@ -39,10 +42,12 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
     // 3. 将buf复制到空闲slot位置
     // 4. 更新page_handle.page_hdr中的数据结构
     // 注意考虑插入一条记录后页面已满的情况，需要更新file_hdr_.first_free_page_no
-
     RmPageHandle page_handle = create_page_handle();
     int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
     page_id_t pageNo = page_handle.page->get_page_id().page_no;
+    bool res = (context->lock_mgr_->lock_exclusive_on_record(context->txn_, Rid{pageNo, free_slot_no}, fd_));
+    if (res == false)
+        throw TransactionAbortException(context->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
     this->insert_record(Rid{pageNo, free_slot_no}, buf);
     return Rid{pageNo, free_slot_no};
 }
@@ -76,8 +81,11 @@ void RmFileHandle::delete_record(const Rid &rid, Context *context)
     // 1. 获取指定记录所在的page handle
     // 2. 更新page_handle.page_hdr中的数据结构
     // 注意考虑删除一条记录后页面未满的情况，需要调用release_page_handle()
-    RmPageHandle page_handle = fetch_page_handle(rid.page_no);
 
+    bool res = (context->lock_mgr_->lock_exclusive_on_record(context->txn_, rid, fd_));
+    if (res == false)
+        throw TransactionAbortException(context->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
+    RmPageHandle page_handle = fetch_page_handle(rid.page_no);
     if (page_handle.page_hdr->num_records-- == file_hdr_.num_records_per_page) // 2: delete will make full->not full
         release_page_handle(page_handle);
     Bitmap::reset(page_handle.bitmap, rid.slot_no);
@@ -96,8 +104,11 @@ void RmFileHandle::update_record(const Rid &rid, char *buf, Context *context)
     // Todo:
     // 1. 获取指定记录所在的page handle
     // 2. 更新记录
+    bool res = (context->lock_mgr_->lock_exclusive_on_record(context->txn_, rid, fd_));
+    if (res == false)
+        throw TransactionAbortException(context->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
     RmPageHandle page_handle = fetch_page_handle(rid.page_no); // 1
-
+    (context->lock_mgr_->lock_shared_on_record(context->txn_, rid, fd_));
     char *slot = page_handle.get_slot(rid.slot_no); // 2
     memcpy(slot, buf, file_hdr_.record_size);
 
