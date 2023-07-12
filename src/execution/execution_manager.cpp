@@ -127,7 +127,7 @@ void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Co
         }
         case T_Showindex:
         {
-            sm_manager_->show_indexes(x->tab_name_,context);
+            sm_manager_->show_indexes(x->tab_name_, context);
             break;
         }
         default:
@@ -141,6 +141,10 @@ void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Co
 void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
                             Context *context)
 {
+    for (executorTreeRoot->beginTuple(); !executorTreeRoot->is_end(); executorTreeRoot->nextTuple())
+    {
+        auto Tuple = executorTreeRoot->Next(); // 啥都不干 只要Next()函数不寄
+    }
     std::vector<std::string> captions;
     std::string func_name;
     bool has_group = false;
