@@ -68,9 +68,12 @@ public:
         }
         for (auto &rid : rids_)
         {
-            bool res = (context_->lock_mgr_->lock_exclusive_on_record(context_->txn_, rid, fh_->GetFd()));
-            if (res == false)
-                throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
+            if (context_->txn_->get_txn_mode())
+            {
+                bool res = (context_->lock_mgr_->lock_exclusive_on_record(context_->txn_, rid, fh_->GetFd()));
+                if (res == false)
+                    throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
+            }
         }
         for (auto &index : tab_.indexes)
         {
