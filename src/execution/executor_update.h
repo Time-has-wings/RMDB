@@ -66,6 +66,15 @@ public:
                 break;
             }
         }
+        for(auto &rid :rids_)
+        {
+            if (context_->txn_->get_txn_mode())
+            {
+                bool res = (context_->lock_mgr_->lock_exclusive_on_record(context_->txn_, rid, fh_->GetFd()));
+                if (res == false)
+                    throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
+            }
+        }
         for (auto &index : tab_.indexes)
         {
             char key_old[index.col_tot_len];
@@ -145,6 +154,7 @@ public:
                     ihs->insert_entry(key1, rid, context_->txn_);
                 }
             }
+            
             fh_->update_record(rid, dat, context_);
             WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, origin_record);
             context_->txn_->append_write_record(wrec);

@@ -105,7 +105,12 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        return fh_->get_record(rid_, context_);
+        if (!context_->txn_->get_txn_mode())
+            return fh_->get_record(rid_, context_);
+        if (context_->lock_mgr_->lock_shared_on_record(context_->txn_, rid_, fh_->GetFd()))
+            return fh_->get_record(rid_, context_);
+        else
+            throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
     }
     Rid &rid() override { return rid_; }
 };
