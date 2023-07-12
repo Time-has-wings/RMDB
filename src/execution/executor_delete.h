@@ -41,12 +41,11 @@ public:
     virtual std::string getType() { return "DeleteExecutor"; };
     std::unique_ptr<RmRecord> Next() override
     {
-        if (context_->txn_->get_txn_mode())
-        {
-            bool res = (context_->lock_mgr_->lock_exclusive_on_table(context_->txn_, fh_->GetFd()));
-            if (res == false)
-                throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
-        }
+
+        bool res = (context_->lock_mgr_->lock_exclusive_on_table(context_->txn_, fh_->GetFd()));
+        if (res == false)
+            throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
+
         for (auto rid : rids_)
         {
             auto rec = fh_->get_record(rid, context_);
