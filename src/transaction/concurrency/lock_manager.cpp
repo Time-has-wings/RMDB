@@ -266,6 +266,7 @@ bool LockManager::lock_exclusive_on_table(Transaction *txn, int tab_fd)
  */
 bool LockManager::lock_IS_on_table(Transaction *txn, int tab_fd)
 {
+
     if (txn->get_state() == TransactionState::ABORTED ||
         txn->get_state() == TransactionState::COMMITTED ||
         txn->get_state() == TransactionState::SHRINKING)
@@ -291,7 +292,7 @@ bool LockManager::lock_IS_on_table(Transaction *txn, int tab_fd)
             return false;
         }
         else
-        { // IS锁最弱,本事务的LockMode不需要改,GroupLockMode也不需要改
+        { 
             return true;
         }
     }
