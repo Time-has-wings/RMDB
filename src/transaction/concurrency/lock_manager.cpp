@@ -403,14 +403,9 @@ bool LockManager::unlock(Transaction *txn, LockDataId lock_data_id)
         GroupLockMode mode = GroupLockMode::NON_LOCK;
         for (auto i = lock_table_[lock_data_id].request_queue_.begin(); i != lock_table_[lock_data_id].request_queue_.end(); i++)
         {
-            if (i->txn_id_ == txn->get_transaction_id())
-            {
-                i->granted_ = false;
-                continue;
-            }
             if (i->granted_)
             {
-                if (i->txn_id_ == txn->get_transaction_id()) 
+                if (i->txn_id_ == txn->get_transaction_id())
                 {
                     i->granted_ = false;
                     continue;
