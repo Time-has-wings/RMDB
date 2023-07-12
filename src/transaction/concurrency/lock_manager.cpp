@@ -90,7 +90,7 @@ bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int
             }
         }
     }
-    if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK || lock_table_[newid].group_lock_mode_ == GroupLockMode::S)
+    if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
     {
         if (lock_IX_on_table(txn, tab_fd))
         {
