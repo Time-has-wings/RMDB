@@ -37,9 +37,9 @@ bool LockManager::lock_shared_on_record(Transaction *txn, const Rid &rid, int ta
         {
             txn->get_lock_set()->insert(newid);
             LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
+            newquest->granted_ = true;
             lock_table_[newid].request_queue_.push_back(*newquest);
             lock_table_[newid].group_lock_mode_ = GroupLockMode::S;
-            newquest->granted_ = true;
             lock.unlock();
             return true;
         }
@@ -96,9 +96,9 @@ bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int
         {
             txn->get_lock_set()->insert(newid);
             LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::EXLUCSIVE);
+            newquest->granted_ = true;
             lock_table_[newid].request_queue_.push_back(*newquest);
             lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
-            newquest->granted_ = true;
             lock.unlock();
             return true;
         }
@@ -177,8 +177,8 @@ bool LockManager::lock_shared_on_table(Transaction *txn, int tab_fd)
     {
         txn->get_lock_set()->insert(newid);
         LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
-        lock_table_[newid].request_queue_.push_back(*newquest);
         newquest->granted_ = true;
+        lock_table_[newid].request_queue_.push_back(*newquest);
         if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IX)
             lock_table_[newid].group_lock_mode_ = GroupLockMode::SIX;
         else if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IS || lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
@@ -244,10 +244,9 @@ bool LockManager::lock_exclusive_on_table(Transaction *txn, int tab_fd)
     {
         txn->get_lock_set()->insert(newid); // 4.1 put into lock_table
         LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::EXLUCSIVE);
-        lock_table_[newid].request_queue_.push_back(*newquest);
         newquest->granted_ = true;
+        lock_table_[newid].request_queue_.push_back(*newquest);
         lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
-        lock_table_[newid].cv_.notify_all();
         lock.unlock();
         return true;
     }
@@ -292,7 +291,7 @@ bool LockManager::lock_IS_on_table(Transaction *txn, int tab_fd)
             return false;
         }
         else
-        { 
+        {
             return true;
         }
     }
@@ -300,8 +299,8 @@ bool LockManager::lock_IS_on_table(Transaction *txn, int tab_fd)
     {
         txn->get_lock_set()->insert(newid); // 4.1 put into lock_table
         LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::INTENTION_SHARED);
-        lock_table_[newid].request_queue_.push_back(*newquest);
         newquest->granted_ = true;
+        lock_table_[newid].request_queue_.push_back(*newquest);
         if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
             lock_table_[newid].group_lock_mode_ = GroupLockMode::IS;
         return true;
@@ -374,8 +373,8 @@ bool LockManager::lock_IX_on_table(Transaction *txn, int tab_fd)
     {
         txn->get_lock_set()->insert(newid); // 4.1 put into lock_table
         LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::INTENTION_EXCLUSIVE);
-        lock_table_[newid].request_queue_.push_back(*newquest);
         newquest->granted_ = true;
+        lock_table_[newid].request_queue_.push_back(*newquest);
         if (lock_table_[newid].group_lock_mode_ == GroupLockMode::S)
             lock_table_[newid].group_lock_mode_ = GroupLockMode::SIX;
         else if (lock_table_[newid].group_lock_mode_ == GroupLockMode::IS || lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
@@ -404,6 +403,11 @@ bool LockManager::unlock(Transaction *txn, LockDataId lock_data_id)
         GroupLockMode mode = GroupLockMode::NON_LOCK;
         for (auto i = lock_table_[lock_data_id].request_queue_.begin(); i != lock_table_[lock_data_id].request_queue_.end(); i++)
         {
+            if (i->txn_id_ == txn->get_transaction_id())
+            {
+                i->granted_ = false;
+                continue;
+            }
             if (i->granted_)
             {
                 if (i->lock_mode_ == LockMode::EXLUCSIVE)
