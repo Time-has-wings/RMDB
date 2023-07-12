@@ -105,20 +105,11 @@ void SmManager::open_db(const std::string &db_name)
     {
         auto &tab = itab.second;
         fhs_.emplace(tab.name, rm_manager_->open_file(tab.name));
-        std::vector<std::string> s;
-        for (size_t i = 0; i < tab.cols.size(); i++)
+        for (auto index : tab.indexes)
         {
-            auto &col = tab.cols[i];
-            if (col.index)
-            {
-                s.push_back(col.name);
-            }
-        }
-        if (s.size() > 0)
-        {
-            auto index_name = ix_manager_->get_index_name(tab.name, s);
+            auto index_name = ix_manager_->get_index_name(tab.name, index.cols);
             assert(ihs_.count(index_name) == 0);
-            ihs_.emplace(index_name, ix_manager_->open_index(tab.name, s));
+            ihs_.emplace(index_name, ix_manager_->open_index(tab.name, index.cols));
         }
     }
 }
