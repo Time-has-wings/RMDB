@@ -66,9 +66,9 @@ public:
                 break;
             }
         }
-        for (auto &rid : rids_)
+        if (context_->txn_->get_txn_mode())
         {
-            if (context_->txn_->get_txn_mode())
+            for (auto &rid : rids_)
             {
                 bool res = (context_->lock_mgr_->lock_exclusive_on_record(context_->txn_, rid, fh_->GetFd()));
                 if (res == false)

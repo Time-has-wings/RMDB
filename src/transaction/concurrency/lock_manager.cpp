@@ -77,17 +77,17 @@ bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int
         {
             if (i->txn_id_ == txn->get_transaction_id())
             {
-                i->lock_mode_ = LockMode::EXLUCSIVE;
-                lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
-                lock_IX_on_table(txn, tab_fd);
-                lock.unlock();
-                return true;
+                if (lock_IX_on_table(txn, tab_fd))
+                {
+                    i->lock_mode_ = LockMode::EXLUCSIVE;
+                    lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
+                    lock.unlock();
+                    return true;
+                }
             }
-            else
-            {
-                lock.unlock();
-                return false;
-            }
+            txn->set_state(TransactionState::ABORTED);
+            lock.unlock();
+            return false;
         }
     }
     if (lock_table_[newid].group_lock_mode_ == GroupLockMode::NON_LOCK)
@@ -102,15 +102,10 @@ bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int
             lock.unlock();
             return true;
         }
-        else
-            return false;
     }
-    else
-    {
-        txn->set_state(TransactionState::ABORTED);
-        lock.unlock();
-        return false;
-    }
+    txn->set_state(TransactionState::ABORTED);
+    lock.unlock();
+    return false;
 }
 
 /**
