@@ -49,7 +49,7 @@ public:
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
                 char key[index.col_tot_len];
                 int offset = 0;
-                for (size_t i = 0; i < index.cols.size(); i++) 
+                for (size_t i = 0; i < index.cols.size(); i++)
                 {
                     memcpy(key + offset, rec->data + index.cols[i].offset, index.cols[i].len);
                     offset += index.cols[i].len;
@@ -58,10 +58,9 @@ public:
             }
             RmRecord delete_record(rec->size);
             memcpy(delete_record.data, rec->data, rec->size);
-            // modify wset
+            fh_->delete_record(rid, context_);
             WriteRecord *wrec = new WriteRecord(WType::DELETE_TUPLE, tab_name_, rid, delete_record);
             context_->txn_->append_write_record(wrec);
-            fh_->delete_record(rid, context_);
         }
         return nullptr;
     }

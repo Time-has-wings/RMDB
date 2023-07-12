@@ -82,7 +82,7 @@ void RmFileHandle::delete_record(const Rid &rid, Context *context)
     // 2. 更新page_handle.page_hdr中的数据结构
     // 注意考虑删除一条记录后页面未满的情况，需要调用release_page_handle()
 
-    bool res = (context->lock_mgr_->lock_exclusive_on_record(context->txn_, rid, fd_));
+    bool res = (context->lock_mgr_->lock_exclusive_on_table(context->txn_, fd_));
     if (res == false)
         throw TransactionAbortException(context->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
     RmPageHandle page_handle = fetch_page_handle(rid.page_no);

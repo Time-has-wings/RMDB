@@ -82,10 +82,11 @@ public:
                 break;
             }
             else
+            {
                 scan_->next();
+            }
         }
     }
-
     void nextTuple() override
     {
         assert(!is_end());
