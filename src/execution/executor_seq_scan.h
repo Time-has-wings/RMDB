@@ -70,6 +70,9 @@ public:
 
     void beginTuple() override
     {
+        //给表上S锁
+        if (context_->txn_->get_txn_mode() && context_->lock_mgr_->lock_shared_on_table(context_->txn_, fh_->GetFd()) == false)
+            throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
         scan_ = std::make_unique<RmScan>(fh_);
         while (!scan_->is_end())
         {
