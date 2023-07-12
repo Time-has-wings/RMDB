@@ -133,7 +133,7 @@ bool LockManager::lock_shared_on_table(Transaction *txn, int tab_fd)
         bool flag = true;
         for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
         {
-            if (i->txn_id_ != txn->get_transaction_id())
+            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
             { // 判断非txn事务的锁是否与本事务加S锁冲突
                 if (i->lock_mode_ == LockMode::EXLUCSIVE ||
                     i->lock_mode_ == LockMode::INTENTION_EXCLUSIVE ||
@@ -215,7 +215,7 @@ bool LockManager::lock_exclusive_on_table(Transaction *txn, int tab_fd)
         bool flag = true;
         for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
         {
-            if (i->txn_id_ != txn->get_transaction_id())
+            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
             { // 判断非txn事务的锁是否与本事务加X锁冲突(存在其他事务就冲突)
                 flag = false;
                 break;
@@ -277,7 +277,7 @@ bool LockManager::lock_IS_on_table(Transaction *txn, int tab_fd)
         bool flag = true;
         for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
         {
-            if (i->txn_id_ != txn->get_transaction_id())
+            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
             { // 判断非txn事务的锁是否与本事务加IS锁冲突
                 if (i->lock_mode_ == LockMode::EXLUCSIVE)
                 {
@@ -331,7 +331,7 @@ bool LockManager::lock_IX_on_table(Transaction *txn, int tab_fd)
         bool flag = true;
         for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
         {
-            if (i->txn_id_ != txn->get_transaction_id())
+            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
             { // 判断非txn事务的锁是否与本事务加IS锁冲突
                 if (i->lock_mode_ == LockMode::SHARED ||
                     i->lock_mode_ == LockMode::EXLUCSIVE ||
@@ -410,6 +410,11 @@ bool LockManager::unlock(Transaction *txn, LockDataId lock_data_id)
             }
             if (i->granted_)
             {
+                if (i->txn_id_ == txn->get_transaction_id()) 
+                {
+                    i->granted_ = false;
+                    continue;
+                }
                 if (i->lock_mode_ == LockMode::EXLUCSIVE)
                     mode = GroupLockMode::X;
                 else if (i->lock_mode_ == LockMode::SHARED && mode != GroupLockMode::SIX)
