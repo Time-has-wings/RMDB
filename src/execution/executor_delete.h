@@ -50,6 +50,14 @@ public:
         for (auto rid : rids_)
         {
             auto rec = fh_->get_record(rid, context_);
+            //写日志
+            DeleteLogRecord delete_log(context_->txn_->get_transaction_id(), *rec, rid, tab_name_);
+            delete_log.prev_lsn_ = context_->txn_->get_prev_lsn(); 
+            context_->log_mgr_->add_log_to_buffer(&delete_log);
+        }
+        for (auto rid : rids_)
+        {
+            auto rec = fh_->get_record(rid, context_);
             for (auto &index : tab_.indexes)
             {
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
