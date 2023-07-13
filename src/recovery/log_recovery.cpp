@@ -99,8 +99,7 @@ void RecoveryManager::redo()
 			char tab_name[temp.table_name_size_ + 1];
 			memset(tab_name, '\0', temp.table_name_size_ + 1);
 			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-			auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-			fh_->insert_record(temp.insert_value_.data, nullptr);
+			insert_record(tab_name, temp.insert_value_.data, temp.rid_);
 		}
 		else if (t->log_type_ == DELETE)
 		{
@@ -109,8 +108,7 @@ void RecoveryManager::redo()
 			char tab_name[temp.table_name_size_];
 			memset(tab_name, '\0', temp.table_name_size_ + 1);
 			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-			auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-			fh_->delete_record(temp.rid_, nullptr);
+			delete_record(tab_name, temp.rid_);
 		}
 		else if (t->log_type_ == UPDATE)
 		{
@@ -119,8 +117,7 @@ void RecoveryManager::redo()
 			char tab_name[temp.table_name_size_];
 			memset(tab_name, '\0', temp.table_name_size_ + 1);
 			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-			auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-			fh_->update_record(temp.rid_, temp.update_value_.data, nullptr);
+			update_record(tab_name, temp.update_value_.data, temp.rid_);
 		}
 		off_set += t->log_tot_len_;
 		t->deserialize(buffer_.buffer_ + off_set);
@@ -146,8 +143,7 @@ void RecoveryManager::undo()
 				char tab_name[temp.table_name_size_ + 1];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-				auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-				fh_->delete_record(temp.rid_, nullptr);
+				delete_record(tab_name, temp.rid_);
 			}
 			else if (t->log_type_ == DELETE)
 			{
@@ -156,8 +152,7 @@ void RecoveryManager::undo()
 				char tab_name[temp.table_name_size_];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-				auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-				fh_->insert_record(temp.delete_value_.data, nullptr);
+				insert_record(tab_name, temp.delete_value_.data, temp.rid_);
 			}
 			else if (t->log_type_ == UPDATE)
 			{
@@ -166,11 +161,72 @@ void RecoveryManager::undo()
 				char tab_name[temp.table_name_size_];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-				auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-				fh_->update_record(temp.rid_, temp.orign_value_.data, nullptr);
+				update_record(tab_name, temp.orign_value_.data, temp.rid_);
 			}
 			lsn = t->prev_lsn_;
 			t->deserialize(buffer_.buffer_ + lsn);
 		}
+	}
+}
+void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
+{
+	auto tab_ = sm_manager_->db_.get_table(tab_name);
+	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
+	RmRecord rec(fh_->get_file_hdr().record_size);
+	auto rid_ = fh_->insert_record(buf, nullptr);
+	rid = rid_;
+	for (size_t i = 0; i < tab_.indexes.size(); ++i)
+	{
+		auto &index = tab_.indexes[i];
+		auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name, index.cols)).get();
+		char key[index.col_tot_len];
+		int offset = 0;
+		for (size_t i = 0; i < index.col_num; ++i)
+		{
+			memcpy(key + offset, rec.data + index.cols[i].offset, index.cols[i].len);
+			offset += index.cols[i].len;
+		}
+		ih->insert_entry(key, rid_, nullptr);
+	}
+}
+void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
+{
+	auto tab_ = sm_manager_->db_.get_table(tab_name);
+	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
+	auto rec = fh_->get_record(rid, nullptr);
+	for (auto &index : tab_.indexes)
+	{
+		auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+		char *update = new char[index.col_tot_len];
+		char *orign = new char[index.col_tot_len];
+		int offset = 0;
+		for (size_t i = 0; i < index.col_num; ++i)
+		{
+			memcpy(update + offset, buf + index.cols[i].offset, index.cols[i].len);
+			memcpy(orign + offset, rec->data + index.cols[i].offset, index.cols[i].len);
+			offset += index.cols[i].len;
+		}
+		ihs->delete_entry(orign, nullptr);
+		ihs->insert_entry(update, rid, nullptr);
+	}
+}
+void RecoveryManager::delete_record(char *tab_name, Rid &rid)
+{
+	auto tab_ = sm_manager_->db_.get_table(tab_name);
+	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
+	auto rec = fh_->get_record(rid, nullptr);
+	fh_->delete_record(rid, nullptr);
+	for (size_t i = 0; i < tab_.indexes.size(); ++i)
+	{
+		auto &index = tab_.indexes[i];
+		auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name, index.cols)).get();
+		char key[index.col_tot_len];
+		int offset = 0;
+		for (size_t i = 0; i < index.col_num; ++i)
+		{
+			memcpy(key + offset, rec->data + index.cols[i].offset, index.cols[i].len);
+			offset += index.cols[i].len;
+		}
+		ih->delete_entry(key, nullptr);
 	}
 }

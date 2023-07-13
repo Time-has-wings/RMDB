@@ -120,7 +120,7 @@ public:
                 }
             }
         }
-        for (auto rid : rids_)
+        for (auto &rid : rids_)
         {
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
             RmRecord update_record(rec->size);
@@ -134,54 +134,26 @@ public:
             update_log.prev_lsn_ = context_->txn_->get_prev_lsn();
             context_->log_mgr_->add_log_to_buffer(&update_log);
             context_->txn_->set_prev_lsn(update_log.lsn_);
-        }
-        context_->log_mgr_->flush_log_to_disk();
-        for (auto &rid : rids_)
-        {
-            std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
-            RmRecord origin_record(rec->size);
-            memcpy(origin_record.data, rec->data, rec->size);
-            char dat[rec->size];
-            memcpy(dat, rec->data, rec->size);
-            for (auto &clause : set_clauses_)
-            {
-                auto col = tab_.get_col(clause.lhs.col_name);
-                memcpy(dat + col->offset, clause.rhs.raw->data, col->len);
-            }
             for (auto &index : tab_.indexes)
             {
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
-                char *key1 = new char[index.col_tot_len];
-                char *key2 = new char[index.col_tot_len];
+                char *update = new char[index.col_tot_len];
+                char *orign = new char[index.col_tot_len];
                 int offset = 0;
                 for (size_t i = 0; i < index.col_num; ++i)
                 {
-                    memcpy(key1 + offset, dat + index.cols[i].offset, index.cols[i].len);
-                    memcpy(key2 + offset, rec->data + index.cols[i].offset, index.cols[i].len);
+                    memcpy(update + offset, update_record.data + index.cols[i].offset, index.cols[i].len);
+                    memcpy(orign + offset, rec->data + index.cols[i].offset, index.cols[i].len);
                     offset += index.cols[i].len;
                 }
-                if (memcmp(key1, key2, index.col_tot_len) == 0)
-                    continue;
-                else if (ihs->get_value(key1, nullptr, nullptr))
-                    throw IndexEnrtyExistsError();
-                else
-                {
-                    ihs->delete_entry(key2, context_->txn_);
-                    ihs->insert_entry(key1, rid, context_->txn_);
-                }
+                ihs->delete_entry(orign, context_->txn_);
+                ihs->insert_entry(update, rid, context_->txn_);
             }
-
-            fh_->update_record(rid, dat, context_);
-            WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, origin_record);
+            fh_->update_record(rid, update_record.data, context_);
+            WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, update_record);
             context_->txn_->append_write_record(wrec);
         }
-
+        context_->log_mgr_->flush_log_to_disk();
         return nullptr;
-    }
-
-    Rid &
-    rid() override
-    {
-        return _abstract_rid;
     }
 };
