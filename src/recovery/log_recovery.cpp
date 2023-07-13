@@ -157,7 +157,7 @@ void RecoveryManager::undo()
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
 				auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-				fh_->insert_record(temp.rid_, temp.delete_value_.data);
+				fh_->insert_record(temp.delete_value_.data, nullptr);
 			}
 			else if (t->log_type_ == UPDATE)
 			{

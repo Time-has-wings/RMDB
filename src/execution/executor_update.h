@@ -133,6 +133,7 @@ public:
             UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec.get()), update_record, rid, tab_name_);
             update_log.prev_lsn_ = context_->txn_->get_prev_lsn();
             context_->log_mgr_->add_log_to_buffer(&update_log);
+            context_->txn_->set_prev_lsn(update_log.lsn_);
         }
         context_->log_mgr_->flush_log_to_disk();
         for (auto &rid : rids_)
