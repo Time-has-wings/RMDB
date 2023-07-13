@@ -95,10 +95,8 @@ void RmFileHandle::update_record(const Rid &rid, char *buf, Context *context)
     // 2. 更新记录
     
     RmPageHandle page_handle = fetch_page_handle(rid.page_no); // 1
-    (context->lock_mgr_->lock_shared_on_record(context->txn_, rid, fd_));
     char *slot = page_handle.get_slot(rid.slot_no); // 2
     memcpy(slot, buf, file_hdr_.record_size);
-
     buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
 }
 

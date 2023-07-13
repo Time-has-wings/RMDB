@@ -11,6 +11,7 @@ See the Mulan PSL v2 for more details. */
 #include "transaction_manager.h"
 #include "record/rm_file_handle.h"
 #include "system/sm_manager.h"
+#include "recovery/log_manager.h"
 
 std::unordered_map<txn_id_t, Transaction *> TransactionManager::txn_map = {};
 
@@ -33,7 +34,12 @@ Transaction *TransactionManager::begin(Transaction *txn, LogManager *log_manager
         next_txn_id_++; // 自增
     }
     txn_map.emplace(txn->get_transaction_id(), txn); // 加入全局事务表
-    return txn;                                      // 4
+    BeginLogRecord beginLog(txn->get_transaction_id());
+    beginLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
+    log_manager->add_log_to_buffer(&beginLog); // 写入日志缓冲区
+    txn->set_prev_lsn(beginLog.lsn_);
+    log_manager->flush_log_to_disk(); // 写入日志缓冲区
+    return txn; // 4
 }
 
 /**
@@ -62,6 +68,10 @@ void TransactionManager::commit(Transaction *txn, LogManager *log_manager)
     // 释放资源
     lock_set->clear();
     // 刷入磁盘
+    CommitLogRecord commitLog(txn->get_transaction_id());
+    commitLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
+    log_manager->add_log_to_buffer(&commitLog); // 写入日志缓冲区
+    txn->set_prev_lsn(commitLog.lsn_);
     log_manager->flush_log_to_disk();
     // 更新事务状态
     txn->set_state(TransactionState::COMMITTED);
@@ -107,6 +117,9 @@ void TransactionManager::abort(Transaction *txn, LogManager *log_manager)
     // 清空
     lock_set->clear();
     // 刷入
+    AbortLogRecord abortLog(txn->get_transaction_id());
+    abortLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
+    log_manager->add_log_to_buffer(&abortLog); // 写入日志缓冲区
     log_manager->flush_log_to_disk();
     // 更新
     txn->set_state(TransactionState::ABORTED);

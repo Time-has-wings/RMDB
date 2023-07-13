@@ -122,12 +122,19 @@ public:
         }
         for (auto rid : rids_)
         {
-            auto rec = fh_->get_record(rid, context_);
-            //写日志
-            UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec.get()), rid, tab_name_);
-            update_log.prev_lsn_ = context_->txn_->get_prev_lsn(); 
+            std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
+            RmRecord update_record(rec->size);
+            memcpy(update_record.data, rec->data, rec->size);
+            for (auto &clause : set_clauses_)
+            {
+                auto col = tab_.get_col(clause.lhs.col_name);
+                memcpy(update_record.data + col->offset, clause.rhs.raw->data, col->len);
+            }
+            UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec.get()), update_record, rid, tab_name_);
+            update_log.prev_lsn_ = context_->txn_->get_prev_lsn();
             context_->log_mgr_->add_log_to_buffer(&update_log);
         }
+        context_->log_mgr_->flush_log_to_disk();
         for (auto &rid : rids_)
         {
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);

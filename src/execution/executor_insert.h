@@ -67,6 +67,11 @@ public:
             // modify wset
             WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
             context_->txn_->append_write_record(wrec);
+            InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_, tab_name_);
+            insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();
+            context_->log_mgr_->add_log_to_buffer(&insert_log);
+            context_->log_mgr_->flush_log_to_disk();
+            context_->txn_->set_prev_lsn(insert_log.lsn_);
             return nullptr;
         }
         // Insert into index judge
@@ -84,14 +89,15 @@ public:
             if (ih->get_value(key, nullptr, nullptr))
                 throw IndexEnrtyExistsError();
         }
-        //写日志
+        // 写日志
         Rid rid_insert = {-1, -1};
-        InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_insert, tab_name_); //rid先草草设置为{-1, -1}
-        insert_log.prev_lsn_ = context_->txn_->get_prev_lsn(); //设置日志的prev_lsn
-        //写记录
+        InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_insert, tab_name_); // rid先草草设置为{-1, -1}
+        insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();                                        // 设置日志的prev_lsn
+        // 写记录
         rid_ = fh_->insert_record(rec.data, context_);
-        insert_log.rid_ = rid_; //重新设置log的rid
-        context_->log_mgr_->add_log_to_buffer(&insert_log); //写入日志缓冲区
+        insert_log.rid_ = rid_;                             // 重新设置log的rid
+        context_->log_mgr_->add_log_to_buffer(&insert_log); // 写入日志缓冲区
+        context_->log_mgr_->flush_log_to_disk();            // 写入日志缓冲区
         // modify wset
         WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
         context_->txn_->append_write_record(wrec);

@@ -50,11 +50,12 @@ public:
         for (auto rid : rids_)
         {
             auto rec = fh_->get_record(rid, context_);
-            //写日志
+            // 写日志
             DeleteLogRecord delete_log(context_->txn_->get_transaction_id(), *rec, rid, tab_name_);
-            delete_log.prev_lsn_ = context_->txn_->get_prev_lsn(); 
+            delete_log.prev_lsn_ = context_->txn_->get_prev_lsn();
             context_->log_mgr_->add_log_to_buffer(&delete_log);
         }
+        context_->log_mgr_->flush_log_to_disk();
         for (auto rid : rids_)
         {
             auto rec = fh_->get_record(rid, context_);
