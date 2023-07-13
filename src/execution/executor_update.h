@@ -124,7 +124,7 @@ public:
         {
             auto rec = fh_->get_record(rid, context_);
             //写日志
-            UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *rec, rid, tab_name_);
+            UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec.get()), rid, tab_name_);
             update_log.prev_lsn_ = context_->txn_->get_prev_lsn(); 
             context_->log_mgr_->add_log_to_buffer(&update_log);
         }

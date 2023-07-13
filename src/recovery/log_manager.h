@@ -230,10 +230,10 @@ public:
         prev_lsn_ = INVALID_LSN;
         table_name_ = nullptr;
     }
-    DeleteLogRecord(txn_id_t txn_id, RmRecord& delete_value_, Rid& rid, std::string table_name) 
+    DeleteLogRecord(txn_id_t txn_id, RmRecord& delete_value, Rid& rid, std::string table_name) 
         : DeleteLogRecord() {
         log_tid_ = txn_id;
-        delete_value_ = delete_value_;
+        delete_value_ = delete_value;
         rid_ = rid;
         log_tot_len_ += sizeof(int);
         log_tot_len_ += delete_value_.size;
@@ -297,10 +297,10 @@ public:
         prev_lsn_ = INVALID_LSN;
         table_name_ = nullptr;
     }
-    UpdateLogRecord(txn_id_t txn_id, RmRecord& update_value_, Rid& rid, std::string table_name) 
+    UpdateLogRecord(txn_id_t txn_id, RmRecord& update_value, Rid& rid, std::string table_name) 
         : UpdateLogRecord() {
         log_tid_ = txn_id;
-        update_value_ = update_value_;
+        update_value_ = update_value;
         rid_ = rid;
         log_tot_len_ += sizeof(int);
         log_tot_len_ += update_value_.size;
