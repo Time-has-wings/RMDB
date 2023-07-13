@@ -170,7 +170,7 @@ void RecoveryManager::undo()
 }
 void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
 {
-	auto tab_ = sm_manager_->db_.get_table(tab_name);
+	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
 	RmRecord rec(fh_->get_file_hdr().record_size);
 	auto rid_ = fh_->insert_record(buf, nullptr);
@@ -191,7 +191,7 @@ void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
 }
 void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
 {
-	auto tab_ = sm_manager_->db_.get_table(tab_name);
+	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
 	auto rec = fh_->get_record(rid, nullptr);
 	for (auto &index : tab_.indexes)
@@ -212,7 +212,7 @@ void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
 }
 void RecoveryManager::delete_record(char *tab_name, Rid &rid)
 {
-	auto tab_ = sm_manager_->db_.get_table(tab_name);
+	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
 	auto rec = fh_->get_record(rid, nullptr);
 	fh_->delete_record(rid, nullptr);

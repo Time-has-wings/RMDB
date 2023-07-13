@@ -290,6 +290,7 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
     assert(ihs_.count(index_name) == 0);
     ihs_.emplace(index_name, std::move(ih));
     tab.indexes.push_back(index_tab);
+    flush_meta();
 }
 
 /**

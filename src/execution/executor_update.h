@@ -156,4 +156,8 @@ public:
         context_->log_mgr_->flush_log_to_disk();
         return nullptr;
     }
+    Rid &rid()
+    {
+        return _abstract_rid;
+    }
 };
