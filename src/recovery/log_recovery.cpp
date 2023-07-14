@@ -156,7 +156,7 @@ void RecoveryManager::undo()
 		auto &lsn = att.second;
 		auto t = std::make_shared<LogRecord>();
 		int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), lsn); //读一条日志就需要调用一次read_log,同时因为不知道一条log的长度有多大,只好以一个缓冲区大小读出来
-		t->deserialize(buffer_.buffer_ + lsn);
+		t->deserialize(buffer_.buffer_ + 0);
 		while ((t->prev_lsn_ != -1))
 		{
 			if (t->log_type_ == INSERT)
@@ -188,7 +188,7 @@ void RecoveryManager::undo()
 			}
 			lsn = t->prev_lsn_;
 			readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), lsn); //同上
-			t->deserialize(buffer_.buffer_ + lsn);
+			t->deserialize(buffer_.buffer_ + 0);
 		}
 	}
 }
