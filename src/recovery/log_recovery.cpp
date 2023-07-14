@@ -91,47 +91,58 @@ void RecoveryManager::analyze()
  */
 void RecoveryManager::redo()
 {
-	int off_set = 0;
-	disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), 0);
-	auto t = std::make_shared<LogRecord>();
-	t->deserialize(buffer_.buffer_ + off_set);
-	while (t->log_tot_len_ != 0)
+	int log_file_size = disk_manager_->get_file_size(LOG_FILE_NAME); //日志文件大小
+	int log_length_min = (int)(sizeof(LogType) + sizeof(lsn_t) + sizeof(uint32_t) + sizeof(txn_id_t) + sizeof(lsn_t)); //最短的记录的长度
+	int buffer_size = sizeof(buffer_); //buffer_大小
+	int read_log_offset = 0; //仍旧按照一整个buffer_的大小进行读取,但是偏移量不再以page_id*sizeof(buffer_)为标准
+	int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);
+	while (readbytes > 0)
 	{
-		if (t->lsn_ < redo_lsn)
-		{
-			off_set += t->log_tot_len_;
+		int off_set = 0; //在本buffer的偏移
+		int read_real_size = std::min(buffer_size, log_file_size - read_log_offset); //read_log实际读入的大小
+		auto t = std::make_shared<LogRecord>();
+		while (true) {
 			t->deserialize(buffer_.buffer_ + off_set);
-			continue;
+			if (off_set + t->log_tot_len_ > read_real_size) //日志跨缓冲区了
+				break;
+			if (t->lsn_ < redo_lsn)
+			{
+	 			off_set += t->log_tot_len_;
+	 			continue;
+	 		}
+	 		if (t->log_type_ == INSERT)
+			{
+				InsertLogRecord temp;
+				temp.deserialize(buffer_.buffer_ + off_set);
+				char tab_name[temp.table_name_size_ + 1];
+				memset(tab_name, '\0', temp.table_name_size_ + 1);
+				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
+				insert_record(tab_name, temp.insert_value_.data, temp.rid_);
+			}
+			else if (t->log_type_ == DELETE)
+			{
+				DeleteLogRecord temp;
+				temp.deserialize(buffer_.buffer_ + off_set);
+				char tab_name[temp.table_name_size_ + 1];
+				memset(tab_name, '\0', temp.table_name_size_ + 1);
+				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
+				delete_record(tab_name, temp.rid_);
+			}
+			else if (t->log_type_ == UPDATE)
+			{
+				UpdateLogRecord temp;
+				temp.deserialize(buffer_.buffer_ + off_set);
+				char tab_name[temp.table_name_size_ + 1];
+				memset(tab_name, '\0', temp.table_name_size_ + 1);
+				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
+				update_record(tab_name, temp.update_value_.data, temp.rid_);
+			}
+			off_set += t->log_tot_len_;
+			if (off_set + log_length_min >= buffer_size) //取等时,表明刚好读完这个缓冲区
+				break; 									//不取等时,表明最后的一条日志可能会丢失一些字段(尤其是log_tot_len_字段)
 		}
-		if (t->log_type_ == INSERT)
-		{
-			InsertLogRecord temp;
-			temp.deserialize(buffer_.buffer_ + off_set);
-			char tab_name[temp.table_name_size_ + 1];
-			memset(tab_name, '\0', temp.table_name_size_ + 1);
-			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-			insert_record(tab_name, temp.insert_value_.data, temp.rid_);
-		}
-		else if (t->log_type_ == DELETE)
-		{
-			DeleteLogRecord temp;
-			temp.deserialize(buffer_.buffer_ + off_set);
-			char tab_name[temp.table_name_size_];
-			memset(tab_name, '\0', temp.table_name_size_ + 1);
-			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-			delete_record(tab_name, temp.rid_);
-		}
-		else if (t->log_type_ == UPDATE)
-		{
-			UpdateLogRecord temp;
-			temp.deserialize(buffer_.buffer_ + off_set);
-			char tab_name[temp.table_name_size_];
-			memset(tab_name, '\0', temp.table_name_size_ + 1);
-			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-			update_record(tab_name, temp.update_value_.data, temp.rid_);
-		}
-		off_set += t->log_tot_len_;
-		t->deserialize(buffer_.buffer_ + off_set);
+		read_log_offset += off_set;
+		readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);
 	}
 }
 
@@ -144,6 +155,7 @@ void RecoveryManager::undo()
 	{
 		auto &lsn = att.second;
 		auto t = std::make_shared<LogRecord>();
+		int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), lsn); //读一条日志就需要调用一次read_log,同时因为不知道一条log的长度有多大,只好以一个缓冲区大小读出来
 		t->deserialize(buffer_.buffer_ + lsn);
 		while ((t->prev_lsn_ != -1))
 		{
@@ -160,7 +172,7 @@ void RecoveryManager::undo()
 			{
 				DeleteLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + lsn);
-				char tab_name[temp.table_name_size_];
+				char tab_name[temp.table_name_size_ + 1];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
 				insert_record(tab_name, temp.delete_value_.data, temp.rid_);
@@ -169,12 +181,13 @@ void RecoveryManager::undo()
 			{
 				UpdateLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + lsn);
-				char tab_name[temp.table_name_size_];
+				char tab_name[temp.table_name_size_ + 1];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
 				update_record(tab_name, temp.orign_value_.data, temp.rid_);
 			}
 			lsn = t->prev_lsn_;
+			readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), lsn); //同上
 			t->deserialize(buffer_.buffer_ + lsn);
 		}
 	}
