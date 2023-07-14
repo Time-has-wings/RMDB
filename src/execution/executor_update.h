@@ -134,6 +134,18 @@ public:
             update_log.prev_lsn_ = context_->txn_->get_prev_lsn();
             context_->log_mgr_->add_log_to_buffer(&update_log);
             context_->txn_->set_prev_lsn(update_log.lsn_);
+        }
+        context_->log_mgr_->flush_log_to_disk();
+        for (auto &rid : rids_)
+        {
+            std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
+            RmRecord update_record(rec->size);
+            memcpy(update_record.data, rec->data, rec->size);
+            for (auto &clause : set_clauses_)
+            {
+                auto col = tab_.get_col(clause.lhs.col_name);
+                memcpy(update_record.data + col->offset, clause.rhs.raw->data, col->len);
+            }
             for (auto &index : tab_.indexes)
             {
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
@@ -160,7 +172,6 @@ public:
             WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, update_record);
             context_->txn_->append_write_record(wrec);
         }
-        context_->log_mgr_->flush_log_to_disk();
         return nullptr;
     }
     Rid &rid()

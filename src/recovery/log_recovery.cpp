@@ -98,6 +98,9 @@ void RecoveryManager::redo()
 			t->deserialize(buffer_.buffer_ + off_set);
 			continue;
 		}
+		if (t->lsn_>12240){
+			int b = 0;
+		}
 		if (t->log_type_ == INSERT)
 		{
 			InsertLogRecord temp;
