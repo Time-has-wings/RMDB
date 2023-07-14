@@ -53,6 +53,8 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
  */
 void RmFileHandle::insert_record(const Rid &rid, char *buf)
 {
+    while (file_hdr_.num_pages <= rid.page_no)
+        create_new_page_handle();
     RmPageHandle page_handle = fetch_page_handle(rid.page_no);
     int free_slot_no = rid.slot_no;
     char *free_slot = page_handle.get_slot(free_slot_no);
@@ -93,9 +95,9 @@ void RmFileHandle::update_record(const Rid &rid, char *buf, Context *context)
     // Todo:
     // 1. 获取指定记录所在的page handle
     // 2. 更新记录
-    
+
     RmPageHandle page_handle = fetch_page_handle(rid.page_no); // 1
-    char *slot = page_handle.get_slot(rid.slot_no); // 2
+    char *slot = page_handle.get_slot(rid.slot_no);            // 2
     memcpy(slot, buf, file_hdr_.record_size);
     buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
 }

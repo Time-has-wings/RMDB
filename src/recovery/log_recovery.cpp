@@ -178,7 +178,7 @@ void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
 {
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
-	auto rid_ = fh_->insert_record(buf, nullptr);
+	fh_->insert_record(rid, buf);
 	for (size_t i = 0; i < tab_.indexes.size(); ++i)
 	{
 		auto &index = tab_.indexes[i];
@@ -190,7 +190,7 @@ void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
 			memcpy(key + offset, buf + index.cols[i].offset, index.cols[i].len);
 			offset += index.cols[i].len;
 		}
-		ih->insert_entry(key, rid_, nullptr);
+		ih->insert_entry(key, rid, nullptr);
 	}
 }
 void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
@@ -213,6 +213,7 @@ void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
 		ihs->delete_entry(orign, nullptr);
 		ihs->insert_entry(update, rid, nullptr);
 	}
+	fh_->update_record(rid, buf, nullptr);
 }
 void RecoveryManager::delete_record(char *tab_name, Rid &rid)
 {
