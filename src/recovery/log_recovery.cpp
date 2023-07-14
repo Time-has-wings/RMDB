@@ -156,13 +156,13 @@ void RecoveryManager::undo()
 		auto &lsn = att.second;
 		auto t = std::make_shared<LogRecord>();
 		int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), lsn); //读一条日志就需要调用一次read_log,同时因为不知道一条log的长度有多大,只好以一个缓冲区大小读出来
-		t->deserialize(buffer_.buffer_ + 0);
+		t->deserialize(buffer_.buffer_);
 		while ((t->prev_lsn_ != -1))
 		{
 			if (t->log_type_ == INSERT)
 			{
 				InsertLogRecord temp;
-				temp.deserialize(buffer_.buffer_ + lsn);
+				temp.deserialize(buffer_.buffer_);
 				char tab_name[temp.table_name_size_ + 1];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
@@ -171,7 +171,7 @@ void RecoveryManager::undo()
 			else if (t->log_type_ == DELETE)
 			{
 				DeleteLogRecord temp;
-				temp.deserialize(buffer_.buffer_ + lsn);
+				temp.deserialize(buffer_.buffer_);
 				char tab_name[temp.table_name_size_ + 1];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
@@ -180,7 +180,7 @@ void RecoveryManager::undo()
 			else if (t->log_type_ == UPDATE)
 			{
 				UpdateLogRecord temp;
-				temp.deserialize(buffer_.buffer_ + lsn);
+				temp.deserialize(buffer_.buffer_);
 				char tab_name[temp.table_name_size_ + 1];
 				memset(tab_name, '\0', temp.table_name_size_ + 1);
 				memcpy(tab_name, temp.table_name_, temp.table_name_size_);
@@ -188,7 +188,7 @@ void RecoveryManager::undo()
 			}
 			lsn = t->prev_lsn_;
 			readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), lsn); //同上
-			t->deserialize(buffer_.buffer_ + 0);
+			t->deserialize(buffer_.buffer_);
 		}
 	}
 }
