@@ -120,7 +120,7 @@ void IxNodeHandle::insert_pairs(int pos, const char *key, const Rid *rid, int n)
     // 不合法 不做处理 直接返回
     if (pos < 0 || pos > page_hdr->num_key)
         return;
-    int mv_size = page_hdr->num_key - pos + n - 1;
+    int mv_size = page_hdr->num_key - pos;
     if (mv_size > 0)
     {
         char *k = get_key(pos);
@@ -486,13 +486,11 @@ bool IxIndexHandle::coalesce_or_redistribute(IxNodeHandle *node, Transaction *tr
         IxNodeHandle *parent = fetch_node(node->get_parent_page_no());
         IxNodeHandle *neighbor;
         int pos = parent->find_child(node);
-        if (pos != 0)
-        { // 使用前驱结点
-            neighbor = fetch_node(parent->value_at(pos - 1));
-        }
+        if (node->get_prev_leaf() != -1)
+            neighbor = fetch_node(node->get_prev_leaf());
         else
-        { // 使用后继结点
-            neighbor = fetch_node(parent->value_at(pos + 1));
+        {
+            neighbor = fetch_node(node->get_next_leaf());
         }
         buffer_pool_manager_->unpin_page(parent->get_page_id(), true);
         buffer_pool_manager_->unpin_page(neighbor->get_page_id(), true);

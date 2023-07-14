@@ -105,13 +105,15 @@ void RecoveryManager::redo()
 			char tab_name[temp.table_name_size_ + 1];
 			memset(tab_name, '\0', temp.table_name_size_ + 1);
 			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
-			insert_record(tab_name, temp.insert_value_.data, temp.rid_);
+			char *newbuf = new char[temp.insert_value_.size];
+			memcpy(newbuf, temp.insert_value_.data, temp.insert_value_.size);
+			insert_record(tab_name, newbuf, temp.rid_);
 		}
 		else if (t->log_type_ == DELETE)
 		{
 			DeleteLogRecord temp;
 			temp.deserialize(buffer_.buffer_ + off_set);
-			char tab_name[temp.table_name_size_];
+			char tab_name[temp.table_name_size_ + 1];
 			memset(tab_name, '\0', temp.table_name_size_ + 1);
 			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
 			delete_record(tab_name, temp.rid_);
@@ -120,9 +122,11 @@ void RecoveryManager::redo()
 		{
 			UpdateLogRecord temp;
 			temp.deserialize(buffer_.buffer_ + off_set);
-			char tab_name[temp.table_name_size_];
+			char tab_name[temp.table_name_size_ + 1];
 			memset(tab_name, '\0', temp.table_name_size_ + 1);
-			memcpy(tab_name, temp.table_name_, temp.table_name_size_);
+			memcpy(tab_name, temp.table_name_, temp.table_name_size_ + 1);
+			char *newbuf = new char[temp.update_value_.size];
+			memcpy(newbuf, temp.update_value_.data, temp.update_value_.size);
 			update_record(tab_name, temp.update_value_.data, temp.rid_);
 		}
 		off_set += t->log_tot_len_;
@@ -220,7 +224,6 @@ void RecoveryManager::delete_record(char *tab_name, Rid &rid)
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
 	auto rec = fh_->get_record(rid, nullptr);
-	fh_->delete_record(rid, nullptr);
 	for (size_t i = 0; i < tab_.indexes.size(); ++i)
 	{
 		auto &index = tab_.indexes[i];
@@ -234,4 +237,5 @@ void RecoveryManager::delete_record(char *tab_name, Rid &rid)
 		}
 		ih->delete_entry(key, nullptr);
 	}
+	fh_->delete_record(rid, nullptr);
 }
