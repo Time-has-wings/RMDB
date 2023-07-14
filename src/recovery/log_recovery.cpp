@@ -78,8 +78,10 @@ void RecoveryManager::analyze()
 					t_id->second = t->lsn_;
 			}
 			off_set += t->log_tot_len_;
-			if (off_set + log_length_min >= buffer_size) //取等时,表明刚好读完这个缓冲区
-				break; 									//不取等时,表明最后的一条日志可能会丢失一些字段(尤其是log_tot_len_字段)
+			if (off_set == read_real_size) 
+				break; //读完整个缓冲区了
+			if (off_set + log_length_min > read_real_size) 
+				break; 									//表明最后的一条日志可能会丢失一些字段(尤其是log_tot_len_字段)
 		}
 		read_log_offset += off_set;
 		readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);
@@ -138,8 +140,10 @@ void RecoveryManager::redo()
 				update_record(tab_name, temp.update_value_.data, temp.rid_);
 			}
 			off_set += t->log_tot_len_;
-			if (off_set + log_length_min >= buffer_size) //取等时,表明刚好读完这个缓冲区
-				break; 									//不取等时,表明最后的一条日志可能会丢失一些字段(尤其是log_tot_len_字段)
+			if (off_set == read_real_size) 
+				break; //读完整个缓冲区了
+			if (off_set + log_length_min > read_real_size) 
+				break; 									//表明最后的一条日志可能会丢失一些字段(尤其是log_tot_len_字段)
 		}
 		read_log_offset += off_set;
 		readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);
