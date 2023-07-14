@@ -529,7 +529,7 @@ bool IxIndexHandle::adjust_root(IxNodeHandle *old_root_node)
         buffer_pool_manager_->unpin_page(child->get_page_id(), true);
         return true;
     }
-    else if (old_root_node->is_leaf_page() && old_root_node->get_size() == 0)
+    else if (old_root_node->is_leaf_page() && old_root_node->get_size() == 0 && old_root_node->page_hdr->parent != -1)
     {
         release_node_handle(*old_root_node); // 删除原来的root
         file_hdr_->root_page_ = INVALID_PAGE_ID;
@@ -748,7 +748,6 @@ IxNodeHandle *IxIndexHandle::fetch_node(int page_no) const
 {
     Page *page = buffer_pool_manager_->fetch_page(PageId{fd_, page_no});
     IxNodeHandle *node = new IxNodeHandle(file_hdr_, page);
-
     return node;
 }
 
