@@ -130,6 +130,12 @@ void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Co
             sm_manager_->show_indexes(x->tab_name_, context);
             break;
         }
+        case T_LoadData:
+        {
+            sm_manager_->load_data_into_table(x->tab_name_, x->file_name_);
+            break;
+        }
+
         default:
             throw InternalError("Unexpected field type");
             break;

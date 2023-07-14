@@ -21,7 +21,7 @@ using namespace ast;
 %define parse.error verbose
 
 // keywords
-%token SHOW TABLES CREATE TABLE DROP DESC INSERT INTO VALUES DELETE FROM ASC ORDER BY COUNT MIN MAX SUM AS LIMIT
+%token SHOW TABLES CREATE TABLE DROP DESC INSERT INTO VALUES DELETE FROM ASC ORDER BY COUNT MIN MAX SUM AS LIMIT LOAD
 WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP TXN_BEGIN TXN_COMMIT TXN_ABORT TXN_ROLLBACK ORDER_BY
 // non-keywords
 %token LEQ NEQ GEQ T_EOF
@@ -43,7 +43,7 @@ WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP 
 %type <sv_expr> expr
 %type <sv_val> value
 %type <sv_vals> valueList
-%type <sv_str> tbName colName asName
+%type <sv_str> tbName colName asName fileName
 %type <sv_strs> tableList colNameList
 %type <sv_col> col
 %type <sv_group_val> groupVal
@@ -115,6 +115,10 @@ dbStmt:
     |   SHOW INDEX FROM tbName
     {
         $$ = std::make_shared<ShowIndex>($4);
+    }
+    |   LOAD fileName INTO tbName
+    {
+        $$ = std::make_shared<LoadData>($4, $2);
     }
     ;
 
@@ -450,4 +454,5 @@ tbName: IDENTIFIER;
 colName: IDENTIFIER;
 
 asName: IDENTIFIER;
+fileName: IDENTIFIER;
 %%

@@ -1,1 +1,2 @@
-./build/bin/rmdb test
+./build/bin/rmdb_client
+

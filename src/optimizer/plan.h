@@ -42,7 +42,8 @@ typedef enum PlanTag
     T_NestLoop,
     T_Sort,
     T_Projection,
-    T_Showindex
+    T_Showindex,
+    T_LoadData
 } PlanTag;
 
 // 查询执行计划
@@ -178,8 +179,15 @@ public:
         Plan::tag = tag;
         tab_name_ = std::move(tab_name);
     }
+    OtherPlan(PlanTag tag, std::string tab_name, std::string file_name)
+    {
+        Plan::tag = tag;
+        tab_name_ = std::move(tab_name);
+        file_name_ = std::move(file_name);
+    }
     ~OtherPlan() {}
     std::string tab_name_;
+    std::string file_name_;
 };
 
 class plannerInfo
