@@ -486,11 +486,13 @@ bool IxIndexHandle::coalesce_or_redistribute(IxNodeHandle *node, Transaction *tr
         IxNodeHandle *parent = fetch_node(node->get_parent_page_no());
         IxNodeHandle *neighbor;
         int pos = parent->find_child(node);
-        if (node->get_prev_leaf() != -1)
-            neighbor = fetch_node(node->get_prev_leaf());
+        if (pos != 0)
+        { // 使用前驱结点
+            neighbor = fetch_node(parent->value_at(pos - 1));
+        }
         else
-        {
-            neighbor = fetch_node(node->get_next_leaf());
+        { // 使用后继结点
+            neighbor = fetch_node(parent->value_at(pos + 1));
         }
         buffer_pool_manager_->unpin_page(parent->get_page_id(), true);
         buffer_pool_manager_->unpin_page(neighbor->get_page_id(), true);
