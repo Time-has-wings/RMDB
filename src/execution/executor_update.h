@@ -146,8 +146,15 @@ public:
                     memcpy(orign + offset, rec->data + index.cols[i].offset, index.cols[i].len);
                     offset += index.cols[i].len;
                 }
-                ihs->delete_entry(orign, context_->txn_);
-                ihs->insert_entry(update, rid, context_->txn_);
+                if (memcmp(update, orign, index.col_tot_len) == 0)
+                    continue;
+                else if (ihs->get_value(update, nullptr, nullptr))
+                    throw IndexEnrtyExistsError();
+                else
+                {
+                    ihs->delete_entry(orign, context_->txn_);
+                    ihs->insert_entry(update, rid, context_->txn_);
+                }
             }
             fh_->update_record(rid, update_record.data, context_);
             WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, update_record);

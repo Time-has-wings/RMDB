@@ -15,63 +15,69 @@ See the Mulan PSL v2 for more details. */
  */
 void RecoveryManager::analyze()
 {
-	int off_set = 0;
-	redo_lsn = INT32_MAX;
-	disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), 0);
-	auto t = std::make_shared<LogRecord>();
-	t->deserialize(buffer_.buffer_ + off_set);
-	while (t->log_tot_len_ != 0)
+	int page_id = 0;
+	int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), page_id * sizeof(buffer_));
+	while (readbytes > 0)
 	{
-		if (t->log_type_ == begin)
-		{
-			ATT.push_back(std::pair<txn_id_t, lsn_t>{t->log_tid_, t->lsn_});
-		}
-		else if (t->log_type_ == commit)
-		{
-			ATT.erase(std::find_if(ATT.begin(), ATT.end(), [t](const std::pair<txn_id_t, lsn_t> &s)
-								   { return s.first == t->log_tid_; }));
-		}
-		else if (t->log_type_ == INSERT)
-		{
-			InsertLogRecord temp;
-			temp.deserialize(buffer_.buffer_ + off_set);
-			redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
-			if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
-							 { return s == temp.rid_.page_no; }) != DPT.end())
-				DPT.push_back(temp.rid_.page_no);
-			auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
-									 { return s.first == temp.log_tid_; });
-			if (t_id != ATT.end())
-				t_id->second = t->lsn_;
-		}
-		else if (t->log_type_ == DELETE)
-		{
-			DeleteLogRecord temp;
-			temp.deserialize(buffer_.buffer_ + off_set);
-			redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
-			if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
-							 { return s == temp.rid_.page_no; }) != DPT.end())
-				DPT.push_back(temp.rid_.page_no);
-			auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
-									 { return s.first == temp.log_tid_; });
-			if (t_id != ATT.end())
-				t_id->second = t->lsn_;
-		}
-		else if (t->log_type_ == UPDATE)
-		{
-			UpdateLogRecord temp;
-			temp.deserialize(buffer_.buffer_ + off_set);
-			redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
-			if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
-							 { return s == temp.rid_.page_no; }) != DPT.end())
-				DPT.push_back(temp.rid_.page_no);
-			auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
-									 { return s.first == temp.log_tid_; });
-			if (t_id != ATT.end())
-				t_id->second = t->lsn_;
-		}
-		off_set += t->log_tot_len_;
+		page_id++;
+		int off_set = 0;
+		redo_lsn = sizeof(buffer_) * (page_id + 1);
+		auto t = std::make_shared<LogRecord>();
 		t->deserialize(buffer_.buffer_ + off_set);
+		while (t->log_tot_len_ != 0)
+		{
+			if (t->log_type_ == begin)
+			{
+				ATT.push_back(std::pair<txn_id_t, lsn_t>{t->log_tid_, t->lsn_});
+			}
+			else if (t->log_type_ == commit)
+			{
+				ATT.erase(std::find_if(ATT.begin(), ATT.end(), [t](const std::pair<txn_id_t, lsn_t> &s)
+									   { return s.first == t->log_tid_; }));
+			}
+			else if (t->log_type_ == INSERT)
+			{
+				InsertLogRecord temp;
+				temp.deserialize(buffer_.buffer_ + off_set);
+				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
+				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
+								 { return s == temp.rid_.page_no; }) != DPT.end())
+					DPT.push_back(temp.rid_.page_no);
+				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
+										 { return s.first == temp.log_tid_; });
+				if (t_id != ATT.end())
+					t_id->second = t->lsn_;
+			}
+			else if (t->log_type_ == DELETE)
+			{
+				DeleteLogRecord temp;
+				temp.deserialize(buffer_.buffer_ + off_set);
+				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
+				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
+								 { return s == temp.rid_.page_no; }) != DPT.end())
+					DPT.push_back(temp.rid_.page_no);
+				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
+										 { return s.first == temp.log_tid_; });
+				if (t_id != ATT.end())
+					t_id->second = t->lsn_;
+			}
+			else if (t->log_type_ == UPDATE)
+			{
+				UpdateLogRecord temp;
+				temp.deserialize(buffer_.buffer_ + off_set);
+				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
+				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
+								 { return s == temp.rid_.page_no; }) != DPT.end())
+					DPT.push_back(temp.rid_.page_no);
+				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
+										 { return s.first == temp.log_tid_; });
+				if (t_id != ATT.end())
+					t_id->second = t->lsn_;
+			}
+			off_set += t->log_tot_len_;
+			t->deserialize(buffer_.buffer_ + off_set);
+		}
+		readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), page_id * sizeof(buffer_));
 	}
 }
 
