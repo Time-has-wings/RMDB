@@ -113,6 +113,8 @@ public:
         {
             sorted_tuples.push_back(std::move(v.at(i).id));
         }
+        v.clear();
+        v.shrink_to_fit();
     }
     Rid &rid() override { return _abstract_rid; }
 };

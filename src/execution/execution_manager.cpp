@@ -188,11 +188,13 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 	Value res;
 	Value temp;
 	bool first = true;
+	std::vector<std::string> columns;
 	// 执行query_plan
 	for (executorTreeRoot->beginTuple(); !executorTreeRoot->is_end(); executorTreeRoot->nextTuple())
 	{
 		auto Tuple = executorTreeRoot->Next();
-		std::vector<std::string> columns;
+		columns.clear();
+		columns.shrink_to_fit();
 		for (auto &col : executorTreeRoot->cols())
 		{
 			if (has_group && func_name == "COUNT")
