@@ -36,6 +36,7 @@ white_space [ \t]+
 new_line "\r"|"\n"|"\r\n"
 sign "+"|"-"
 identifier {alpha}(_|{alpha}|{digit})*
+file_name (_|{alpha}|{digit}|\/)*\.csv
 value_int {sign}?{digit}{1,9}
 value_bigint {sign}?{digit}{10,19}
 value_invalid {sign}?{digit}{20,}
@@ -83,6 +84,7 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 "CHAR" { return CHAR; }
 "FLOAT" { return FLOAT; }
 "INDEX" { return INDEX; }
+"LOAD" { return LOAD; }
 "AND" { return AND; }
 "JOIN" {return JOIN;}
 "EXIT" { return EXIT; }
@@ -104,6 +106,10 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 {identifier} {
     yylval->sv_str = yytext;
     return IDENTIFIER;
+}
+{file_name} {
+    yylval->sv_str = yytext;
+    return FILENAME;
 }
     /* literals */
 {value_int} {
