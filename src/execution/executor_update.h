@@ -169,7 +169,7 @@ public:
                 }
             }
             fh_->update_record(rid, update_record.data, context_);
-            WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, update_record);
+            WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, *rec.get());
             context_->txn_->append_write_record(wrec);
         }
         return nullptr;
