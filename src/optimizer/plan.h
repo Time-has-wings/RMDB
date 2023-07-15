@@ -174,7 +174,11 @@ public:
 class OtherPlan : public Plan
 {
 public:
-    OtherPlan(PlanTag tag, std::string tab_name, std::string file_name)
+    OtherPlan(PlanTag tag, std::string tab_name)
+    {
+        Plan::tag = tag;
+        tab_name_ = std::move(tab_name);
+    }OtherPlan(PlanTag tag, std::string tab_name, std::string file_name)
     {
         Plan::tag = tag;
         tab_name_ = std::move(tab_name);
