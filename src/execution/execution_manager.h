@@ -25,20 +25,21 @@ See the Mulan PSL v2 for more details. */
 #include "executor_abstract.h"
 #include "transaction/transaction_manager.h"
 
-
-class QlManager {
-   private:
+class QlManager
+{
+private:
     SmManager *sm_manager_;
     TransactionManager *txn_mgr_;
 
-   public:
-    QlManager(SmManager *sm_manager, TransactionManager *txn_mgr) 
-        : sm_manager_(sm_manager),  txn_mgr_(txn_mgr) {}
+public:
+    QlManager(SmManager *sm_manager, TransactionManager *txn_mgr)
+        : sm_manager_(sm_manager), txn_mgr_(txn_mgr) {}
 
     void run_mutli_query(std::shared_ptr<Plan> plan, Context *context);
     void run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Context *context);
     void select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
-                        Context *context);
+                     Context *context);
 
     void run_dml(std::unique_ptr<AbstractExecutor> exec);
+    bool outputfile = true;
 };

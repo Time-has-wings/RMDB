@@ -2,7 +2,7 @@
 RMDB is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
-        http://license.coscl.org.cn/MulanPSL2
+		http://license.coscl.org.cn/MulanPSL2
 THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
@@ -20,7 +20,7 @@ See the Mulan PSL v2 for more details. */
 #include "index/ix.h"
 #include "record_printer.h"
 
-const char* help_info = "Supported SQL syntax:\n"
+const char *help_info = "Supported SQL syntax:\n"
 						"  command ;\n"
 						"command:\n"
 						"  CREATE TABLE table_name (column_name type [, column_name type ...])\n"
@@ -45,7 +45,7 @@ const char* help_info = "Supported SQL syntax:\n"
 						"  {* | column [, column ...]}\n";
 
 // 主要负责执行DDL语句
-void QlManager::run_mutli_query(std::shared_ptr<Plan> plan, Context* context)
+void QlManager::run_mutli_query(std::shared_ptr<Plan> plan, Context *context)
 {
 	if (auto x = std::dynamic_pointer_cast<DDLPlan>(plan))
 	{
@@ -79,7 +79,7 @@ void QlManager::run_mutli_query(std::shared_ptr<Plan> plan, Context* context)
 }
 
 // 执行help; show tables; desc table; begin; commit; abort;语句
-void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t* txn_id, Context* context)
+void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Context *context)
 {
 	if (auto x = std::dynamic_pointer_cast<OtherPlan>(plan))
 	{
@@ -145,13 +145,13 @@ void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t* txn_id, Co
 
 // 执行select语句，select语句的输出除了需要返回客户端外，还需要写入output.txt文件中
 void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
-	Context* context)
+							Context *context)
 {
 	std::vector<std::string> captions;
 	std::string func_name;
 	bool has_group = false;
 	captions.reserve(sel_cols.size());
-	for (auto& sel_col : sel_cols)
+	for (auto &sel_col : sel_cols)
 	{
 		if (sel_col.isGroup)
 		{
@@ -171,13 +171,16 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 	rec_printer.print_separator(context);
 	// print header into file
 	std::fstream outfile;
-	outfile.open("output.txt", std::ios::out | std::ios::app);
-	outfile << "|";
-	for (int i = 0; i < captions.size(); ++i)
+	if (outputfile)
 	{
-		outfile << " " << captions[i] << " |";
+		outfile.open("output.txt", std::ios::out | std::ios::app);
+		outfile << "|";
+		for (int i = 0; i < captions.size(); ++i)
+		{
+			outfile << " " << captions[i] << " |";
+		}
+		outfile << "\n";
 	}
-	outfile << "\n";
 
 	// Print records
 	size_t num_rec = 0;
@@ -190,7 +193,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 	{
 		auto Tuple = executorTreeRoot->Next();
 		std::vector<std::string> columns;
-		for (auto& col : executorTreeRoot->cols())
+		for (auto &col : executorTreeRoot->cols())
 		{
 			if (has_group && func_name == "COUNT")
 			{
@@ -198,19 +201,19 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 				continue;
 			}
 			std::string col_str;
-			char* rec_buf = Tuple->data + col.offset;
+			char *rec_buf = Tuple->data + col.offset;
 			if (col.type == TYPE_INT)
 			{
 				if (has_group)
 				{
 					if (first)
 					{
-						res.set_int(*(int*)rec_buf);
+						res.set_int(*(int *)rec_buf);
 						first = false;
 					}
 					else
 					{
-						temp.set_int(*(int*)rec_buf);
+						temp.set_int(*(int *)rec_buf);
 
 						if (func_name == "SUM")
 							res += temp;
@@ -221,7 +224,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 					}
 					continue;
 				}
-				col_str = std::to_string(*(int*)rec_buf);
+				col_str = std::to_string(*(int *)rec_buf);
 			}
 			else if (col.type == TYPE_FLOAT)
 			{
@@ -229,12 +232,12 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 				{
 					if (first)
 					{
-						res.set_float(*(float*)rec_buf);
+						res.set_float(*(float *)rec_buf);
 						first = false;
 					}
 					else
 					{
-						temp.set_float(*(float*)rec_buf);
+						temp.set_float(*(float *)rec_buf);
 						if (func_name == "SUM")
 							res += temp;
 						else if (func_name == "MAX")
@@ -244,15 +247,15 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 					}
 					continue;
 				}
-				col_str = std::to_string(*(float*)rec_buf);
+				col_str = std::to_string(*(float *)rec_buf);
 			}
 			else if (col.type == TYPE_BIGINT)
 			{
-				col_str = std::to_string(*(int64_t*)rec_buf);
+				col_str = std::to_string(*(int64_t *)rec_buf);
 			}
 			else if (col.type == TYPE_STRING)
 			{
-				col_str = std::string((char*)rec_buf, col.len);
+				col_str = std::string((char *)rec_buf, col.len);
 				col_str.resize(strlen(col_str.c_str()));
 				if (has_group)
 				{
@@ -274,7 +277,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			}
 			else if (col.type == TYPE_DATETIME)
 			{
-				int64_t temp = *(int64_t*)rec_buf;
+				int64_t temp = *(int64_t *)rec_buf;
 				col_str = datetime::trans_datetime(temp);
 			}
 			columns.push_back(col_str);
@@ -283,12 +286,15 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 		{ // print record into buffer
 			rec_printer.print_record(columns, context);
 			// print record into file
-			outfile << "|";
-			for (int i = 0; i < columns.size(); ++i)
+			if (outputfile)
 			{
-				outfile << " " << columns[i] << " |";
+				outfile << "|";
+				for (int i = 0; i < columns.size(); ++i)
+				{
+					outfile << " " << columns[i] << " |";
+				}
+				outfile << "\n";
 			}
-			outfile << "\n";
 			num_rec++;
 		}
 	}
@@ -314,13 +320,17 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			}
 		}
 		// print record into file
-		outfile << "|";
-		outfile << " " << ans << " |";
-		outfile << "\n";
-		rec_printer.print_record(std::vector<std::string>{ ans }, context);
+		if (outputfile)
+		{
+			outfile << "|";
+			outfile << " " << ans << " |";
+			outfile << "\n";
+		}
+		rec_printer.print_record(std::vector<std::string>{ans}, context);
 		num_rec++;
 	}
-	outfile.close();
+	if (outputfile)
+		outfile.close();
 	// Print footer into buffer
 	rec_printer.print_separator(context);
 	// Print record count into buffer

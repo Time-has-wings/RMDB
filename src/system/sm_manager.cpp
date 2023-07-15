@@ -153,8 +153,11 @@ void SmManager::close_db()
 void SmManager::show_tables(Context *context)
 {
 	std::fstream outfile;
-	outfile.open("output.txt", std::ios::out | std::ios::app);
-	outfile << "| Tables |\n";
+	if (outputfile)
+	{
+		outfile.open("output.txt", std::ios::out | std::ios::app);
+		outfile << "| Tables |\n";
+	}
 	RecordPrinter printer(1);
 	printer.print_separator(context);
 	printer.print_record({"Tables"}, context);
@@ -163,10 +166,12 @@ void SmManager::show_tables(Context *context)
 	{
 		auto &tab = entry.second;
 		printer.print_record({tab.name}, context);
-		outfile << "| " << tab.name << " |\n";
+		if (outfile)
+			outfile << "| " << tab.name << " |\n";
 	}
 	printer.print_separator(context);
-	outfile.close();
+	if (outfile)
+		outfile.close();
 }
 
 /**
@@ -341,32 +346,38 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<ColMet
 void SmManager::show_indexes(const std::string &tab_name, Context *context)
 {
 	std::fstream outfile;
-	outfile.open("output.txt", std::ios::out | std::ios::app);
+	if (outputfile)
+		outfile.open("output.txt", std::ios::out | std::ios::app);
 	TabMeta &tab = db_.get_table(tab_name);
 	// if (!tab.)
 	for (auto &index : tab.indexes)
 	{
-		outfile << "| " << tab.name << " | "
-				<< "unique"
-				<< " | (";
+		if (outputfile)
+		{
+			outfile << "| " << tab.name << " | "
+					<< "unique"
+					<< " | (";
+			int i = 0;
+			for (auto &col : index.cols)
+			{
+				if (i + 1 == index.cols.size())
+					outfile << col.name;
+				else
+					outfile << col.name << ",";
+				i++;
+			}
+			outfile << ") |\n";
+		}
 		RecordPrinter printer(1);
 		printer.print_separator(context);
 		printer.print_record({tab_name}, context);
 		printer.print_separator(context);
 		printer.print_record_index(index.cols, context);
-		int i = 0;
-		for (auto &col : index.cols)
-		{
-			if (i + 1 == index.cols.size())
-				outfile << col.name;
-			else
-				outfile << col.name << ",";
-			i++;
-		}
-		outfile << ") |\n";
+
 		printer.print_separator(context);
 	}
-	outfile.close();
+	if (outfile)
+		outfile.close();
 }
 
 void SmManager::rollback_delete(const std::string &tab_name,
