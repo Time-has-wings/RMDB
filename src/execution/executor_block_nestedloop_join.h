@@ -27,8 +27,8 @@ private:
     std::vector<std::pair<std::unique_ptr<RmRecord>, std::vector<Value>>> blocks;
     std::vector<Value> rVals;
     int64_t now_size = 0;
-    int rec_size;
-    int idx;
+    int64_t rec_size;
+    int64_t idx;
     bool isend;
 
 public:
