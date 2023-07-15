@@ -111,9 +111,9 @@ void RecoveryManager::redo()
 				break;
 			if (t->lsn_ < redo_lsn)
 			{
+				off_set += t->log_tot_len_;
 				if (off_set == read_log_offset)
 					break;
-				off_set += t->log_tot_len_;
 				continue;
 			}
 			if (t->log_type_ == INSERT)
