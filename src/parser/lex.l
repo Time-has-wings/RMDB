@@ -36,7 +36,7 @@ white_space [ \t]+
 new_line "\r"|"\n"|"\r\n"
 sign "+"|"-"
 identifier {alpha}(_|{alpha}|{digit})*
-file_name (\_|{alpha}|{digit}|\/|\-|\.)+?(\.{alpha}*)?
+file_name (_|{alpha}|{digit}|\/)*\.csv
 value_int {sign}?{digit}{1,9}
 value_bigint {sign}?{digit}{10,19}
 value_invalid {sign}?{digit}{20,}
