@@ -485,6 +485,9 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 		ColMeta col = {
 			.tab_name = tab_name,
 			.name = word,
+			.type = TYPE_INVALID,
+			.len = 0,
+			.offset = 0,
 			.index = false};
 		tab.cols.push_back(col);
 	}
