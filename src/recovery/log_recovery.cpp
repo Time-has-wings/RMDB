@@ -112,7 +112,7 @@ void RecoveryManager::redo()
 			if (t->lsn_ < redo_lsn)
 			{
 				off_set += t->log_tot_len_;
-				if (off_set == read_log_offset)
+				if (off_set == read_real_size)
 					break;
 				continue;
 			}
