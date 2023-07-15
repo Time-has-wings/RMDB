@@ -27,7 +27,7 @@ WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP 
 %token LEQ NEQ GEQ T_EOF
 
 // type-specific tokens
-%token <sv_str> IDENTIFIER VALUE_STRING
+%token <sv_str> IDENTIFIER VALUE_STRING FILENAME
 %token <sv_int> VALUE_INT
 %token <sv_bigint> VALUE_BIGINT
 %token <sv_datetime> VALUE_DATETIME
@@ -454,5 +454,5 @@ tbName: IDENTIFIER;
 colName: IDENTIFIER;
 
 asName: IDENTIFIER;
-fileName: IDENTIFIER;
+fileName: FILENAME;
 %%

@@ -35,8 +35,8 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED
-# define YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED
+#ifndef YY_YY_HOME_PYGONE_TMP_TMP_HJRCPLBKRL_SRC_PARSER_YACC_TAB_H_INCLUDED
+# define YY_YY_HOME_PYGONE_TMP_TMP_HJRCPLBKRL_SRC_PARSER_YACC_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -100,11 +100,12 @@ extern int yydebug;
     T_EOF = 301,                   /* T_EOF  */
     IDENTIFIER = 302,              /* IDENTIFIER  */
     VALUE_STRING = 303,            /* VALUE_STRING  */
-    VALUE_INT = 304,               /* VALUE_INT  */
-    VALUE_BIGINT = 305,            /* VALUE_BIGINT  */
-    VALUE_DATETIME = 306,          /* VALUE_DATETIME  */
-    VALUE_INVALID = 307,           /* VALUE_INVALID  */
-    VALUE_FLOAT = 308              /* VALUE_FLOAT  */
+    FILENAME = 304,                /* FILENAME  */
+    VALUE_INT = 305,               /* VALUE_INT  */
+    VALUE_BIGINT = 306,            /* VALUE_BIGINT  */
+    VALUE_DATETIME = 307,          /* VALUE_DATETIME  */
+    VALUE_INVALID = 308,           /* VALUE_INVALID  */
+    VALUE_FLOAT = 309              /* VALUE_FLOAT  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -131,4 +132,4 @@ struct YYLTYPE
 int yyparse (void);
 
 
-#endif /* !YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED  */
+#endif /* !YY_YY_HOME_PYGONE_TMP_TMP_HJRCPLBKRL_SRC_PARSER_YACC_TAB_H_INCLUDED  */
