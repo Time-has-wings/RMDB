@@ -9,7 +9,6 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
 #pragma once
-
 #include "index/ix.h"
 #include "record/rm_file_handle.h"
 #include "sm_defs.h"

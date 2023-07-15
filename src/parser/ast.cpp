@@ -9,8 +9,9 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 #include "ast.h"
 
-namespace ast {
+namespace ast
+{
 
-std::shared_ptr<TreeNode> parse_tree;
+	std::shared_ptr<TreeNode> parse_tree;
 
 }

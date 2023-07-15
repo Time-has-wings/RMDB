@@ -1,3 +1,3 @@
-set(SOURCES datetime.cpp)
+set(SOURCES datetime.cpp LoadData.cpp)
 add_library(sourcelib STATIC ${SOURCES})
 

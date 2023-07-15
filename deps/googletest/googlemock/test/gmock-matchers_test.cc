@@ -2539,13 +2539,13 @@ TEST(NotTest, NotMatcherSafelyCastsMonomorphicMatchers) {
 }
 
 // Helper to allow easy testing of AllOf matchers with num parameters.
-void AllOfMatches(int num, const Matcher<int>& m) {
+void AllOfMatches(int int_num, const Matcher<int>& m) {
   SCOPED_TRACE(Describe(m));
   EXPECT_TRUE(m.Matches(0));
-  for (int i = 1; i <= num; ++i) {
+  for (int i = 1; i <= int_num; ++i) {
     EXPECT_FALSE(m.Matches(i));
   }
-  EXPECT_TRUE(m.Matches(num + 1));
+  EXPECT_TRUE(m.Matches(int_num + 1));
 }
 
 // Tests that AllOf(m1, ..., mn) matches any value that matches all of
@@ -2716,23 +2716,23 @@ TEST(AllOfTest, ExplainsResult) {
 }
 
 // Helper to allow easy testing of AnyOf matchers with num parameters.
-static void AnyOfMatches(int num, const Matcher<int>& m) {
+static void AnyOfMatches(int int_num, const Matcher<int>& m) {
   SCOPED_TRACE(Describe(m));
   EXPECT_FALSE(m.Matches(0));
-  for (int i = 1; i <= num; ++i) {
+  for (int i = 1; i <= int_num; ++i) {
     EXPECT_TRUE(m.Matches(i));
   }
-  EXPECT_FALSE(m.Matches(num + 1));
+  EXPECT_FALSE(m.Matches(int_num + 1));
 }
 
-static void AnyOfStringMatches(int num, const Matcher<std::string>& m) {
+static void AnyOfStringMatches(int int_num, const Matcher<std::string>& m) {
   SCOPED_TRACE(Describe(m));
   EXPECT_FALSE(m.Matches(std::to_string(0)));
 
-  for (int i = 1; i <= num; ++i) {
+  for (int i = 1; i <= int_num; ++i) {
     EXPECT_TRUE(m.Matches(std::to_string(i)));
   }
-  EXPECT_FALSE(m.Matches(std::to_string(num + 1)));
+  EXPECT_FALSE(m.Matches(std::to_string(int_num + 1)));
 }
 
 // Tests that AnyOf(m1, ..., mn) matches any value that matches at

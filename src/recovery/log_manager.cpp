@@ -16,9 +16,9 @@ See the Mulan PSL v2 for more details. */
  * @param {LogRecord*} log_record 要写入缓冲区的日志记录
  * @return {lsn_t} 返回该日志的日志记录号
  */
-lsn_t LogManager::add_log_to_buffer(LogRecord *log_record)
+lsn_t LogManager::add_log_to_buffer(LogRecord* log_record)
 {
-	std::unique_lock<std::mutex> lock{latch_};		   // 互斥访问
+	std::unique_lock<std::mutex> lock{ latch_ };           // 互斥访问
 	if (log_buffer_.is_full(log_record->log_tot_len_)) // 日志缓冲区已满
 	{
 		flush_log_to_disk(); // 写入磁盘么? 这里调用会不会受上面的lock的影响啊
@@ -31,7 +31,7 @@ lsn_t LogManager::add_log_to_buffer(LogRecord *log_record)
 	log_record->serialize(dest);
 	memcpy(log_buffer_.buffer_ + log_buffer_.offset_, dest, log_record->log_tot_len_);
 	log_buffer_.offset_ += log_record->log_tot_len_;
-	lock.unlock();			 // 解锁
+	lock.unlock();             // 解锁
 	return log_record->lsn_; // 返回日志记录号
 }
 
@@ -40,7 +40,7 @@ lsn_t LogManager::add_log_to_buffer(LogRecord *log_record)
  */
 void LogManager::flush_log_to_disk()
 {
-	std::unique_lock<std::mutex> lock{latch_}; // 互斥访问
+	std::unique_lock<std::mutex> lock{ latch_ }; // 互斥访问
 	disk_manager_->write_log(log_buffer_.buffer_, log_buffer_.offset_);
 	persist_lsn_ += log_buffer_.offset_;
 	log_buffer_.offset_ = 0;

@@ -42,7 +42,6 @@ struct Value
         int64_t datetime_val; // datetime
         bool invalid_val;
     };
-
     std::string str_val;           // string value
     std::shared_ptr<RmRecord> raw; // raw record buffer
     bool incompatible_type_compare(const Value &b) const
