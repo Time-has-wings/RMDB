@@ -117,6 +117,10 @@ void* client_handler(void* sock_fd)
 		{
 			std::cout << "Server crash" << std::endl;
 			exit(1);
+		}if (strcmp(data_recv, "set output_file off") == 0)
+		{
+			std::cout << "Server crash" << std::endl;
+			exit(1);
 		}
 
 		std::cout << "Read from client " << fd << ": " << data_recv << std::endl;
