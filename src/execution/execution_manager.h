@@ -30,7 +30,7 @@ class QlManager
 private:
     SmManager *sm_manager_;
     TransactionManager *txn_mgr_;
-    bool outputfile = true;
+    
 
 public:
     QlManager(SmManager *sm_manager, TransactionManager *txn_mgr)
@@ -40,6 +40,6 @@ public:
     void run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Context *context);
     void select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
                      Context *context);
-
+bool outputfile = true;
     void run_dml(std::unique_ptr<AbstractExecutor> exec);
 };
