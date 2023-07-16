@@ -499,10 +499,10 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 		for (int i = 0; i < tab.cols.size(); ++i)
 		{
 			std::getline(sin, word, ',');
-			auto v = LoadData::trans(word);
-			vals.push_back(v);
 			if (first)
 			{
+				auto v = LoadData::trans(word);
+				vals.push_back(v);
 				if (v.type == TYPE_INT || v.type == TYPE_FLOAT)
 					tab.cols.at(i).len = 4;
 				else if (v.type == TYPE_DATETIME || v.type == TYPE_BIGINT)
@@ -513,6 +513,11 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 				tab.cols.at(i).offset = curr_offset;
 				tab.cols.at(i).type = v.type;
 				curr_offset += tab.cols.at(i).len;
+			}
+			else
+			{
+				auto v = LoadData::trans(word, tab.cols.at(i));
+				vals.push_back(v);
 			}
 		}
 		if (first)

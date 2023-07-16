@@ -19,13 +19,11 @@ bool BufferPoolManager::find_victim_page(frame_id_t *frame_id)
 {
     if (!free_list_.empty()) // 缓冲池未满
     {
-        *frame_id = free_list_.back(); // 获取frameId
-        free_list_.pop_back();
+        *frame_id = free_list_.front(); // 获取frameId
+        free_list_.pop_front();
         return true;
     }
-    if (replacer_->victim(frame_id)) // 缓冲池已满
-        return true;
-    return false;
+    return replacer_->victim(frame_id); // 缓冲池已满
 }
 
 /**
@@ -44,12 +42,16 @@ void BufferPoolManager::update_page(Page *page, PageId new_page_id, frame_id_t n
     {
         disk_manager_->write_page(temp.fd, temp.page_no, page->get_data(), PAGE_SIZE);
         page->is_dirty_ = false;
+        page->pin_count_ = 0;
     }
     page_table_.erase(page->get_page_id());
     page_table_[new_page_id] = new_frame_id;
+    page->reset_memory();
+    Page *newpage = pages_ + new_frame_id;
+    newpage->id_ = new_page_id;
+    newpage->pin_count_ = 1;
     disk_manager_->read_page(new_page_id.fd, new_page_id.page_no, page->get_data(), PAGE_SIZE);
-    page->id_ = new_page_id;
-    page->pin_count_ = 1;
+    replacer_->pin(new_frame_id);
 }
 
 /**
@@ -75,11 +77,12 @@ Page *BufferPoolManager::fetch_page(PageId page_id)
     {
         frame_id_t fid = pageIterator->second;
         Page *page = pages_ + fid;
+        if (!page->pin_count_)
+            replacer_->pin(fid);
         page->pin_count_++;
-        replacer_->pin(fid);
         return page;
     }
-    frame_id_t fid = INVALID_FRAME_ID;
+    frame_id_t fid;
     if (!find_victim_page(&fid))
         return nullptr;
     Page *page = pages_ + fid;
@@ -115,14 +118,11 @@ bool BufferPoolManager::unpin_page(PageId page_id, bool is_dirty)
     {
         return false;
     }
-    if (page->pin_count_ > 0)
+    if (--(page->pin_count_) == 0)
     {
-        if (--(page->pin_count_) == 0)
-        {
-            replacer_->unpin(fid);
-        }
+        replacer_->unpin(fid);
     }
-    page->is_dirty_ |= is_dirty;
+    page->is_dirty_ = is_dirty;
     return true;
 }
 
@@ -169,9 +169,18 @@ Page *BufferPoolManager::new_page(PageId *page_id)
         return nullptr;
     }
     Page *page = pages_ + fid;
-    page_id_t pageno = disk_manager_->allocate_page(page_id->fd);
-    page_id->page_no = pageno;
-    update_page(page, *page_id, fid); // 2,3,4
+    if( page->is_dirty_ ) {
+        disk_manager_->write_page( page->id_.fd, page->id_.page_no, page->get_data(), PAGE_SIZE );
+        page->pin_count_ = 0;
+        page->is_dirty_ = false;
+    }
+    page_id->page_no = disk_manager_->allocate_page(page_id->fd);
+    page->reset_memory(); // 4.2
+    page_table_.erase( page->get_page_id() ); // 4.3
+    page_table_[*page_id] = fid;
+    page->pin_count_ = 1; // 4.4
+    page->id_ = *page_id; // 5
+    replacer_->pin(fid);
     return page;
 }
 
@@ -193,12 +202,10 @@ bool BufferPoolManager::delete_page(PageId page_id)
     Page *page = pages_ + frameId;
     if (page->pin_count_ != 0)
         return false;
-    disk_manager_->write_page(page->get_page_id().fd, page->get_page_id().page_no, page->get_data(), PAGE_SIZE);
-    // disk_manager_->deallocate_page(page_id.page_no);
+    // disk_manager_->write_page(page->get_page_id().fd, page->get_page_id().page_no, page->get_data(), PAGE_SIZE);
+    disk_manager_->deallocate_page(page_id.page_no);
     page_table_.erase(page_id);
-    page->id_.page_no = INVALID_PAGE_ID;
-    page->pin_count_ = 0;
-    page->is_dirty_ = false;
+    page->reset_memory();
     free_list_.push_back(frameId);
     return true;
 }

@@ -7,6 +7,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include "system/sm_meta.h"
 #include <vector>
 extern std::regex int_num;
 extern std::regex big_num;
@@ -23,5 +24,6 @@ class LoadData
 	{
 	}
 	static Value trans(std::string&);
+	static Value trans(std::string &, ColMeta &);
 };
 

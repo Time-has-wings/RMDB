@@ -21,22 +21,20 @@ LRUReplacer::~LRUReplacer() = default;
  */
 bool LRUReplacer::victim(frame_id_t *frame_id)
 {
-    // C++17 std::scoped_lock
+   // C++17 std::scoped_lock
     // 它能够避免死锁发生，其构造函数能够自动进行上锁操作，析构函数会对互斥量进行解锁操作，保证线程安全。
     std::scoped_lock lock{latch_}; //  如果编译报错可以替换成其他lock
 
     // Todo:
     //  利用lru_replacer中的LRUlist_,LRUHash_实现LRU策略
     //  选择合适的frame指定为淘汰页面,赋值给*frame_id
-    if (LRUhash_.empty())
+    if (LRUlist_.empty())
     {
         return false;
-        frame_id = nullptr;
     }
-    frame_id_t frameId = LRUlist_.front();
-    LRUlist_.pop_front();
-    LRUhash_.erase(frameId);
-    *frame_id = frameId;
+    *frame_id = LRUlist_.back(); //choose the last element as the victim
+    LRUlist_.pop_back(); //delete from the list
+    LRUhash_.erase(*frame_id); //delete from the hash
     return true;
 }
 
@@ -68,18 +66,10 @@ void LRUReplacer::unpin(frame_id_t frame_id)
     //  支持并发锁
     //  选择一个frame取消固定
     std::scoped_lock lock{latch_};
-    auto iter = LRUhash_.find(frame_id);
-    if (iter == LRUhash_.end())
-    {
-        if (LRUhash_.size() >= max_size_)
-            while (LRUhash_.size() >= max_size_)
-            {
-                frame_id_t *t;
-                victim(t);
-            }
-        auto it = LRUlist_.insert(LRUlist_.end(), frame_id);
-        LRUhash_[frame_id] = it;
-    }
+    if( LRUhash_.find(frame_id) != LRUhash_.end() ) //待Unpin的victim已经是unpin状态
+        return;
+    LRUlist_.push_front(frame_id); // insert to the head: just used
+    LRUhash_[frame_id] = LRUlist_.begin(); //frame_id ---> list.begin
 }
 
 /**
