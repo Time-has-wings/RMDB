@@ -42,11 +42,12 @@ void RmScan::next()
     int records_per_page = file_handle_->file_hdr_.num_records_per_page;
     rid_.slot_no = Bitmap::next_bit(1, page_handle.bitmap, records_per_page, rid_.slot_no);
     int pages_max = file_handle_->file_hdr_.num_pages;
+    file_handle_->buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
     while (is_end() && rid_.page_no < pages_max)
     {
         rid_.page_no++;
-        file_handle_->buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
         page_handle = file_handle_->fetch_page_handle(rid_.page_no);
+        file_handle_->buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
         rid_.slot_no = Bitmap::first_bit(1, page_handle.bitmap, records_per_page);
     }
 }
