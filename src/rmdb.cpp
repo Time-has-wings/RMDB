@@ -118,7 +118,7 @@ void *client_handler(void *sock_fd)
 			std::cout << "Server crash" << std::endl;
 			exit(1);
 		}
-		if (strcmp(data_recv, "set output_file off") == 0)
+		if (strcmp(data_recv, "set output_file off") == 0||strcmp(data_recv, "\"set output_file off\"") == 0)
 		{
 			outputfile = false;
 			ql_manager->outputfile = false;

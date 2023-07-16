@@ -292,6 +292,8 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 			std::memcpy(key + offset, data + index_tab.cols[i].offset, index_tab.cols[i].len);
 			offset += index_tab.cols[i].len;
 		}
+		if (*(int *)key == 428078&&tab_name=="te3")
+			int a = 0;
 		ih->insert_entry(key, rm_scan.rid(), context->txn_);
 	}
 	auto index_name = ix_manager_->get_index_name(tab_name, index_tab.cols);
@@ -539,4 +541,5 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 		}
 		fh_->insert_record(rec.data, nullptr);
 	}
+	// buffer_pool_manager_->flush_all_pages();
 }

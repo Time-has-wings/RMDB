@@ -195,7 +195,6 @@ bool BufferPoolManager::delete_page(PageId page_id)
     // 2.   若目标页的pin_count不为0，则返回false
     // 3.   将目标页数据写回磁盘，从页表中删除目标页，重置其元数据，将其加入free_list_，返回true
     std::scoped_lock lock{latch_};
-
     if (!page_table_.count(page_id))
         return true;
     frame_id_t frameId = page_table_[page_id];

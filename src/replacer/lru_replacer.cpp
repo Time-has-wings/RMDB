@@ -66,7 +66,7 @@ void LRUReplacer::unpin(frame_id_t frame_id)
     //  支持并发锁
     //  选择一个frame取消固定
     std::scoped_lock lock{latch_};
-    if( LRUhash_.find(frame_id) != LRUhash_.end() ) //待Unpin的victim已经是unpin状态
+    if( LRUhash_.find(frame_id) != LRUhash_.end()) //待Unpin的victim已经是unpin状态
         return;
     LRUlist_.push_front(frame_id); // insert to the head: just used
     LRUhash_[frame_id] = LRUlist_.begin(); //frame_id ---> list.begin

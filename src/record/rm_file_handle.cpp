@@ -22,7 +22,9 @@ std::unique_ptr<RmRecord> RmFileHandle::get_record(const Rid &rid, Context *cont
     // 1. 获取指定记录所在的page handle
     // 2. 初始化一个指向RmRecord的指针（赋值其内部的data和size）
     RmPageHandle page_handle = fetch_page_handle(rid.page_no);
-    return std::unique_ptr<RmRecord>(new RmRecord({file_hdr_.record_size, page_handle.get_slot(rid.slot_no)}));
+    auto res = std::unique_ptr<RmRecord>(new RmRecord({file_hdr_.record_size, page_handle.get_slot(rid.slot_no)}));
+    buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+    return res;
 }
 
 /**

@@ -255,10 +255,11 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
             auto s2 = ret->upper_bound(key) - 1;
             int s = s1 <= s2 ? s1 : s2;
             next_page_id = ret->value_at(s);
+            
         }
         else
             next_page_id = ret->internal_lookup(key);
-        buffer_pool_manager_->unpin_page(ret->get_page_id(), false);
+        buffer_pool_manager_->unpin_page(ret->get_page_id(), true);
         ret = fetch_node(next_page_id);
     }
     return std::make_pair(ret, false);
@@ -375,7 +376,7 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
         root->insert_pair(0, old_node->get_key(0), {old_node->get_page_no(), -1});
         root->insert_pair(1, key, {new_node->get_page_no(), -1});
         file_hdr_->root_page_ = root->get_page_no();
-        buffer_pool_manager_->unpin_page(new_node->get_page_id(), true);
+        buffer_pool_manager_->unpin_page(root->get_page_id(), true);
         return; // 结束递归
     }
     else
@@ -393,6 +394,7 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
         {
             IxNodeHandle *fa_right_node = split(fa);
             insert_into_parent(fa, fa_right_node->get_key(0), fa_right_node, transaction);
+            buffer_pool_manager_->unpin_page(fa_right_node->get_page_id(), true);
         }
         buffer_pool_manager_->unpin_page(fa->get_page_id(), true);
     }
@@ -423,12 +425,16 @@ page_id_t IxIndexHandle::insert_entry(const char *key, const Rid &value, Transac
         insert_into_parent(leaf_node, new_node->get_key(0), new_node, transaction);
         buffer_pool_manager_->unpin_page(new_node->get_page_id(), true);
     }
-    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), re);
+    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), true);
     // 需要考虑分裂后 插入的结点可能有变化
     if (!(leaf_node->get_size() >= leaf_node->get_max_size()))
         return leaf_node->get_page_no();
     else
-        return fetch_node(leaf_node->get_next_leaf())->get_page_no();
+    {
+        auto p = fetch_node(leaf_node->get_next_leaf());
+        buffer_pool_manager_->unpin_page(p->get_page_id(), true);
+        return p->get_page_no();
+    }
 }
 
 /**
@@ -653,7 +659,7 @@ Rid IxIndexHandle::get_rid(const Iid &iid) const
     {
         throw IndexEntryNotFoundError();
     }
-    buffer_pool_manager_->unpin_page(node->get_page_id(), false); // unpin it!
+    buffer_pool_manager_->unpin_page(node->get_page_id(),false); // unpin it!
     return *node->get_rid(iid.slot_no);
 }
 
