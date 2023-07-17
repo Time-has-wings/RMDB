@@ -287,7 +287,7 @@ namespace ast
         std::vector<std::shared_ptr<BinaryExpr>> conds;
         std::vector<std::shared_ptr<JoinExpr>> jointree;
 
-        bool has_sort;
+        bool has_sort=false;
         std::shared_ptr<OrderClause> order_clause;
 
         SelectStmt(std::vector<std::shared_ptr<Col>> cols_,
@@ -297,7 +297,7 @@ namespace ast
                                                                  order_clause(std::move(order_clause_))
         {
             if (auto orderclause = std::dynamic_pointer_cast<ast::OrderClause>(order_clause))
-                has_sort = (bool)order_clause->orders.size() > 0;
+                has_sort = (bool)(order_clause->orders.size() > 0);
         }
     };
 
