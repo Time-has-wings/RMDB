@@ -501,6 +501,8 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 			std::getline(sin, word, ',');
 			if (first)
 			{
+				if (word.back() == '\r')
+					word.erase(word.size()-1,1);
 				auto v = LoadData::trans(word);
 				vals.push_back(v);
 				if (v.type == TYPE_INT || v.type == TYPE_FLOAT)

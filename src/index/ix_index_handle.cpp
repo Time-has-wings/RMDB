@@ -24,14 +24,29 @@ int IxNodeHandle::lower_bound(const char *target) const
     // 查找当前节点中第一个大于等于target的key，并返回key的位置给上层
     // 提示: 可以采用多种查找方式，如顺序遍历、二分查找等；使用ix_compare()函数进行比较
     // lgm:先写一个顺序遍历的版本
-    for (int key_idx = 0; key_idx < page_hdr->num_key; ++key_idx)
+    // for (int key_idx = 0; key_idx < page_hdr->num_key; ++key_idx)
+    // {
+    //     char *key = get_key(key_idx);
+    //     int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
+    //     if (state >= 0)
+    //         return key_idx;
+    // }
+    int l = 0, r = page_hdr->num_key - 1;
+    while (l <= r)
     {
-        char *key = get_key(key_idx);
+        int mid = l + (r - l) / 2;
+        char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
-        if (state >= 0)
-            return key_idx;
+        if (state < 0)
+        {
+            l = mid + 1;
+        }
+        else
+        {
+            r = mid - 1;
+        }
     }
-    return page_hdr->num_key; // 没有找到则返回num_key
+    return l; // 没有找到则返回num_key
 }
 
 /**
@@ -46,14 +61,23 @@ int IxNodeHandle::upper_bound(const char *target) const
     // 查找当前节点中第一个大于target的key，并返回key的位置给上层
     // 提示: 可以采用多种查找方式：顺序遍历、二分查找等；使用ix_compare()函数进行比较
     // 先写一个顺序遍历的版本
-    for (int key_idx = 1; key_idx < page_hdr->num_key; ++key_idx)
-    { // 此处循环遍历可用二分代替
-        char *key = get_key(key_idx);
+    int l = 1, r = page_hdr->num_key - 1;
+    while (l <= r)
+    {
+        int mid = l + (r - l) / 2;
+        char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
-        if (state > 0)
-            return key_idx;
+        if (state <= 0)
+        {
+            l = mid + 1;
+        }
+        else
+        {
+            r = mid - 1;
+        }
     }
-    return page_hdr->num_key; // 没有找到则返回num_key
+    return l;
+    //     return l; // 没有找到则返回num_key
 }
 
 /**
@@ -93,7 +117,7 @@ page_id_t IxNodeHandle::internal_lookup(const char *key)
     // 2. 获取该孩子节点（子树）所在页面的编号
     // 3. 返回页面编号
     int idx = upper_bound(key);
-    return value_at(idx - 1);
+    return value_at(idx-1);
 }
 
 /**
@@ -255,7 +279,6 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
             auto s2 = ret->upper_bound(key) - 1;
             int s = s1 <= s2 ? s1 : s2;
             next_page_id = ret->value_at(s);
-            
         }
         else
             next_page_id = ret->internal_lookup(key);
@@ -659,7 +682,7 @@ Rid IxIndexHandle::get_rid(const Iid &iid) const
     {
         throw IndexEntryNotFoundError();
     }
-    buffer_pool_manager_->unpin_page(node->get_page_id(),false); // unpin it!
+    buffer_pool_manager_->unpin_page(node->get_page_id(), false); // unpin it!
     return *node->get_rid(iid.slot_no);
 }
 
@@ -680,7 +703,7 @@ Iid IxIndexHandle::lower_bound(const char *key)
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
-            return leaf_begin();
+            return leaf_end();
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
