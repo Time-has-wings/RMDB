@@ -34,6 +34,7 @@ Transaction *TransactionManager::begin(Transaction *txn, LogManager *log_manager
         txn = new Transaction(next_txn_id_);
         next_txn_id_++; // 自增
     }
+    lock.unlock();
     txn_map.emplace(txn->get_transaction_id(), txn); // 加入全局事务表
     BeginLogRecord beginLog(txn->get_transaction_id());
     beginLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
@@ -57,7 +58,6 @@ void TransactionManager::commit(Transaction *txn, LogManager *log_manager)
     // 4. 把事务日志刷入磁盘中
     // 5. 更新事务状态
     // 提交所有写操作
-    std::unique_lock<std::mutex> lock(latch_);
     auto write_set = txn->get_write_set();
     while (write_set->size())
         write_set->pop_back();
@@ -93,7 +93,6 @@ void TransactionManager::abort(Transaction *txn, LogManager *log_manager)
     // 4. 把事务日志刷入磁盘中
     // 5. 更新事务状态
     // 回滚
-    std::unique_lock<std::mutex> lock(latch_);
     auto write_set = txn->get_write_set();
     while (write_set->size())
     {
