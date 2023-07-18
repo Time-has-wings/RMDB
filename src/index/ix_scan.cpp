@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 void IxScan::next() {
     assert(!is_end());
     IxNodeHandle *node = ih_->fetch_node(iid_.page_no);
+    bpm_->unpin_page(node->get_page_id(),true);
     assert(node->is_leaf_page());
     assert(iid_.slot_no < node->get_size());
     // increment slot no

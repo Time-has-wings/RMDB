@@ -28,18 +28,20 @@ Transaction *TransactionManager::begin(Transaction *txn, LogManager *log_manager
     // 2. 如果为空指针，创建新事务
     // 3. 把开始事务加入到全局事务表中
     // 4. 返回当前事务指针
+    std::unique_lock<std::mutex> lock(latch_);
     if (txn == nullptr)
     {
         txn = new Transaction(next_txn_id_);
         next_txn_id_++; // 自增
     }
     txn_map.emplace(txn->get_transaction_id(), txn); // 加入全局事务表
+    lock.unlock();
     BeginLogRecord beginLog(txn->get_transaction_id());
     beginLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
     log_manager->add_log_to_buffer(&beginLog); // 写入日志缓冲区
     txn->set_prev_lsn(beginLog.lsn_);
     log_manager->flush_log_to_disk(); // 写入日志缓冲区
-    return txn; // 4
+    return txn;                       // 4
 }
 
 /**

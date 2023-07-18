@@ -240,7 +240,7 @@ namespace ast
     };
 
     struct DeleteStmt : public TreeNode
-    { 
+    {
         std::string tab_name;
         std::vector<std::shared_ptr<BinaryExpr>> conds;
 
@@ -252,7 +252,12 @@ namespace ast
         std::string tab_name;
         ShowIndex(std::string tab_name_) : tab_name(std::move(tab_name_)) {}
     };
-
+    struct LoadData : public TreeNode
+    {
+        std::string tab_name;
+        std::string file_name;
+        LoadData(std::string tab_name_, std::string file_name_) : tab_name(std::move(tab_name_)), file_name(std::move(file_name_)) {}
+    };
     struct UpdateStmt : public TreeNode
     {
         std::string tab_name;
@@ -282,7 +287,7 @@ namespace ast
         std::vector<std::shared_ptr<BinaryExpr>> conds;
         std::vector<std::shared_ptr<JoinExpr>> jointree;
 
-        bool has_sort;
+        bool has_sort=false;
         std::shared_ptr<OrderClause> order_clause;
 
         SelectStmt(std::vector<std::shared_ptr<Col>> cols_,
@@ -292,7 +297,7 @@ namespace ast
                                                                  order_clause(std::move(order_clause_))
         {
             if (auto orderclause = std::dynamic_pointer_cast<ast::OrderClause>(order_clause))
-                has_sort = (bool)order_clause->orders.size() > 0;
+                has_sort = (bool)(order_clause->orders.size() > 0);
         }
     };
 
