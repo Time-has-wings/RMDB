@@ -373,7 +373,6 @@ void SmManager::show_indexes(const std::string &tab_name, Context *context)
 		printer.print_record({tab_name}, context);
 		printer.print_separator(context);
 		printer.print_record_index(index.cols, context);
-
 		printer.print_separator(context);
 	}
 	if (outfile)
@@ -472,85 +471,40 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 		throw InternalError("file cant open");
 	std::string buffer, linestr, word;
 	buffer.assign(std::istreambuf_iterator<char>(csv_data), std::istreambuf_iterator<char>());
-	TabMeta tab;
-	tab.name = tab_name;
-	int curr_offset = 0;
+	auto &tab = db_.get_table(tab_name);
+	auto &fh_ = fhs_.at(tab_name);
 	std::stringstream strStr;
 	std::istringstream sin;
-	bool first = true;
 	strStr.str(buffer);
 	getline(strStr, linestr);
-	sin.str(linestr);
-	while (std::getline(sin, word, ','))
-	{
-		if (word.back() == '\r')
-			word.erase(word.size() - 1, 1);
-		ColMeta col = {
-			.tab_name = tab_name,
-			.name = word,
-			.type = TYPE_INVALID,
-			.len = 0,
-			.offset = 0,
-			.index = false};
-		tab.cols.push_back(col);
-	}
 	while (getline(strStr, linestr))
 	{
 		sin.clear();
 		sin.str(linestr);
-		if (first)
+		RmRecord rec(fh_->get_file_hdr().record_size);
+		for (size_t i = 0; i < tab.cols.size(); i++)
 		{
-			std::vector<Value> vals;
-			for (size_t i = 0; i < tab.cols.size(); i++)
-			{
-				std::getline(sin, word, ',');
-				if (word.back() == '\r')
-					word.erase(word.size() - 1, 1);
-				auto v = LoadData::trans(word);
-				vals.push_back(v);
-				if (v.type == TYPE_INT || v.type == TYPE_FLOAT)
-					tab.cols.at(i).len = 4;
-				else if (v.type == TYPE_DATETIME || v.type == TYPE_BIGINT)
-					tab.cols.at(i).len = 8;
-				else if (v.type == TYPE_STRING)
-					tab.cols.at(i).len = v.str_val.size();
-				tab.cols.at(i).type = v.type;
-				tab.cols.at(i).offset = curr_offset;
-				tab.cols.at(i).type = v.type;
-				curr_offset += tab.cols.at(i).len;
-			}
-			first = false;
-			rm_manager_->create_file(tab_name, curr_offset);
-			db_.tabs_[tab_name] = tab;
-			fhs_.emplace(tab_name, rm_manager_->open_file(tab_name));
-			flush_meta();
-			RmRecord rec(curr_offset);
-			for (size_t i = 0; i < vals.size(); i++)
-			{
-				auto &col = tab.cols[i];
-				auto &val = vals[i];
-				val.init_raw(col.len);
-				memcpy(rec.data + col.offset, val.raw->data, col.len);
-			}
-			auto &fh_ = fhs_.at(tab_name);
-			fh_->insert_record(rec.data, nullptr);
+			auto &col = tab.cols.at(i);
+			std::getline(sin, word, ',');
+			if (word.back() == '\r')
+				word.erase(word.size() - 1, 1);
+			auto val = LoadData::trans(word, col);
+			val.init_raw(col.len);
+			memcpy(rec.data + col.offset, val.raw->data, val.raw->size);
 		}
-		else
+		auto rid = fh_->insert_record(rec.data, nullptr);
+		for (size_t i = 0; i < tab.indexes.size(); ++i)
 		{
-			int off_set = 0;
-			auto &fh_ = fhs_.at(tab_name);
-			RmRecord rec(curr_offset);
-			for (size_t i = 0; i < tab.cols.size(); i++)
+			auto &index = tab.indexes[i];
+			auto ih = ihs_.at(get_ix_manager()->get_index_name(tab_name, index.cols)).get();
+			char key[index.col_tot_len];
+			int offset = 0;
+			for (size_t i = 0; i < index.col_num; ++i)
 			{
-				std::getline(sin, word, ',');
-				if (word.back() == '\r')
-					word.erase(word.size() - 1, 1);
-				auto val = LoadData::trans(word, tab.cols.at(i));
-				val.init_raw(tab.cols.at(i).len);
-				memcpy(rec.data + off_set, val.raw->data, val.raw->size);
-				off_set += val.raw->size;
+				memcpy(key + offset, rec.data + index.cols[i].offset, index.cols[i].len);
+				offset += index.cols[i].len;
 			}
-			fh_->insert_record(rec.data, nullptr);
+			ih->insert_entry(key, rid, nullptr);
 		}
 	}
 }
