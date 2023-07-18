@@ -38,15 +38,17 @@ void RmScan::next()
 {
     // Todo:
     // 找到文件中下一个存放了记录的非空闲位置，用rid_来指向这个位置
-    RmPageHandle page_handle = file_handle_->fetch_page_handle( rid_.page_no );
-    int records_per_page =  file_handle_->file_hdr_.num_records_per_page;
-    rid_.slot_no = Bitmap::next_bit( 1, page_handle.bitmap, records_per_page, rid_.slot_no );
+    RmPageHandle page_handle = file_handle_->fetch_page_handle(rid_.page_no);
+    int records_per_page = file_handle_->file_hdr_.num_records_per_page;
+    rid_.slot_no = Bitmap::next_bit(1, page_handle.bitmap, records_per_page, rid_.slot_no);
     int pages_max = file_handle_->file_hdr_.num_pages;
-
-    while( is_end() && rid_.page_no < pages_max ) {
+    file_handle_->buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+    while (is_end() && rid_.page_no < pages_max)
+    {
         rid_.page_no++;
-        page_handle = file_handle_->fetch_page_handle( rid_.page_no );
-        rid_.slot_no = Bitmap::first_bit( 1, page_handle.bitmap, records_per_page );
+        page_handle = file_handle_->fetch_page_handle(rid_.page_no);
+        file_handle_->buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+        rid_.slot_no = Bitmap::first_bit(1, page_handle.bitmap, records_per_page);
     }
 }
 

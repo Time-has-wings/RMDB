@@ -149,8 +149,8 @@ public:
             for (auto &index : tab_.indexes)
             {
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
-                char *update = new char[index.col_tot_len];
-                char *orign = new char[index.col_tot_len];
+                char update [index.col_tot_len];
+                char orign[index.col_tot_len];
                 int offset = 0;
                 for (size_t i = 0; i < index.col_num; ++i)
                 {
@@ -169,7 +169,7 @@ public:
                 }
             }
             fh_->update_record(rid, update_record.data, context_);
-            WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, update_record);
+            WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, *rec.get());
             context_->txn_->append_write_record(wrec);
         }
         return nullptr;

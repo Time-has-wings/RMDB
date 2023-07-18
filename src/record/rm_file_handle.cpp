@@ -22,7 +22,9 @@ std::unique_ptr<RmRecord> RmFileHandle::get_record(const Rid &rid, Context *cont
     // 1. 获取指定记录所在的page handle
     // 2. 初始化一个指向RmRecord的指针（赋值其内部的data和size）
     RmPageHandle page_handle = fetch_page_handle(rid.page_no);
-    return std::unique_ptr<RmRecord>(new RmRecord({file_hdr_.record_size, page_handle.get_slot(rid.slot_no)}));
+    auto res = std::unique_ptr<RmRecord>(new RmRecord({file_hdr_.record_size, page_handle.get_slot(rid.slot_no)}));
+    buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+    return res;
 }
 
 /**
@@ -42,7 +44,13 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
     RmPageHandle page_handle = create_page_handle();
     int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
     page_id_t pageNo = page_handle.page->get_page_id().page_no;
-    this->insert_record(Rid{pageNo, free_slot_no}, buf);
+    char *free_slot = page_handle.get_slot(free_slot_no);
+    memcpy(free_slot, buf, file_hdr_.record_size);
+    Bitmap::set(page_handle.bitmap, free_slot_no);
+    page_handle.page_hdr->num_records++;
+    if (page_handle.page_hdr->num_records == file_hdr_.num_records_per_page)
+        file_hdr_.first_free_page_no = page_handle.page_hdr->next_free_page_no;
+    buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
     return Rid{pageNo, free_slot_no};
 }
 
@@ -78,8 +86,9 @@ void RmFileHandle::delete_record(const Rid &rid, Context *context)
     // 2. 更新page_handle.page_hdr中的数据结构
     // 注意考虑删除一条记录后页面未满的情况，需要调用release_page_handle()
     RmPageHandle page_handle = fetch_page_handle(rid.page_no);
-    if (page_handle.page_hdr->num_records-- == file_hdr_.num_records_per_page) // 2: delete will make full->not full
+    if (page_handle.page_hdr->num_records == file_hdr_.num_records_per_page) // 2: delete will make full->not full
         release_page_handle(page_handle);
+    page_handle.page_hdr->num_records--;
     Bitmap::reset(page_handle.bitmap, rid.slot_no);
     buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
 }

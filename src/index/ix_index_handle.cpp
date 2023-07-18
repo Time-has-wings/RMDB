@@ -23,15 +23,22 @@ int IxNodeHandle::lower_bound(const char *target) const
     // Todo:
     // 查找当前节点中第一个大于等于target的key，并返回key的位置给上层
     // 提示: 可以采用多种查找方式，如顺序遍历、二分查找等；使用ix_compare()函数进行比较
-    // lgm:先写一个顺序遍历的版本
-    for (int key_idx = 0; key_idx < page_hdr->num_key; ++key_idx)
+    int l = 0, r = page_hdr->num_key - 1;
+    while (l <= r)
     {
-        char *key = get_key(key_idx);
+        int mid = l + (r - l) / 2;
+        char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
-        if (state >= 0)
-            return key_idx;
+        if (state < 0)
+        {
+            l = mid + 1;
+        }
+        else
+        {
+            r = mid - 1;
+        }
     }
-    return page_hdr->num_key; // 没有找到则返回num_key
+    return l; // 没有找到则返回num_key
 }
 
 /**
@@ -46,14 +53,22 @@ int IxNodeHandle::upper_bound(const char *target) const
     // 查找当前节点中第一个大于target的key，并返回key的位置给上层
     // 提示: 可以采用多种查找方式：顺序遍历、二分查找等；使用ix_compare()函数进行比较
     // 先写一个顺序遍历的版本
-    for (int key_idx = 1; key_idx < page_hdr->num_key; ++key_idx)
-    { // 此处循环遍历可用二分代替
-        char *key = get_key(key_idx);
+    int l = 1, r = page_hdr->num_key - 1;
+    while (l <= r)
+    {
+        int mid = l + (r - l) / 2;
+        char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
-        if (state > 0)
-            return key_idx;
+        if (state <= 0)
+        {
+            l = mid + 1;
+        }
+        else
+        {
+            r = mid - 1;
+        }
     }
-    return page_hdr->num_key; // 没有找到则返回num_key
+    return l;
 }
 
 /**
@@ -258,7 +273,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
         }
         else
             next_page_id = ret->internal_lookup(key);
-        buffer_pool_manager_->unpin_page(ret->get_page_id(), false);
+        buffer_pool_manager_->unpin_page(ret->get_page_id(), true);
         ret = fetch_node(next_page_id);
     }
     return std::make_pair(ret, false);
@@ -375,7 +390,7 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
         root->insert_pair(0, old_node->get_key(0), {old_node->get_page_no(), -1});
         root->insert_pair(1, key, {new_node->get_page_no(), -1});
         file_hdr_->root_page_ = root->get_page_no();
-        buffer_pool_manager_->unpin_page(new_node->get_page_id(), true);
+        buffer_pool_manager_->unpin_page(root->get_page_id(), true);
         return; // 结束递归
     }
     else
@@ -393,6 +408,7 @@ void IxIndexHandle::insert_into_parent(IxNodeHandle *old_node, const char *key, 
         {
             IxNodeHandle *fa_right_node = split(fa);
             insert_into_parent(fa, fa_right_node->get_key(0), fa_right_node, transaction);
+            buffer_pool_manager_->unpin_page(fa_right_node->get_page_id(), true);
         }
         buffer_pool_manager_->unpin_page(fa->get_page_id(), true);
     }
@@ -423,12 +439,16 @@ page_id_t IxIndexHandle::insert_entry(const char *key, const Rid &value, Transac
         insert_into_parent(leaf_node, new_node->get_key(0), new_node, transaction);
         buffer_pool_manager_->unpin_page(new_node->get_page_id(), true);
     }
-    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), re);
+    buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), true);
     // 需要考虑分裂后 插入的结点可能有变化
     if (!(leaf_node->get_size() >= leaf_node->get_max_size()))
         return leaf_node->get_page_no();
     else
-        return fetch_node(leaf_node->get_next_leaf())->get_page_no();
+    {
+        auto p = fetch_node(leaf_node->get_next_leaf());
+        buffer_pool_manager_->unpin_page(p->get_page_id(), true);
+        return p->get_page_no();
+    }
 }
 
 /**
@@ -674,7 +694,10 @@ Iid IxIndexHandle::lower_bound(const char *key)
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
-            return leaf_begin();
+        {
+            buffer_pool_manager_->unpin_page(node->get_page_id(), true);
+            return leaf_end();
+        }
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
@@ -700,14 +723,17 @@ Iid IxIndexHandle::upper_bound(const char *key)
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
+        {
+            buffer_pool_manager_->unpin_page(node->get_page_id(), true);
             return leaf_end();
+        }
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
     {
         iid = {.page_no = node->get_page_no(), .slot_no = idx};
     }
-    buffer_pool_manager_->unpin_page(node->get_page_id(), false);
+    buffer_pool_manager_->unpin_page(node->get_page_id(), true);
     return iid;
 }
 
