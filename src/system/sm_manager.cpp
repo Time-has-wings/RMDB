@@ -482,6 +482,8 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 	tab.name = tab_name;
 	while (std::getline(sin, word, ','))
 	{
+		if (word.back() == '\r')
+			word.erase(word.size() - 1, 1);
 		ColMeta col = {
 			.tab_name = tab_name,
 			.name = word,
