@@ -23,14 +23,6 @@ int IxNodeHandle::lower_bound(const char *target) const
     // Todo:
     // 查找当前节点中第一个大于等于target的key，并返回key的位置给上层
     // 提示: 可以采用多种查找方式，如顺序遍历、二分查找等；使用ix_compare()函数进行比较
-    // lgm:先写一个顺序遍历的版本
-    // for (int key_idx = 0; key_idx < page_hdr->num_key; ++key_idx)
-    // {
-    //     char *key = get_key(key_idx);
-    //     int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
-    //     if (state >= 0)
-    //         return key_idx;
-    // }
     int l = 0, r = page_hdr->num_key - 1;
     while (l <= r)
     {
@@ -77,7 +69,6 @@ int IxNodeHandle::upper_bound(const char *target) const
         }
     }
     return l;
-    //     return l; // 没有找到则返回num_key
 }
 
 /**
@@ -117,7 +108,7 @@ page_id_t IxNodeHandle::internal_lookup(const char *key)
     // 2. 获取该孩子节点（子树）所在页面的编号
     // 3. 返回页面编号
     int idx = upper_bound(key);
-    return value_at(idx-1);
+    return value_at(idx - 1);
 }
 
 /**
@@ -703,7 +694,10 @@ Iid IxIndexHandle::lower_bound(const char *key)
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
+        {
+            buffer_pool_manager_->unpin_page(node->get_page_id(), true);
             return leaf_end();
+        }
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
@@ -729,14 +723,17 @@ Iid IxIndexHandle::upper_bound(const char *key)
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
+        {
+            buffer_pool_manager_->unpin_page(node->get_page_id(), true);
             return leaf_end();
+        }
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
     }
     else
     {
         iid = {.page_no = node->get_page_no(), .slot_no = idx};
     }
-    buffer_pool_manager_->unpin_page(node->get_page_id(), false);
+    buffer_pool_manager_->unpin_page(node->get_page_id(), true);
     return iid;
 }
 
