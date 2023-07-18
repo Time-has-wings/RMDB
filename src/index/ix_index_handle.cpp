@@ -52,7 +52,6 @@ int IxNodeHandle::upper_bound(const char *target) const
     // Todo:
     // 查找当前节点中第一个大于target的key，并返回key的位置给上层
     // 提示: 可以采用多种查找方式：顺序遍历、二分查找等；使用ix_compare()函数进行比较
-    // 先写一个顺序遍历的版本
     int l = 1, r = page_hdr->num_key - 1;
     while (l <= r)
     {
