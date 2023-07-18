@@ -73,8 +73,8 @@ void TransactionManager::commit(Transaction *txn, LogManager *log_manager)
     CommitLogRecord commitLog(txn->get_transaction_id());
     commitLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
     log_manager->add_log_to_buffer(&commitLog); // 写入日志缓冲区
-    txn->set_prev_lsn(commitLog.lsn_);
-    log_manager->flush_log_to_disk();
+    //txn->set_prev_lsn(commitLog.lsn_); // 设置无效
+    log_manager->flush_log_to_disk(); // 日志刷盘
     // 更新事务状态
     txn->set_state(TransactionState::COMMITTED);
 }
@@ -122,7 +122,7 @@ void TransactionManager::abort(Transaction *txn, LogManager *log_manager)
     AbortLogRecord abortLog(txn->get_transaction_id());
     abortLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
     log_manager->add_log_to_buffer(&abortLog); // 写入日志缓冲区
-    log_manager->flush_log_to_disk();
+    log_manager->flush_log_to_disk(); // 日志刷盘
     // 更新
     txn->set_state(TransactionState::ABORTED);
 }
