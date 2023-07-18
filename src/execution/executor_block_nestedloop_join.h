@@ -23,7 +23,7 @@ private:
     size_t len_;                              // join后获得的每条记录的长度
     std::vector<ColMeta> cols_;               // join后获得的记录的字段
     std::vector<Condition> fed_conds_;        // join条件
-    int64_t join_buffer_size = 4294967296;
+    int64_t join_buffer_size = 34359738368;
     std::vector<std::pair<std::unique_ptr<RmRecord>, std::vector<Value>>> blocks;
     std::vector<Value> rVals;
     int64_t now_size = 0;

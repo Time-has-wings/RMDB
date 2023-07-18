@@ -34,8 +34,8 @@ Transaction *TransactionManager::begin(Transaction *txn, LogManager *log_manager
         txn = new Transaction(next_txn_id_);
         next_txn_id_++; // 自增
     }
-    lock.unlock();
     txn_map.emplace(txn->get_transaction_id(), txn); // 加入全局事务表
+    lock.unlock();
     BeginLogRecord beginLog(txn->get_transaction_id());
     beginLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
     log_manager->add_log_to_buffer(&beginLog); // 写入日志缓冲区
