@@ -41,7 +41,24 @@ lsn_t LogManager::add_log_to_buffer(LogRecord *log_record)
 void LogManager::flush_log_to_disk()
 {
 	std::unique_lock<std::mutex> lock{latch_}; // 互斥访问
-	disk_manager_->write_log(log_buffer_.buffer_, log_buffer_.offset_);
-	persist_lsn_ += log_buffer_.offset_;
+	char *log_buffer = new char[log_buffer_.offset_];
+	memcpy(log_buffer, log_buffer_.buffer_, log_buffer_.offset_);
+	buffers.push_front(std::pair<char *, size_t>(log_buffer, log_buffer_.offset_));
 	log_buffer_.offset_ = 0;
+	cond.notify_all();
+}
+void LogManager::run()
+{
+	while (true)
+	{
+		std::unique_lock<std::mutex> lck(latch_);
+		while (buffers.empty() && !stop)
+			cond.wait(lck);
+		if (stop && buffers.empty())
+			return;
+		auto &log = buffers.back();
+		buffers.pop_back();
+		disk_manager_->write_log(log.first, log.second);
+		delete log.first;
+	}
 }
