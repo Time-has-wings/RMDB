@@ -198,7 +198,7 @@ bool BufferPoolManager::delete_page(PageId page_id)
     page->id_.page_no = INVALID_PAGE_ID;
     page->pin_count_ = 0;
     page->is_dirty_ = false;
-    free_list_.push_back(frameId);
+    free_list_.emplace_back(frameId);
     return true;
 }
 

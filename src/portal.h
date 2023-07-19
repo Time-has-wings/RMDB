@@ -83,7 +83,7 @@ public:
                 std::vector<Rid> rids;
                 for (scan->beginTuple(); !scan->is_end(); scan->nextTuple())
                 {
-                    rids.push_back(scan->rid());
+                    rids.emplace_back(scan->rid());
                 }
                 std::unique_ptr<AbstractExecutor> root = std::make_unique<UpdateExecutor>(sm_manager_,
                                                                                           x->tab_name_, x->set_clauses_, x->conds_, rids, context);
@@ -95,7 +95,7 @@ public:
                 std::vector<Rid> rids;
                 for (scan->beginTuple(); !scan->is_end(); scan->nextTuple())
                 {
-                    rids.push_back(scan->rid());
+                    rids.emplace_back(scan->rid());
                 }
 
                 std::unique_ptr<AbstractExecutor> root =

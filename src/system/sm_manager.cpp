@@ -224,7 +224,7 @@ void SmManager::create_table(const std::string &tab_name, const std::vector<ColD
 					   .offset = curr_offset,
 					   .index = false};
 		curr_offset += col_def.len;
-		tab.cols.push_back(col);
+		tab.cols.emplace_back(col);
 	}
 	int record_size = curr_offset;
 	rm_manager_->create_file(tab_name, record_size);
@@ -272,7 +272,7 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 	{
 		auto col = tab.get_col(col_name);
 		col->index = true;
-		index_tab.cols.push_back(*col);
+		index_tab.cols.emplace_back(*col);
 		col_sum_len += col->len;
 	}
 	index_tab.tab_name = tab_name;
@@ -297,7 +297,7 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 	auto index_name = ix_manager_->get_index_name(tab_name, index_tab.cols);
 	assert(ihs_.count(index_name) == 0);
 	ihs_.emplace(index_name, std::move(ih));
-	tab.indexes.push_back(index_tab);
+	tab.indexes.emplace_back(index_tab);
 	flush_meta();
 }
 
@@ -339,7 +339,7 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<ColMet
 	std::vector<std::string> col_names;
 	for (auto &col : cols)
 	{
-		col_names.push_back(col.name);
+		col_names.emplace_back(col.name);
 	}
 	drop_index(tab_name, col_names, context);
 }
