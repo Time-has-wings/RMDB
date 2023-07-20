@@ -9,7 +9,6 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
 #include "analyze.h"
-
 /**
  * @description: 分析器，进行语义分析和查询重写，需要检查不符合语义规定的部分
  * @param {shared_ptr<ast::TreeNode>} parse parser生成的结果集
@@ -42,6 +41,10 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                                       { return group->col_name == col.name; });
                 if (s == cols.end())
                     throw InternalError("wrong col");
+                else if (s->type == TYPE_STRING && group->func_name == "SUM")
+                {
+                    throw InvalidValueCountError();
+                }
             }
             else
             {
