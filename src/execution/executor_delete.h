@@ -55,7 +55,7 @@ public:
             context_->log_mgr_->add_log_to_buffer(&delete_log);
             context_->txn_->set_prev_lsn(delete_log.lsn_);
         }
-        context_->log_mgr_->flush_log_to_disk();
+        // context_->log_mgr_->flush_log_to_disk();
         for (auto rid : rids_)
         {
             auto rec = fh_->get_record(rid, context_);

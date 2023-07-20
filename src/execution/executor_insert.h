@@ -94,7 +94,7 @@ public:
         insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();
         insert_log.rid_ = rid_;
         context_->log_mgr_->add_log_to_buffer(&insert_log);
-        context_->log_mgr_->flush_log_to_disk();
+        // context_->log_mgr_->flush_log_to_disk();
         context_->txn_->set_prev_lsn(insert_log.lsn_);
         // modify wset
         WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);

@@ -40,7 +40,7 @@ Transaction *TransactionManager::begin(Transaction *txn, LogManager *log_manager
     beginLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
     log_manager->add_log_to_buffer(&beginLog); // 写入日志缓冲区
     txn->set_prev_lsn(beginLog.lsn_);
-    log_manager->flush_log_to_disk(); // 写入日志缓冲区
+    // log_manager->flush_log_to_disk(); // 写入日志缓冲区
     return txn;                       // 4
 }
 
