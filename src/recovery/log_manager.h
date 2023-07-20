@@ -16,8 +16,7 @@ See the Mulan PSL v2 for more details. */
 #include "log_defs.h"
 #include "common/config.h"
 #include "record/rm_defs.h"
-#include <condition_variable>
-#include <thread>
+
 /* 日志记录对应操作的类型 */
 enum LogType : int
 {
@@ -430,35 +429,17 @@ public:
 class LogManager
 {
 public:
-    LogManager(DiskManager *disk_manager) : stop(false)
-    {
-        disk_manager_ = disk_manager;
-        log_thread = std::thread([this]
-                                 { run(); });
-    }
-    ~LogManager()
-    {
-        {
-            std::unique_lock<std::mutex> lock{latch_};
-            stop = true;
-        }
-        cond.notify_all();
-        log_thread.join();
-    }
+    LogManager(DiskManager *disk_manager) { disk_manager_ = disk_manager; }
+
     lsn_t add_log_to_buffer(LogRecord *log_record);
     void flush_log_to_disk();
-    void run();
+
     LogBuffer *get_log_buffer() { return &log_buffer_; }
 
 private:
     std::atomic<lsn_t> global_lsn_{0}; // 全局lsn，递增，用于为每条记录分发lsn
     std::mutex latch_;                 // 用于对log_buffer_的互斥访问
-    std::mutex mtx;                 // 用于对log_buffer_的互斥访问
     LogBuffer log_buffer_;             // 日志缓冲区
     lsn_t persist_lsn_;                // 记录已经持久化到磁盘中的最后一条日志的日志号
     DiskManager *disk_manager_;
-    std::condition_variable cond;
-    std::thread log_thread;
-    std::list<std::pair<char *, size_t>> buffers;
-    bool stop;
 };
