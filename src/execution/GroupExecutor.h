@@ -39,6 +39,7 @@ public:
             col_.tab_name = group.col.tab_name;
             col_.len = 4;
             col_.type = TYPE_INT;
+            col_.offset = 0;
             cols_.push_back(col_);
             all = group.all;
         }
