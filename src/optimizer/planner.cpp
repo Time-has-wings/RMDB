@@ -67,7 +67,8 @@ bool Planner::get_index_cols(std::string tab_name, std::vector<Condition> &curr_
         {
             for (int j = 0; j < curr_conds.size(); j++)
             {
-                if (i>= curr_conds.size())break;
+                if (i >= curr_conds.size())
+                    break;
                 if (curr_conds[j].lhs_col.col_name == index_col_names[i])
                 {
                     std::iter_swap(curr_conds.begin() + i, curr_conds.begin() + j);
@@ -196,8 +197,8 @@ std::shared_ptr<Plan> Planner::physical_optimization(std::shared_ptr<Query> quer
     // 其他物理优化
 
     // 处理orderby
+    plan = generate_group_plan(query, std::move(plan));
     plan = generate_sort_plan(query, std::move(plan));
-
     return plan;
 }
 
@@ -331,7 +332,15 @@ std::shared_ptr<Plan> Planner::make_one_rel(std::shared_ptr<Query> query)
 
     return table_join_executors;
 }
-
+std::shared_ptr<Plan> Planner::generate_group_plan(std::shared_ptr<Query> query, std::shared_ptr<Plan> plan)
+{
+    auto x = std::dynamic_pointer_cast<ast::SelectStmt>(query->parse);
+    if (!x->group_func)
+    {
+        return plan;
+    }
+    return std::make_shared<GroupPlan>(T_Group, std::move(plan), query->group);
+}
 std::shared_ptr<Plan> Planner::generate_sort_plan(std::shared_ptr<Query> query, std::shared_ptr<Plan> plan)
 {
     auto x = std::dynamic_pointer_cast<ast::SelectStmt>(query->parse);

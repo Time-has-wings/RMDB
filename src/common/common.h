@@ -23,7 +23,6 @@ struct TabCol
     std::string tab_name;
     std::string col_name;
     std::string as_name;
-    std::string func_name;
     bool isGroup = false;
     friend bool operator<(const TabCol &x, const TabCol &y)
     {
@@ -368,4 +367,10 @@ struct SetClause
 {
     TabCol lhs;
     Value rhs;
+};
+struct Group
+{
+    TabCol col;
+    std::string func_name;
+    bool all = false;
 };

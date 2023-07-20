@@ -43,7 +43,8 @@ typedef enum PlanTag
     T_Sort,
     T_Projection,
     T_Showindex,
-    T_LoadData
+    T_LoadData,
+    T_Group
 } PlanTag;
 
 // 查询执行计划
@@ -129,7 +130,19 @@ public:
     std::vector<std::pair<TabCol, bool>> orders;
     int limit;
 };
-
+class GroupPlan : public Plan
+{
+public:
+    GroupPlan(PlanTag tag, std::shared_ptr<Plan> subplan, Group group)
+    {
+        subplan_ = std::move(subplan);
+        Plan::tag = tag;
+        group_ = std::move(group);
+    }
+    ~GroupPlan() {}
+    std::shared_ptr<Plan> subplan_;
+    Group group_;
+};
 // dml语句，包括insert; delete; update; select语句　
 class DMLPlan : public Plan
 {
@@ -178,7 +191,8 @@ public:
     {
         Plan::tag = tag;
         tab_name_ = std::move(tab_name);
-    }OtherPlan(PlanTag tag, std::string tab_name, std::string file_name)
+    }
+    OtherPlan(PlanTag tag, std::string tab_name, std::string file_name)
     {
         Plan::tag = tag;
         tab_name_ = std::move(tab_name);

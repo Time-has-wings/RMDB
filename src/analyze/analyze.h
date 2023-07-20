@@ -19,8 +19,9 @@ See the Mulan PSL v2 for more details. */
 #include "parser/parser.h"
 #include "system/sm.h"
 #include "common/common.h"
-class Query{
-    public:
+class Query
+{
+public:
     std::shared_ptr<ast::TreeNode> parse;
     // TODO jointree
     // where条件
@@ -31,22 +32,23 @@ class Query{
     std::vector<std::string> tables;
     // update 的set 值
     std::vector<SetClause> set_clauses;
-    //insert 的values值
+    // insert 的values值
     std::vector<Value> values;
-    //orderby 的 排序所需值
+    // orderby 的 排序所需值
     std::vector<std::pair<TabCol, bool>> orders;
+    Group group;
     int limit;
-    Query(){}
-
+    Query() {}
 };
 
 class Analyze
 {
 private:
     SmManager *sm_manager_;
+
 public:
-    Analyze(SmManager *sm_manager) : sm_manager_(sm_manager){}
-    ~Analyze(){}
+    Analyze(SmManager *sm_manager) : sm_manager_(sm_manager) {}
+    ~Analyze() {}
 
     std::shared_ptr<Query> do_analyze(std::shared_ptr<ast::TreeNode> root);
 
@@ -58,4 +60,3 @@ private:
     Value convert_sv_value(const std::shared_ptr<ast::Value> &sv_val);
     CompOp convert_sv_comp_op(ast::SvCompOp op);
 };
-

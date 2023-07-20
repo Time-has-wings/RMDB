@@ -30,32 +30,44 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                 throw TableNotFoundError(table);
             }
         }
-        bool group_all = false;
-        std::string as_name;
-        std::string func_name;
+        if (x->group_func)
+        {
+            auto group = x->group;
+            if (group->tab_name == "")
+                group->tab_name = query->tables[0];
+            if (!group->all)
+            {
+                auto &cols = sm_manager_->db_.get_table(group->tab_name).cols;
+                auto s = std::find_if(cols.begin(), cols.end(), [group](const ColMeta &col)
+                                      { return group->col_name == col.name; });
+                if (s == cols.end())
+                    throw InternalError("wrong col");
+            }
+            else
+            {
+                std::vector<ColMeta> all_cols;
+                get_all_cols(query->tables, all_cols);
+                query->group.all = true;
+                group->col_name = all_cols[0].name;
+            }
+            TabCol sel_col;
+            sel_col = {.tab_name = group->tab_name, .col_name = group->col_name, .as_name = group->as_name, .isGroup = true};
+            query->cols.emplace_back(sel_col);
+            query->group.func_name = group->func_name;
+            query->group.col.col_name = group->col_name;
+            query->group.col.tab_name = group->tab_name;
+            get_clause(x->conds, query->conds);
+            check_clause(query->tables, query->conds);
+            query->parse = std::move(parse);
+            return query;
+        }
         // 处理target list，在target list中添加上表名，例如 a.id
         for (auto &sv_sel_col : x->cols)
         {
             TabCol sel_col;
-            if (auto group = std::dynamic_pointer_cast<ast::GroupValue>(sv_sel_col))
-            {
-                if (!group->all)
-                {
-                    sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name, .as_name = group->as_name, .func_name = group->func_name, .isGroup = true};
-                }
-                else
-                {
-                    group_all = true;
-                    as_name = group->as_name;
-                    func_name = group->func_name;
-                    continue;
-                }
-            }
-            else
-                sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name};
+            sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name};
             query->cols.emplace_back(sel_col);
         }
-
         std::vector<ColMeta> all_cols;
         get_all_cols(query->tables, all_cols);
         if (query->cols.empty())
@@ -64,17 +76,8 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
             for (auto &col : all_cols)
             {
                 TabCol sel_col;
-                if (group_all)
-                {
-                    sel_col = {.tab_name = col.tab_name, .col_name = col.name, .as_name = as_name, .func_name = func_name, .isGroup = true};
-                    query->cols.emplace_back(sel_col);
-                    break;
-                }
-                else
-                {
-                    sel_col = {.tab_name = col.tab_name, .col_name = col.name};
-                    query->cols.emplace_back(sel_col);
-                }
+                sel_col = {.tab_name = col.tab_name, .col_name = col.name};
+                query->cols.emplace_back(sel_col);
             }
         }
         else
@@ -163,8 +166,6 @@ TabCol Analyze::check_column(const std::vector<ColMeta> &all_cols, TabCol target
                     throw AmbiguousColumnError(target.col_name);
                 }
                 tab_name = col.tab_name;
-                if (col.type == TYPE_STRING && target.func_name == "SUM")
-                    throw InvalidValueCountError();
             }
         }
         if (tab_name.empty())

@@ -162,6 +162,10 @@ dml:
     {
         $$ = std::make_shared<SelectStmt>($2, $4, $5, $6);
     }
+    |   SELECT groupVal FROM tableList optWhereClause
+    {
+        $$ = std::make_shared<SelectStmt>($2, $4, $5);
+    }
     ;
 
 fieldList:
@@ -320,15 +324,7 @@ colList:
     {
         $$ = std::vector<std::shared_ptr<Col>>{$1};
     }
-    |  groupVal
-    {
-        $$ = std::vector<std::shared_ptr<Col>>{$1};
-    }
     |   colList ',' col
-    {
-        $$.push_back($3);
-    }
-    |   colList ',' groupVal
     {
         $$.push_back($3);
     }
