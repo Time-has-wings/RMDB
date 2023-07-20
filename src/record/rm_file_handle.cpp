@@ -53,7 +53,27 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
     buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
     return Rid{pageNo, free_slot_no};
 }
-
+void RmFileHandle::insert_records(char *buf, int size)
+{
+    RmPageHandle page_handle = create_page_handle();
+    for (size_t i = 0; i < size; i++)
+    {
+        int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
+        page_id_t pageNo = page_handle.page->get_page_id().page_no;
+        char *free_slot = page_handle.get_slot(free_slot_no);
+        memcpy(free_slot, buf + i * file_hdr_.record_size, file_hdr_.record_size);
+        Bitmap::set(page_handle.bitmap, free_slot_no);
+        page_handle.page_hdr->num_records++;
+        if (page_handle.page_hdr->num_records == file_hdr_.num_records_per_page)
+        {
+            file_hdr_.first_free_page_no = page_handle.page_hdr->next_free_page_no;
+            buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+            if (i != size - 1)
+                page_handle = create_page_handle();
+        }
+    }
+    buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+}
 /**
  * @description: 在当前表中的指定位置插入一条记录
  * @param {Rid&} rid 要插入记录的位置
