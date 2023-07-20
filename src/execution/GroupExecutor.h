@@ -65,7 +65,10 @@ public:
     {
         prev_->beginTuple();
         if (prev_->is_end())
+        {
+            isend_ = true;
             return;
+        }
         if (all)
         {
             work();
