@@ -155,13 +155,13 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 	{
 		if (sel_col.isGroup)
 		{
-			captions.push_back(sel_col.as_name);
+			captions.emplace_back(sel_col.as_name);
 			func_name = sel_col.func_name;
 			has_group = true;
 			break;
 		}
 		else
-			captions.push_back(sel_col.col_name);
+			captions.emplace_back(sel_col.col_name);
 	}
 
 	// Print header into buffer
@@ -282,7 +282,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 				int64_t temp = *(int64_t *)rec_buf;
 				col_str = datetime::trans_datetime(temp);
 			}
-			columns.push_back(col_str);
+			columns.emplace_back(col_str);
 		}
 		if (!has_group)
 		{ // print record into buffer

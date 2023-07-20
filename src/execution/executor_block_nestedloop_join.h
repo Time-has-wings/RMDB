@@ -76,9 +76,9 @@ public:
             {
                 auto left_col = left_->get_col(left_->cols(), cond.lhs_col);
                 auto left_value = get_value(left_record, *left_col);
-                block.push_back(left_value);
+                block.emplace_back(left_value);
             }
-            blocks.push_back({std::move(left_record), std::move(block)});
+            blocks.emplace_back(std::pair<std::unique_ptr<RmRecord>, std::vector<Value>>(std::move(left_record), std::move(block)));
             block.clear();
             if (now_size > join_buffer_size - rec_size)
                 break;
@@ -151,7 +151,7 @@ private:
                         {
                             right_value = cond.rhs_val;
                         }
-                        rVals.push_back(right_value);
+                        rVals.emplace_back(right_value);
                     }
                 }
                 auto left_rec = std::find_if(blocks.begin() + idx, blocks.end(), [&](const std::pair<std::unique_ptr<RmRecord>, std::vector<Value>> &block)

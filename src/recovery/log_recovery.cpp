@@ -32,7 +32,7 @@ void RecoveryManager::analyze()
 				break;
 			if (t->log_type_ == begin)
 			{
-				ATT.push_back(std::pair<txn_id_t, lsn_t>{t->log_tid_, t->lsn_});
+				ATT.emplace_back(std::pair<txn_id_t, lsn_t>{t->log_tid_, t->lsn_});
 			}
 			else if (t->log_type_ == commit) // abort也是需要undo
 			{
@@ -46,7 +46,7 @@ void RecoveryManager::analyze()
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_; // redo_lsn最开始在定义时便有了最大值 下同
 				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
-					DPT.push_back(temp.rid_.page_no);
+					DPT.emplace_back(temp.rid_.page_no);
 				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
@@ -59,7 +59,7 @@ void RecoveryManager::analyze()
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
 				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
-					DPT.push_back(temp.rid_.page_no);
+					DPT.emplace_back(temp.rid_.page_no);
 				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
@@ -72,7 +72,7 @@ void RecoveryManager::analyze()
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
 				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
-					DPT.push_back(temp.rid_.page_no);
+					DPT.emplace_back(temp.rid_.page_no);
 				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())

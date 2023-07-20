@@ -53,7 +53,7 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
             }
             else
                 sel_col = {.tab_name = sv_sel_col->tab_name, .col_name = sv_sel_col->col_name};
-            query->cols.push_back(sel_col);
+            query->cols.emplace_back(sel_col);
         }
 
         std::vector<ColMeta> all_cols;
@@ -67,13 +67,13 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                 if (group_all)
                 {
                     sel_col = {.tab_name = col.tab_name, .col_name = col.name, .as_name = as_name, .func_name = func_name, .isGroup = true};
-                    query->cols.push_back(sel_col);
+                    query->cols.emplace_back(sel_col);
                     break;
                 }
                 else
                 {
                     sel_col = {.tab_name = col.tab_name, .col_name = col.name};
-                    query->cols.push_back(sel_col);
+                    query->cols.emplace_back(sel_col);
                 }
             }
         }
@@ -115,7 +115,7 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
                     throw InternalError("Overflow");
                 }
             }
-            query->set_clauses.push_back(clause);
+            query->set_clauses.emplace_back(clause);
         }
         get_clause(x->conds, query->conds);
         check_clause({x->tab_name}, query->conds);
@@ -136,7 +136,7 @@ std::shared_ptr<Query> Analyze::do_analyze(std::shared_ptr<ast::TreeNode> parse)
             {
                 throw InternalError("Overflow");
             }
-            query->values.push_back(temp);
+            query->values.emplace_back(temp);
         }
     }
     else
@@ -210,7 +210,7 @@ void Analyze::get_clause(const std::vector<std::shared_ptr<ast::BinaryExpr>> &sv
             cond.is_rhs_val = false;
             cond.rhs_col = {.tab_name = rhs_col->tab_name, .col_name = rhs_col->col_name};
         }
-        conds.push_back(cond);
+        conds.emplace_back(cond);
     }
 }
 

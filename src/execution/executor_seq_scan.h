@@ -108,6 +108,7 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
+        //return fh_->get_record(rid_, context_); //beginTuple可对table上S锁,说明可以对record上S锁.
         if (context_->txn_->get_txn_mode())
         {
             if (context_->lock_mgr_->lock_shared_on_record(context_->txn_, rid_, fh_->GetFd()))

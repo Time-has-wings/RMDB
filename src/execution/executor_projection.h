@@ -32,11 +32,11 @@ public:
         for (auto &sel_col : sel_cols)
         {
             auto pos = get_col(prev_cols, sel_col);
-            sel_idxs_.push_back(pos - prev_cols.begin());
+            sel_idxs_.emplace_back(pos - prev_cols.begin());
             auto col = *pos;
             col.offset = curr_offset;
             curr_offset += col.len;
-            cols_.push_back(col);
+            cols_.emplace_back(col);
         }
         len_ = curr_offset;
     }
