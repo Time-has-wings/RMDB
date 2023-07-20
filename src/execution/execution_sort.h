@@ -61,8 +61,8 @@ public:
             auto order = orders.at(i);
             auto pos = get_col(prev_cols, order.first);
             auto col = *pos;
-            cols_.push_back(col);
-            is_descs_.push_back(order.second);
+            cols_.emplace_back(col);
+            is_descs_.emplace_back(order.second);
         }
         tuple_num = 0;
         used_tuple.clear();
@@ -111,7 +111,7 @@ public:
         std::sort(v.begin(), v.end());
         for (int i = 0; i < v.size(); i++)
         {
-            sorted_tuples.push_back(std::move(v.at(i).id));
+            sorted_tuples.emplace_back(std::move(v.at(i).id));
         }
         v.clear();
         v.shrink_to_fit();

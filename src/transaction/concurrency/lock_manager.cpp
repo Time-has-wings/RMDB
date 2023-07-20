@@ -27,13 +27,13 @@ bool LockManager::lock_shared_on_record(Transaction *txn, const Rid &rid, int ta
     txn->set_state(TransactionState::GROWING);
     LockDataId newid(tab_fd, rid, LockDataType::RECORD);
     if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
-    {
+    { // 本事务已对改数据项上锁(S or X)
         lock.unlock();
         return true;
     }
     if (lock_table_[newid].group_lock_mode_ != GroupLockMode::X)
     {
-        if (lock_IS_on_table(txn, tab_fd))
+        if (lock_IS_on_table(txn, tab_fd)) // 可对table上IS锁
         {
             txn->get_lock_set()->insert(newid);
             LockRequest *newquest = new LockRequest(txn->get_transaction_id(), LockMode::SHARED);
@@ -44,12 +44,15 @@ bool LockManager::lock_shared_on_record(Transaction *txn, const Rid &rid, int ta
             return true;
         }
         else
+        {
+            lock.unlock();
             return false;
+        }
     }
     else
     {
-        lock.unlock();
         txn->set_state(TransactionState::ABORTED);
+        lock.unlock();
         return false;
     }
 }
@@ -63,7 +66,6 @@ bool LockManager::lock_shared_on_record(Transaction *txn, const Rid &rid, int ta
  */
 bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int tab_fd)
 {
-
     std::unique_lock<std::mutex> lock{latch_};
     if (txn->get_state() == TransactionState::ABORTED ||
         txn->get_state() == TransactionState::COMMITTED ||
@@ -77,7 +79,7 @@ bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int
         {
             if (i->txn_id_ == txn->get_transaction_id())
             {
-                if (lock_IX_on_table(txn, tab_fd))
+                if (lock_IX_on_table(txn, tab_fd)) // 可对table上IX锁
                 {
                     i->lock_mode_ = LockMode::EXLUCSIVE;
                     lock_table_[newid].group_lock_mode_ = GroupLockMode::X;
@@ -85,6 +87,7 @@ bool LockManager::lock_exclusive_on_record(Transaction *txn, const Rid &rid, int
                     return true;
                 }
             }
+            //存在其他事务对该数据项的锁,故本事务上X锁失败
             txn->set_state(TransactionState::ABORTED);
             lock.unlock();
             return false;
@@ -389,22 +392,23 @@ bool LockManager::lock_IX_on_table(Transaction *txn, int tab_fd)
  * @param {Transaction*} txn 要释放锁的事务对象指针
  * @param {LockDataId} lock_data_id 要释放的锁ID
  */
+
+txn_id_t unlock_txn_id; //全局变量 用于remove_if
 bool LockManager::unlock(Transaction *txn, LockDataId lock_data_id)
 {
     std::unique_lock<std::mutex> lock(latch_);
     txn->set_state(TransactionState::SHRINKING);
     if (txn->get_lock_set()->find(lock_data_id) != txn->get_lock_set()->end())
     {
+        // 删除该事务
+        unlock_txn_id = txn->get_transaction_id();
+        lock_table_[lock_data_id].request_queue_.remove_if([](LockRequest it){return it.txn_id_ == unlock_txn_id;});
+        // 重新评判队列的锁模式
         GroupLockMode mode = GroupLockMode::NON_LOCK;
         for (auto i = lock_table_[lock_data_id].request_queue_.begin(); i != lock_table_[lock_data_id].request_queue_.end(); i++)
         {
             if (i->granted_)
             {
-                if (i->txn_id_ == txn->get_transaction_id())
-                {
-                    i->granted_ = false;
-                    continue;
-                }
                 if (i->lock_mode_ == LockMode::EXLUCSIVE)
                     mode = GroupLockMode::X;
                 else if (i->lock_mode_ == LockMode::SHARED && mode != GroupLockMode::SIX)

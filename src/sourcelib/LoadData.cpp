@@ -51,28 +51,28 @@ Value LoadData::trans(std::string &s)
 	}
 	return res;
 }
-Value LoadData::trans(std::string &s, ColMeta &c)
+Value LoadData::trans(std::string &s, ColMeta &col)
 {
-	Value res;
-	switch (c.type)
+	Value val;
+	switch (col.type)
 	{
 	case TYPE_INT:
-		res.set_int(std::stoi(s));
+		val.set_int(std::stoi(s));
 		break;
 	case TYPE_DATETIME:
-		res.set_datetime(s);
+		val.set_datetime(s);
 		break;
 	case TYPE_BIGINT:
-		res.set_bigint(atoll(s.c_str()));
+		val.set_bigint(atoll(s.c_str()));
 		break;
 	case TYPE_STRING:
-		res.set_str(s);
+		val.set_str(s);
 		break;
 	case TYPE_FLOAT:
-		res.set_float(std::stof(s));
+		val.set_float(std::stof(s));
 		break;
 	default:
 		break;
 	}
-	return res;
+	return val;
 }
