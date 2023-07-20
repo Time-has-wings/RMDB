@@ -22,7 +22,7 @@ void LoadData::trans(std::string &s, ColMeta &col, char *desrc, size_t off_set)
 		*(int64_t *)t = atoll(s.c_str());
 		break;
 	case TYPE_STRING:
-		memcpy(desrc + off_set, s.c_str(), col.len);
+		memcpy(desrc + off_set, s.c_str(), s.size());
 		return;
 	case TYPE_FLOAT:
 		*(float *)t = std::stof(s);

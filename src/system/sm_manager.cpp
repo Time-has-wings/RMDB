@@ -482,7 +482,7 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 	{
 		sin.clear();
 		sin.str(linestr);
-		memset(str, '\0', fh_->get_file_hdr().record_size + 1);
+		memset(str, '\0', fh_->get_file_hdr().record_size);
 		for (size_t i = 0; i < tab.cols.size(); i++)
 		{
 			auto &col = tab.cols.at(i);
