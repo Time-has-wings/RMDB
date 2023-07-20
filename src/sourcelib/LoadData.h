@@ -19,11 +19,10 @@ class LoadData
 	std::string file_name;
 	std::string tab_name;
 	std::vector<std::string> column_names;
- public:
+
+public:
 	LoadData(std::string file_name_, std::string tab_name_) : file_name(file_name_), tab_name(tab_name_)
 	{
 	}
-	static Value trans(std::string&);
-	static Value trans(std::string &, ColMeta &);
+	static void trans(std::string &, ColMeta &, char *s, size_t off_set);
 };
-

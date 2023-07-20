@@ -477,22 +477,21 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 	std::istringstream sin;
 	strStr.str(buffer);
 	getline(strStr, linestr);
+	char str[fh_->get_file_hdr().record_size];
 	while (getline(strStr, linestr))
 	{
 		sin.clear();
 		sin.str(linestr);
-		RmRecord rec(fh_->get_file_hdr().record_size);
+		memset(str, '\0', fh_->get_file_hdr().record_size + 1);
 		for (size_t i = 0; i < tab.cols.size(); i++)
 		{
 			auto &col = tab.cols.at(i);
 			std::getline(sin, word, ',');
 			if (word.back() == '\r')
 				word.erase(word.size() - 1, 1);
-			auto val = LoadData::trans(word, col);
-			val.init_raw(col.len);
-			memcpy(rec.data + col.offset, val.raw->data, val.raw->size);
+			LoadData::trans(word, col, str, col.offset);
 		}
-		auto rid = fh_->insert_record(rec.data, nullptr);
+		auto rid = fh_->insert_record(str, nullptr);
 		for (size_t i = 0; i < tab.indexes.size(); ++i)
 		{
 			auto &index = tab.indexes[i];
@@ -501,7 +500,7 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 			int offset = 0;
 			for (size_t i = 0; i < index.col_num; ++i)
 			{
-				memcpy(key + offset, rec.data + index.cols[i].offset, index.cols[i].len);
+				memcpy(key + offset, str + index.cols[i].offset, index.cols[i].len);
 				offset += index.cols[i].len;
 			}
 			ih->insert_entry(key, rid, nullptr);
