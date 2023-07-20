@@ -64,6 +64,8 @@ public:
     void beginTuple() override
     {
         prev_->beginTuple();
+        if (prev_->is_end())
+            return;
         if (all)
         {
             work();
@@ -95,11 +97,8 @@ public:
             col_str.resize(strlen(col_str.c_str()));
             res.set_str(col_str);
         }
-        if(!prev_->is_end())
-        {
-            prev_->nextTuple();
-            work();
-        }
+        prev_->nextTuple();
+        work();
     }
     void nextTuple() override
     {
