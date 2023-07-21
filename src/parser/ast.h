@@ -287,19 +287,22 @@ namespace ast
         std::vector<std::string> tabs;
         std::vector<std::shared_ptr<BinaryExpr>> conds;
         std::vector<std::shared_ptr<JoinExpr>> jointree;
-
+        bool is_limit = false;
         bool has_sort = false;
         bool group_func = false;
         std::shared_ptr<OrderClause> order_clause;
 
-        SelectStmt(std::vector<std::shared_ptr<Col>> cols_, 
+        SelectStmt(std::vector<std::shared_ptr<Col>> cols_,
                    std::vector<std::string> tabs_,
                    std::vector<std::shared_ptr<BinaryExpr>> conds_,
                    std::shared_ptr<OrderClause> order_clause_) : cols(std::move(cols_)), tabs(std::move(tabs_)), conds(std::move(conds_)),
                                                                  order_clause(std::move(order_clause_))
         {
             if (auto orderclause = std::dynamic_pointer_cast<ast::OrderClause>(order_clause))
+            {
                 has_sort = (bool)(order_clause->orders.size() > 0);
+                is_limit = order_clause->limit != -1;
+            }
         }
         SelectStmt(std::shared_ptr<GroupValue> group_,
                    std::vector<std::string> tabs_,

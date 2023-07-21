@@ -348,7 +348,9 @@ std::shared_ptr<Plan> Planner::generate_sort_plan(std::shared_ptr<Query> query, 
     {
         return plan;
     }
-    return std::make_shared<SortPlan>(T_Sort, std::move(plan), query->orders, query->limit);
+    if (x->is_limit)
+        return std::make_shared<LimitPlan>(T_Limit, std::move(plan), query->orders, query->limit);
+    return std::make_shared<SortPlan>(T_Sort, std::move(plan), query->orders);
 }
 
 /**

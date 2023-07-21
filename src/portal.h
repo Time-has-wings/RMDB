@@ -23,6 +23,7 @@ See the Mulan PSL v2 for more details. */
 #include "execution/executor_insert.h"
 #include "execution/executor_delete.h"
 #include "execution/execution_sort.h"
+#include "execution/LimitExecutor.h"
 #include "execution/GroupExecutor.h"
 #include "common/common.h"
 
@@ -191,12 +192,18 @@ public:
         else if (auto x = std::dynamic_pointer_cast<SortPlan>(plan))
         {
             return std::make_unique<SortExecutor>(convert_plan_executor(x->subplan_, context),
+                                                  x->orders);
+        }
+        else if (auto x = std::dynamic_pointer_cast<LimitPlan>(plan))
+        {
+            return std::make_unique<LimitExecutor>(convert_plan_executor(x->subplan_, context),
                                                   x->orders, x->limit);
         }
         else if (auto x = std::dynamic_pointer_cast<GroupPlan>(plan))
         {
             return std::make_unique<GroupExecutor>(convert_plan_executor(x->subplan_, context), x->group_);
         }
+
         return nullptr;
     }
 };

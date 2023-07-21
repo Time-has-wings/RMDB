@@ -15,11 +15,12 @@ See the Mulan PSL v2 for more details. */
 #include "index/ix.h"
 #include "system/sm.h"
 #include <queue>
-struct value_id
+#include <memory>
+struct value_rec
 {
     std::vector<std::pair<Value, bool>> v;
-    std::unique_ptr<RmRecord> id;
-    bool operator<(const value_id &t)
+    int id;
+    bool operator<(value_rec t) const
     {
         size_t s = 0;
         while (s != v.size())
@@ -38,18 +39,18 @@ struct value_id
     }
 };
 
-class SortExecutor : public AbstractExecutor
+class LimitExecutor : public AbstractExecutor
 {
 private:
     std::unique_ptr<AbstractExecutor> prev_;
     std::vector<ColMeta> cols_; // 框架中只支持一个键排序，需要自行修改数据结构支持多个键排序
-    size_t tuple_num;
     std::vector<bool> is_descs_;
-    std::vector<std::unique_ptr<RmRecord>> sorted_tuples;
-    size_t idx = 0;
+    int limit;
+    std::priority_queue<value_rec> tuples;
+    std::unordered_map<int, std::unique_ptr<RmRecord>> s_map;
 
 public:
-    SortExecutor(std::unique_ptr<AbstractExecutor> prev, const std::vector<std::pair<TabCol, bool>> &orders)
+    LimitExecutor(std::unique_ptr<AbstractExecutor> prev, const std::vector<std::pair<TabCol, bool>> &orders, int limit_)
     {
         prev_ = std::move(prev);
         auto &prev_cols = prev_->cols();
@@ -61,8 +62,39 @@ public:
             cols_.emplace_back(col);
             is_descs_.emplace_back(order.second);
         }
-        tuple_num = 0;
-        sort();
+        limit = limit_;
+    }
+
+    std::unique_ptr<RmRecord> Next() override
+    {
+        if (!tuples.empty())
+        {
+            auto &a = (tuples.top());
+            tuples.pop();
+            return std::move(s_map[a.id]);
+        }
+    }
+
+    void init()
+    {
+        int id = 1;
+        while (!prev_->is_end())
+        {
+            auto rec = prev_->Next();
+            auto a = *rec;
+            std::vector<std::pair<Value, bool>> vec;
+            for (int i = 0; i < cols_.size(); i++)
+            {
+                auto val = prev_->get_value(rec, cols_.at(i));
+                vec.emplace_back(val, is_descs_.at(i));
+            }
+            s_map[id] = std::move(rec);
+            value_rec x{vec, id++};
+            tuples.push(x);
+            if (tuples.size() > limit)
+                tuples.pop();
+            prev_->nextTuple();
+        }
     }
     const std::vector<ColMeta> &cols() const
     {
@@ -70,44 +102,16 @@ public:
     };
     bool is_end() const override
     {
-        return idx >tuple_num;
+        return tuples.empty();
     }
     void beginTuple() override
     {
-        idx++;
+        return;
     }
 
     void nextTuple() override
     {
-        idx++;
-    }
-
-    std::unique_ptr<RmRecord> Next() override
-    {
-        return std::move(sorted_tuples.at(idx-1));
-    }
-    void sort()
-    {
-        std::vector<value_id> v;
-        prev_->beginTuple();
-        while (!prev_->is_end())
-        {
-            tuple_num++;
-            auto rec = prev_->Next();
-            std::vector<std::pair<Value, bool>> vec;
-            for (int i = 0; i < cols_.size(); i++)
-            {
-                auto val = prev_->get_value(rec, cols_.at(i));
-                vec.emplace_back(val, is_descs_.at(i));
-            }
-            v.push_back({vec, std::move(rec)});
-            prev_->nextTuple();
-        }
-        std::sort(v.begin(), v.end());
-        for (int i = 0; i < v.size(); i++)
-        {
-            sorted_tuples.emplace_back(std::move(v.at(i).id));
-        }
+        return;
     }
     Rid &rid() override { return _abstract_rid; }
 };

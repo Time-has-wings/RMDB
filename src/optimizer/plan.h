@@ -44,7 +44,8 @@ typedef enum PlanTag
     T_Projection,
     T_Showindex,
     T_LoadData,
-    T_Group
+    T_Group,
+    T_Limit
 } PlanTag;
 
 // 查询执行计划
@@ -118,14 +119,28 @@ public:
 class SortPlan : public Plan
 {
 public:
-    SortPlan(PlanTag tag, std::shared_ptr<Plan> subplan, std::vector<std::pair<TabCol, bool>> orders_, int limit_)
+    SortPlan(PlanTag tag, std::shared_ptr<Plan> subplan, std::vector<std::pair<TabCol, bool>> orders_)
+    {
+        subplan_ = std::move(subplan);
+        orders = std::move(orders_);
+        Plan::tag = tag;
+    }
+    ~SortPlan() {}
+    std::shared_ptr<Plan> subplan_;
+    std::vector<std::pair<TabCol, bool>> orders;
+};
+class LimitPlan : public Plan
+{
+public:
+    LimitPlan(PlanTag tag, std::shared_ptr<Plan> subplan, std::vector<std::pair<TabCol, bool>> orders_, int limit_)
     {
         subplan_ = std::move(subplan);
         orders = std::move(orders_);
         limit = limit_;
         Plan::tag = tag;
     }
-    ~SortPlan() {}
+    ~LimitPlan() {}
+    
     std::shared_ptr<Plan> subplan_;
     std::vector<std::pair<TabCol, bool>> orders;
     int limit;
