@@ -94,7 +94,6 @@ public:
         }
         for (auto &index : tab_.indexes)
         {
-            int cnt = 0;
             for (int i = 0; i < rids_.size() - 1; i++)
             {
                 for (int j = i + 1; j < rids_.size(); j++)
@@ -111,10 +110,8 @@ public:
                         offset += index.cols[i].len;
                     }
                     if (f)
-                        cnt++;
+                        throw IndexEnrtyExistsError();
                 }
-                if (cnt > 0)
-                    throw IndexEnrtyExistsError();
             }
         }
         for (int i = 0; i < rids_.size(); i++)
