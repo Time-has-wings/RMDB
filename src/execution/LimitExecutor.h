@@ -46,7 +46,7 @@ private:
     std::vector<ColMeta> cols_; // 框架中只支持一个键排序，需要自行修改数据结构支持多个键排序
     std::vector<bool> is_descs_;
     int limit;
-    std::priority_queue<value_rec> tuples;
+    std::priority_queue<int> valid_tuples;
     std::unordered_map<int, std::unique_ptr<RmRecord>> s_map;
 
 public:
@@ -67,17 +67,18 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        if (!tuples.empty())
+        if (!valid_tuples.empty())
         {
-            auto &a = (tuples.top());
-            tuples.pop();
-            return std::move(s_map[a.id]);
+            auto id = valid_tuples.top();
+            return std::move(s_map[id]);
         }
     }
 
     void init()
     {
         int id = 1;
+        prev_->beginTuple();
+        std::priority_queue<value_rec> tuples;
         while (!prev_->is_end())
         {
             auto rec = prev_->Next();
@@ -92,8 +93,16 @@ public:
             value_rec x{vec, id++};
             tuples.push(x);
             if (tuples.size() > limit)
+            {
+                s_map.erase(tuples.top().id);
                 tuples.pop();
+            }
             prev_->nextTuple();
+        }
+        while (!tuples.empty())
+        {
+            valid_tuples.push(tuples.top().id);
+            tuples.pop();
         }
     }
     const std::vector<ColMeta> &cols() const
@@ -102,16 +111,16 @@ public:
     };
     bool is_end() const override
     {
-        return tuples.empty();
+        return valid_tuples.empty();
     }
     void beginTuple() override
     {
-        return;
+        init();
     }
 
     void nextTuple() override
     {
-        return;
+        valid_tuples.pop();
     }
     Rid &rid() override { return _abstract_rid; }
 };
