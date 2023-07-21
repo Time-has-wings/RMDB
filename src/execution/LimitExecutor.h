@@ -46,7 +46,7 @@ private:
     std::vector<ColMeta> cols_; // 框架中只支持一个键排序，需要自行修改数据结构支持多个键排序
     std::vector<bool> is_descs_;
     int limit;
-    std::priority_queue<int> valid_tuples;
+    std::list<int> valid_tuples;
     std::unordered_map<int, std::unique_ptr<RmRecord>> s_map;
 
 public:
@@ -69,7 +69,7 @@ public:
     {
         if (!valid_tuples.empty())
         {
-            auto id = valid_tuples.top();
+            auto id = valid_tuples.front();
             return std::move(s_map[id]);
         }
     }
@@ -101,7 +101,7 @@ public:
         }
         while (!tuples.empty())
         {
-            valid_tuples.push(tuples.top().id);
+            valid_tuples.push_front(tuples.top().id);
             tuples.pop();
         }
     }
@@ -120,7 +120,7 @@ public:
 
     void nextTuple() override
     {
-        valid_tuples.pop();
+        valid_tuples.pop_front();
     }
     Rid &rid() override { return _abstract_rid; }
 };
