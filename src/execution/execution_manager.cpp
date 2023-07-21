@@ -148,8 +148,6 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 							Context *context)
 {
 	std::vector<std::string> captions;
-	std::string func_name;
-	bool has_group = false;
 	captions.reserve(sel_cols.size());
 	for (auto &sel_col : sel_cols)
 	{
@@ -181,10 +179,6 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 
 	// Print records
 	size_t num_rec = 0;
-	int cnt = 0;
-	Value res;
-	Value temp;
-	bool first = true;
 	std::vector<std::string> columns;
 	// 执行query_plan
 	for (executorTreeRoot->beginTuple(); !executorTreeRoot->is_end(); executorTreeRoot->nextTuple())

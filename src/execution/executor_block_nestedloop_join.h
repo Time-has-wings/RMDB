@@ -66,7 +66,6 @@ public:
     {
         now_size = 0;
         blocks.clear();
-        blocks.shrink_to_fit();
         std::vector<Value> block;
         while (!left_->is_end())
         {
@@ -166,14 +165,11 @@ private:
                 {
                     idx = 0;
                     rVals.clear();
-                    rVals.shrink_to_fit();
                     right_->nextTuple();
                 }
             }
             if (left_->is_end())
             {
-                blocks.clear();
-                blocks.shrink_to_fit();
                 isend = true;
                 return;
             }

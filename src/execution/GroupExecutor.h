@@ -120,7 +120,7 @@ public:
         if (func_ == COUNT)
         {
             *(int *)(r->data) = cnt;
-            return std::move(r);
+            return r;
         }
         if (type_ == TYPE_INT)
         {

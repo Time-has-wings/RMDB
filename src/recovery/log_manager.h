@@ -335,17 +335,18 @@ public:
         prev_lsn_ = INVALID_LSN;
         table_name_ = nullptr;
     }
-    UpdateLogRecord(txn_id_t txn_id, RmRecord &orign_value, RmRecord &update_value, Rid &rid, std::string table_name)
+    UpdateLogRecord(txn_id_t txn_id, RmRecord &orign_value, char *update_value, Rid &rid, std::string table_name)
         : UpdateLogRecord()
     {
         log_tid_ = txn_id;
         orign_value_ = orign_value;
-        update_value_ = update_value;
+        buf_ = update_value;
         rid_ = rid;
+        val_size = orign_value.size;
         log_tot_len_ += sizeof(int);
-        log_tot_len_ += orign_value_.size;
+        log_tot_len_ += val_size;
         log_tot_len_ += sizeof(int);
-        log_tot_len_ += update_value_.size;
+        log_tot_len_ += val_size;
         log_tot_len_ += sizeof(Rid);
         table_name_size_ = table_name.length();
         table_name_ = new char[table_name_size_];
@@ -358,14 +359,14 @@ public:
     {
         LogRecord::serialize(dest);
         int offset = OFFSET_LOG_DATA;
-        memcpy(dest + offset, &orign_value_.size, sizeof(int));
+        memcpy(dest + offset, &val_size, sizeof(int));
         offset += sizeof(int);
-        memcpy(dest + offset, orign_value_.data, orign_value_.size);
-        offset += orign_value_.size;
-        memcpy(dest + offset, &update_value_.size, sizeof(int));
+        memcpy(dest + offset, orign_value_.data, val_size);
+        offset += val_size;
+        memcpy(dest + offset, &val_size, sizeof(int));
         offset += sizeof(int);
-        memcpy(dest + offset, update_value_.data, update_value_.size);
-        offset += update_value_.size;
+        memcpy(dest + offset, buf_, val_size);
+        offset += val_size;
         memcpy(dest + offset, &rid_, sizeof(Rid));
         offset += sizeof(Rid);
         memcpy(dest + offset, &table_name_size_, sizeof(size_t));
@@ -396,9 +397,11 @@ public:
         printf("table name: %s\n", table_name_);
     }
 
-    RmRecord orign_value_;   // 更新的原始值
-    RmRecord update_value_;  // 更新的值
-    Rid rid_;                // 记录更新的位置
+    RmRecord orign_value_;  // 更新的原始值
+    RmRecord update_value_; // 更新的值
+    char *buf_;             // 更新的值
+    Rid rid_;               // 记录更新的位置
+    size_t val_size;
     char *table_name_;       // 更新记录的表名称
     size_t table_name_size_; // 表名称的大小
 };

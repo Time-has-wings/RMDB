@@ -25,6 +25,8 @@ private:
     std::string tab_name_;
     std::vector<SetClause> set_clauses_;
     SmManager *sm_manager_;
+    char **rids_data;
+    size_t rec_size;
 
 public:
     UpdateExecutor(SmManager *sm_manager, const std::string &tab_name, std::vector<SetClause> set_clauses,
@@ -38,9 +40,19 @@ public:
         conds_ = conds;
         rids_ = rids;
         context_ = context;
+        rids_data = new char *[rids_.size()];
     }
     std::unique_ptr<RmRecord> Next() override
     {
+        if (context_->txn_->get_txn_mode())
+        {
+            for (auto &rid : rids_)
+            {
+                bool res = (context_->lock_mgr_->lock_exclusive_on_record(context_->txn_, rid, fh_->GetFd()));
+                if (res == false)
+                    throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
+            }
+        }
         for (auto &clause : set_clauses_)
         {
             auto col = tab_.get_col(clause.lhs.col_name);
@@ -66,95 +78,68 @@ public:
                 break;
             }
         }
-        if (context_->txn_->get_txn_mode())
+        for (int i = 0; i < rids_.size(); i++)
         {
-            for (auto &rid : rids_)
+            auto &rid = rids_.at(i);
+            std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
+            rec_size = rec->size;
+            *(rids_data + i) = new char[rec->size];
+            char *dat = *(rids_data + i);
+            memcpy(dat, rec->data, rec->size);
+            for (auto &clause : set_clauses_)
             {
-                bool res = (context_->lock_mgr_->lock_exclusive_on_record(context_->txn_, rid, fh_->GetFd()));
-                if (res == false)
-                    throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
+                auto col = tab_.get_col(clause.lhs.col_name);
+                memcpy(dat + col->offset, clause.rhs.raw->data, col->len);
             }
         }
         for (auto &index : tab_.indexes)
         {
-            char key_old[index.col_tot_len];
-            char key[index.col_tot_len];
-            for (auto &rid : rids_)
+            int cnt = 0;
+            for (int i = 0; i < rids_.size() - 1; i++)
             {
-                std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
-                char dat[rec->size];
-                memcpy(dat, rec->data, rec->size);
-                for (auto &clause : set_clauses_)
+                for (int j = i + 1; j < rids_.size(); j++)
                 {
-                    auto col = tab_.get_col(clause.lhs.col_name);
-                    memcpy(dat + col->offset, clause.rhs.raw->data, col->len);
-                }
-                int offset = 0;
-                for (size_t i = 0; i < index.col_num; ++i)
-                {
-                    memcpy(key + offset, dat + index.cols[i].offset, index.cols[i].len);
-                    offset += index.cols[i].len;
-                }
-                std::memcpy(key_old, key, index.col_tot_len);
-                int cnt = 0;
-                for (auto &rid : rids_)
-                {
-                    std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
-                    char dat[rec->size];
-                    memcpy(dat, rec->data, rec->size);
-                    for (auto &clause : set_clauses_)
-                    {
-                        auto col = tab_.get_col(clause.lhs.col_name);
-                        memcpy(dat + col->offset, clause.rhs.raw->data, col->len);
-                    }
                     int offset = 0;
-                    for (size_t i = 0; i < index.col_num; ++i)
+                    bool f = true;
+                    for (size_t k = 0; k < index.col_num; ++k)
                     {
-                        memcpy(key + offset, dat + index.cols[i].offset, index.cols[i].len);
+                        if (memcmp(*(rids_data + i) + index.cols[k].offset, *(rids_data + j) + index.cols[k].offset, index.cols[k].len))
+                        {
+                            f = false;
+                            break;
+                        }
                         offset += index.cols[i].len;
                     }
-                    if (memcmp(key_old, key, index.col_tot_len) == 0)
+                    if (f)
                         cnt++;
-                    if (cnt >= 2)
-                        throw IndexEnrtyExistsError();
                 }
+                if (cnt > 0)
+                    throw IndexEnrtyExistsError();
             }
         }
-        for (auto &rid : rids_)
+        for (int i = 0; i < rids_.size(); i++)
         {
+            auto &rid = rids_.at(i);
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
-            RmRecord update_record(rec->size);
-            memcpy(update_record.data, rec->data, rec->size);
-            for (auto &clause : set_clauses_)
-            {
-                auto col = tab_.get_col(clause.lhs.col_name);
-                memcpy(update_record.data + col->offset, clause.rhs.raw->data, col->len);
-            }
-            UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec.get()), update_record, rid, tab_name_);
+            UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec.get()), *(rids_data + i), rid, tab_name_);
             update_log.prev_lsn_ = context_->txn_->get_prev_lsn();
             context_->log_mgr_->add_log_to_buffer(&update_log);
             context_->txn_->set_prev_lsn(update_log.lsn_);
         }
-        // context_->log_mgr_->flush_log_to_disk();
-        for (auto &rid : rids_)
+        for (int i = 0; i < rids_.size(); i++)
         {
+            auto &rid = rids_.at(i);
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
-            RmRecord update_record(rec->size);
-            memcpy(update_record.data, rec->data, rec->size);
-            for (auto &clause : set_clauses_)
-            {
-                auto col = tab_.get_col(clause.lhs.col_name);
-                memcpy(update_record.data + col->offset, clause.rhs.raw->data, col->len);
-            }
+
             for (auto &index : tab_.indexes)
             {
                 auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
-                char update [index.col_tot_len];
+                char update[index.col_tot_len];
                 char orign[index.col_tot_len];
                 int offset = 0;
                 for (size_t i = 0; i < index.col_num; ++i)
                 {
-                    memcpy(update + offset, update_record.data + index.cols[i].offset, index.cols[i].len);
+                    memcpy(update + offset, *(rids_data + i) + index.cols[i].offset, index.cols[i].len);
                     memcpy(orign + offset, rec->data + index.cols[i].offset, index.cols[i].len);
                     offset += index.cols[i].len;
                 }
@@ -168,10 +153,12 @@ public:
                     ihs->insert_entry(update, rid, context_->txn_);
                 }
             }
-            fh_->update_record(rid, update_record.data, context_);
+            fh_->update_record(rid, *(rids_data + i), context_);
             WriteRecord *wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, *rec.get());
             context_->txn_->append_write_record(wrec);
         }
+        for (int i = 0; i < rids_.size(); i++)
+            delete[] *(rids_data + i);
         return nullptr;
     }
     Rid &rid()
