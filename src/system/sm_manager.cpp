@@ -503,7 +503,7 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 				memcpy(key + offset, str + index.cols[i].offset, index.cols[i].len);
 				offset += index.cols[i].len;
 			}
-			ih->insert_entry(key, rid, nullptr);
+			ih->recover_insert_entry(key, rid);
 		}
 	}
 }
