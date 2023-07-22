@@ -281,7 +281,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
             auto s1 = ret->lower_bound(key);
             auto s2 = ret->upper_bound(key) - 1;
             int s = s1 <= s2 ? s1 : s2;
-                   next_page_id = ret->value_at(s);
+            next_page_id = ret->value_at(s);
         }
         else
             next_page_id = ret->internal_lookup(key);
@@ -535,7 +535,6 @@ bool IxIndexHandle::delete_entry(const char *key, Transaction *transaction)
     // 2. 在该叶子结点中删除键值对
     // 3. 如果删除成功需要调用CoalesceOrRedistribute来进行合并或重分配操作，并根据函数返回结果判断是否有结点需要删除
     // 4. 如果需要并发，并且需要删除叶子结点，则需要在事务的delete_page_set中添加删除结点的对应页面；记得处理并发的上锁
-    root_latch_.lock();
     auto leaf_page = find_leaf_page(key, Operation::DELETE, transaction, false);
     auto leaf_node = leaf_page.first;
     bool root_is_latched = leaf_page.second;
@@ -762,11 +761,14 @@ Iid IxIndexHandle::lower_bound(const char *key)
 {
     IxNodeHandle *node = find_leaf_page(key, Operation::FIND, nullptr, true).first;
     int idx = node->lower_bound(key);
+    if (node->is_root_page())
+        root_latch_.unlock();
     Iid iid;
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
         {
+            node->page->RUnlatch();
             buffer_pool_manager_->unpin_page(node->get_page_id(), true);
             return leaf_end();
         }
@@ -776,6 +778,7 @@ Iid IxIndexHandle::lower_bound(const char *key)
     {
         iid = {.page_no = node->get_page_no(), .slot_no = idx};
     }
+    node->page->RUnlatch();
     buffer_pool_manager_->unpin_page(node->get_page_id(), false);
     return iid;
 }
@@ -791,11 +794,14 @@ Iid IxIndexHandle::upper_bound(const char *key)
 
     IxNodeHandle *node = find_leaf_page(key, Operation::FIND, nullptr, false).first;
     int idx = node->upper_bound(key);
+    if (node->is_root_page())
+        root_latch_.unlock();
     Iid iid;
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
         {
+            node->page->RUnlatch();
             buffer_pool_manager_->unpin_page(node->get_page_id(), true);
             return leaf_end();
         }
@@ -805,6 +811,7 @@ Iid IxIndexHandle::upper_bound(const char *key)
     {
         iid = {.page_no = node->get_page_no(), .slot_no = idx};
     }
+    node->page->RUnlatch();
     buffer_pool_manager_->unpin_page(node->get_page_id(), true);
     return iid;
 }

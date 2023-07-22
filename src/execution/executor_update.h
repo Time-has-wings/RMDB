@@ -160,7 +160,7 @@ public:
                 }
                 if (memcmp(update, orign, index.col_tot_len) == 0)
                     continue;
-                else if (ihs->get_value(update, nullptr, nullptr))
+                else if (ihs->get_value(update, nullptr, context_->txn_))
                     throw IndexEnrtyExistsError();
                 else
                 {
