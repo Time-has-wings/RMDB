@@ -216,7 +216,7 @@ void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
 			memcpy(key + offset, buf + index.cols[i].offset, index.cols[i].len);
 			offset += index.cols[i].len;
 		}
-		ih->insert_entry(key, rid, nullptr);
+		ih->recover_insert_entry(key, rid);
 	}
 }
 void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
@@ -236,8 +236,8 @@ void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
 			memcpy(orign + offset, rec->data + index.cols[i].offset, index.cols[i].len);
 			offset += index.cols[i].len;
 		}
-		ihs->delete_entry(orign, nullptr);
-		ihs->insert_entry(update, rid, nullptr);
+		ihs->recover_delete_entry(orign);
+		ihs->recover_insert_entry(update, rid);
 	}
 	fh_->update_record(rid, buf, nullptr);
 }
@@ -257,7 +257,7 @@ void RecoveryManager::delete_record(char *tab_name, Rid &rid)
 			memcpy(key + offset, rec->data + index.cols[i].offset, index.cols[i].len);
 			offset += index.cols[i].len;
 		}
-		ih->delete_entry(key, nullptr);
+		ih->recover_delete_entry(key);
 	}
 	fh_->delete_record(rid, nullptr);
 }

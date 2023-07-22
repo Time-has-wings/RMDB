@@ -233,7 +233,6 @@ public:
 
     // for insert
     page_id_t insert_entry(const char *key, const Rid &value, Transaction *transaction);
-
     IxNodeHandle *split(IxNodeHandle *node);
 
     void insert_into_parent(IxNodeHandle *old_node, const char *key, IxNodeHandle *new_node, Transaction *transaction);
@@ -257,13 +256,16 @@ public:
     Iid leaf_end() const;
 
     Iid leaf_begin() const;
-
+    void recover_insert_entry(const char *key, const Rid &value);
+    void recover_delete_entry(const char *key);
+    IxNodeHandle * recover_leaf_page(const char *key);
 private:
     // 辅助函数
     void update_root_page_no(page_id_t root) { file_hdr_->root_page_ = root; }
 
     bool is_empty() const { return file_hdr_->root_page_ == IX_NO_PAGE; }
-
+    bool is_safe(IxNodeHandle *node, Operation op);
+    void unlatch_and_unpin_pageset(Transaction *transation, Operation operation);
     // for get/create node
     IxNodeHandle *fetch_node(int page_no) const;
 

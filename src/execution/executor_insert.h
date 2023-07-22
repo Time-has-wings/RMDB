@@ -85,7 +85,7 @@ public:
                 memcpy(key + offset, rec.data + index.cols[i].offset, index.cols[i].len);
                 offset += index.cols[i].len;
             }
-            if (ih->get_value(key, nullptr, nullptr))
+            if (ih->get_value(key, nullptr, context_->txn_))
                 throw IndexEnrtyExistsError();
         }
         auto rid_insert = Rid{1, -1};
