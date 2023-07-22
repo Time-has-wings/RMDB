@@ -52,7 +52,7 @@ int IxNodeHandle::upper_bound(const char *target) const
     // Todo:
     // 查找当前节点中第一个大于target的key，并返回key的位置给上层
     // 提示: 可以采用多种查找方式：顺序遍历、二分查找等；使用ix_compare()函数进行比较
-    int l = 0, r = page_hdr->num_key - 1;
+    int l = 1, r = page_hdr->num_key - 1;
     while (l <= r)
     {
         int mid = l + (r - l) / 2;
@@ -107,7 +107,7 @@ page_id_t IxNodeHandle::internal_lookup(const char *key)
     // 2. 获取该孩子节点（子树）所在页面的编号
     // 3. 返回页面编号
     int idx = upper_bound(key);
-    return value_at((idx == 0 ? 0 : idx - 1));
+    return value_at((idx - 1));
 }
 
 /**
@@ -281,7 +281,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
             auto s1 = ret->lower_bound(key);
             auto s2 = ret->upper_bound(key) - 1;
             int s = s1 <= s2 ? s1 : s2;
-            next_page_id = ret->value_at(s);
+                   next_page_id = ret->value_at(s);
         }
         else
             next_page_id = ret->internal_lookup(key);
@@ -535,7 +535,7 @@ bool IxIndexHandle::delete_entry(const char *key, Transaction *transaction)
     // 2. 在该叶子结点中删除键值对
     // 3. 如果删除成功需要调用CoalesceOrRedistribute来进行合并或重分配操作，并根据函数返回结果判断是否有结点需要删除
     // 4. 如果需要并发，并且需要删除叶子结点，则需要在事务的delete_page_set中添加删除结点的对应页面；记得处理并发的上锁
-    std::scoped_lock lock{root_latch_};
+    root_latch_.lock();
     auto leaf_page = find_leaf_page(key, Operation::DELETE, transaction, false);
     auto leaf_node = leaf_page.first;
     bool root_is_latched = leaf_page.second;
