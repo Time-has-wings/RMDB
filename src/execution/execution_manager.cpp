@@ -147,7 +147,6 @@ void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Co
 void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
 							Context *context)
 {
-	if (!outputfile)return;
 	std::vector<std::string> captions;
 	captions.reserve(sel_cols.size());
 	for (auto &sel_col : sel_cols)
@@ -160,15 +159,14 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 		else
 			captions.emplace_back(sel_col.col_name);
 	}
-	// Print header into buffer
-	RecordPrinter rec_printer(sel_cols.size());
-	rec_printer.print_separator(context);
-	rec_printer.print_record(captions, context);
-	rec_printer.print_separator(context);
-	// print header into file
 	std::fstream outfile;
+	RecordPrinter rec_printer(sel_cols.size());
 	if (outputfile)
 	{
+		// Print header into buffer
+		rec_printer.print_separator(context);
+		rec_printer.print_record(captions, context);
+		rec_printer.print_separator(context);
 		outfile.open("output.txt", std::ios::out | std::ios::app);
 		outfile << "|";
 		for (int i = 0; i < captions.size(); ++i)
@@ -176,6 +174,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			outfile << " " << captions[i] << " |";
 		}
 		outfile << "\n";
+		// print header into file
 	}
 
 	// Print records
@@ -186,7 +185,6 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 	{
 		auto Tuple = executorTreeRoot->Next();
 		columns.clear();
-		columns.shrink_to_fit();
 		for (auto &col : executorTreeRoot->cols())
 		{
 			std::string col_str;
@@ -214,11 +212,10 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			}
 			columns.emplace_back(col_str);
 		}
-
-		rec_printer.print_record(columns, context);
-		// print record into file
+				// print record into file
 		if (outputfile)
 		{
+			rec_printer.print_record(columns, context);
 			outfile << "|";
 			for (int i = 0; i < columns.size(); ++i)
 			{
@@ -229,11 +226,13 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 		num_rec++;
 	}
 	if (outputfile)
+	{
 		outfile.close();
-	// Print footer into buffer
-	rec_printer.print_separator(context);
-	// Print record count into buffer
-	RecordPrinter::print_record_count(num_rec, context);
+		// Print footer into buffer
+		rec_printer.print_separator(context);
+		// Print record count into buffer
+		RecordPrinter::print_record_count(num_rec, context);
+	}
 }
 
 // 执行DML语句
