@@ -147,6 +147,7 @@ void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Co
 void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
 							Context *context)
 {
+	if (!outputfile)return;
 	std::vector<std::string> captions;
 	captions.reserve(sel_cols.size());
 	for (auto &sel_col : sel_cols)
