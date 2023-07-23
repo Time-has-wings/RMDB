@@ -32,7 +32,7 @@ private:
 
     Rid rid_;
     std::unique_ptr<RecScan> scan_;
-
+    size_t idx = 0;
     SmManager *sm_manager_;
 
 public:
@@ -111,6 +111,7 @@ public:
             auto cond = fed_conds_[i];
             if (cond.is_rhs_val && cond.op != OP_NE && cond.lhs_col.col_name == index_col_names_[i])
             {
+                idx = i + 1;
                 std::memcpy(rhs_key + off_set, cond.rhs_val.raw->data, cond.rhs_val.raw->size);
                 off_set += cond.rhs_val.raw->size;
                 switch (cond.op)
@@ -144,7 +145,7 @@ public:
         while (!scan_->is_end())
         {
             auto rec = fh_->get_record(scan_->rid(), context_);
-            if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
+            if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rec); }))
             {
@@ -160,7 +161,7 @@ public:
         for (scan_->next(); !scan_->is_end(); scan_->next())
         {
             auto rec = fh_->get_record(scan_->rid(), context_);
-            if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
+            if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rec); }))
             {
