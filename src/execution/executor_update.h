@@ -25,9 +25,10 @@ private:
     std::string tab_name_;
     std::vector<SetClause> set_clauses_;
     SmManager *sm_manager_;
-    std::vector<IndexMeta > index_queue;
-    std::vector<ColMeta > col_queue;
-    std::vector<RmRecord > rm_vector;
+    std::vector<IndexMeta> index_queue;
+    std::vector<ColMeta> col_queue;
+    std::vector<RmRecord> rm_vector;
+    size_t s ;
 
 public:
     UpdateExecutor(SmManager *sm_manager, const std::string &tab_name, std::vector<SetClause> set_clauses,
@@ -41,6 +42,7 @@ public:
         conds_ = conds;
         rids_ = rids;
         context_ = context;
+        s = rids_.size();
     }
     std::unique_ptr<RmRecord> Next() override
     {
@@ -56,7 +58,7 @@ public:
         for (auto &clause : set_clauses_)
         {
             auto col = tab_.get_col(clause.lhs.col_name);
-            col_queue.push_back(*col);
+            col_queue.emplace_back(*col);
             clause.rhs.value_change(col->type);
             if (clause.rhs.type != col->type)
             {
@@ -87,7 +89,7 @@ public:
                 auto col = tab_.get_col(clause.lhs.col_name);
                 memcpy(rec.data + col->offset, clause.rhs.raw->data, col->len);
             }
-            rm_vector.push_back(rec);
+            rm_vector.emplace_back(rec);
         }
         for (auto &index : tab_.indexes)
         {
@@ -96,7 +98,7 @@ public:
                 if (std::any_of(index.cols.begin(), index.cols.end(), [&col](const ColMeta &c)
                                 { return col.name == c.name; }))
                 {
-                    index_queue.push_back(index);
+                    index_queue.emplace_back(index);
                     break;
                 }
             }
@@ -105,7 +107,7 @@ public:
         {
             char key_old[index.col_tot_len];
             char key[index.col_tot_len];
-            for (size_t i = 0; i < rids_.size(); i++)
+            for (size_t i = 0; i < s-1; i++)
             {
                 auto &rec_i = rm_vector[i];
                 int offset_i = 0;
@@ -114,7 +116,7 @@ public:
                     memcpy(key_old + offset_i, rec_i.data + index.cols[k].offset, index.cols[k].len);
                     offset_i += index.cols[k].len;
                 }
-                for (size_t j = i + 1; j < rids_.size(); j++)
+                for (size_t j = i + 1; j < s; j++)
                 {
                     auto &rec_j = rm_vector[j];
                     int offset_j = 0;
@@ -128,9 +130,9 @@ public:
                 }
             }
         }
-        for (size_t i = 0; i < rids_.size(); i++)
+        for (size_t i = 0; i <s; i++)
         {
-            auto update_record = rm_vector[i];
+            auto &update_record = rm_vector[i];
             auto &rid = rids_[i];
             std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
             UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec.get()), update_record, rid, tab_name_);

@@ -24,6 +24,7 @@ private:
     std::string tab_name_;      // 表名称
     Rid rid_;                   // 插入的位置，由于系统默认插入时不指定位置，因此当前rid_在插入后才赋值
     SmManager *sm_manager_;
+    std::vector<RmRecord> s;
 
 public:
     InsertExecutor(SmManager *sm_manager, const std::string &tab_name, std::vector<Value> values, Context *context)
@@ -61,56 +62,32 @@ public:
             val.init_raw(col.len);
             memcpy(rec.data + col.offset, val.raw->data, col.len);
         }
-        if (tab_.indexes.size() == 0)
-        {
-            rid_ = fh_->insert_record(rec.data, context_);
-            WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
-            context_->txn_->append_write_record(wrec);
-            InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_, tab_name_);
-            insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();
-            context_->log_mgr_->add_log_to_buffer(&insert_log);
-            context_->log_mgr_->flush_log_to_disk();
-            context_->txn_->set_prev_lsn(insert_log.lsn_);
-            return nullptr;
-        }
-        // Insert into index judge
         for (size_t i = 0; i < tab_.indexes.size(); ++i)
         {
             auto &index = tab_.indexes[i];
+            s.emplace_back(index.col_tot_len);
             auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index.cols)).get();
-            char key[index.col_tot_len];
             int offset = 0;
-            for (size_t i = 0; i < index.col_num; ++i)
+            for (size_t j = 0; j < index.col_num; ++j)
             {
-                memcpy(key + offset, rec.data + index.cols[i].offset, index.cols[i].len);
-                offset += index.cols[i].len;
+                memcpy(s[i].data + offset, rec.data + index.cols[j].offset, index.cols[j].len);
+                offset += index.cols[j].len;
             }
-            if (ih->get_value(key, nullptr, context_->txn_))
+            if (ih->get_value(s[i].data, nullptr, context_->txn_))
                 throw IndexEnrtyExistsError();
         }
-        auto rid_insert = Rid{1, -1};
-        InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_insert, tab_name_);
         rid_ = fh_->insert_record(rec.data, context_);
-        insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();
-        insert_log.rid_ = rid_;
-        context_->log_mgr_->add_log_to_buffer(&insert_log);
-        // context_->log_mgr_->flush_log_to_disk();
-        context_->txn_->set_prev_lsn(insert_log.lsn_);
-        // modify wset
         WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
         context_->txn_->append_write_record(wrec);
+        InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_, tab_name_);
+        insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();
+        context_->log_mgr_->add_log_to_buffer(&insert_log);
+        context_->txn_->set_prev_lsn(insert_log.lsn_);
         for (size_t i = 0; i < tab_.indexes.size(); ++i)
         {
             auto &index = tab_.indexes[i];
             auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index.cols)).get();
-            char key[index.col_tot_len];
-            int offset = 0;
-            for (size_t i = 0; i < index.col_num; ++i)
-            {
-                memcpy(key + offset, rec.data + index.cols[i].offset, index.cols[i].len);
-                offset += index.cols[i].len;
-            }
-            ih->insert_entry(key, rid_, context_->txn_);
+            ih->insert_entry(s[i].data, rid_, context_->txn_);
         }
         return nullptr;
     }
