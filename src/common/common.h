@@ -152,10 +152,6 @@ struct Value
     }
     bool operator>(const Value &rhs) const
     {
-        if (incompatible_type_compare(rhs))
-        {
-            throw IncompatibleTypeError(coltype2str(type), coltype2str(rhs.type));
-        }
         switch (type)
         {
         case TYPE_INT:
@@ -207,10 +203,6 @@ struct Value
 
     bool operator<(const Value &rhs) const
     {
-        if (incompatible_type_compare(rhs))
-        {
-            throw IncompatibleTypeError(coltype2str(type), coltype2str(rhs.type));
-        }
         switch (type)
         {
         case TYPE_INT:
@@ -262,10 +254,6 @@ struct Value
 
     bool operator==(const Value &rhs) const
     {
-        if (incompatible_type_compare(rhs))
-        {
-            throw IncompatibleTypeError(coltype2str(type), coltype2str(rhs.type));
-        }
         switch (type)
         {
         case TYPE_INT:
@@ -316,17 +304,155 @@ struct Value
     }
     bool operator!=(const Value &rhs) const
     {
-        return !(*this == rhs);
+        switch (type)
+        {
+        case TYPE_INT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return int_val != rhs.int_val;
+            case TYPE_FLOAT:
+                return int_val != rhs.float_val;
+            case TYPE_BIGINT:
+                return int_val != rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_FLOAT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return float_val != rhs.int_val;
+            case TYPE_FLOAT:
+                return float_val != rhs.float_val;
+            case TYPE_BIGINT:
+                return float_val != rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_BIGINT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return bigint_val != rhs.int_val;
+            case TYPE_FLOAT:
+                return bigint_val != rhs.float_val;
+            case TYPE_BIGINT:
+                return bigint_val != rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_STRING:
+            return str_val != rhs.str_val;
+        case TYPE_DATETIME:
+            return datetime_val != rhs.datetime_val;
+        }
+        return false;
     }
 
     bool operator>=(const Value &rhs) const
     {
-        return (*this == rhs || *this > rhs);
+        switch (type)
+        {
+        case TYPE_INT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return int_val >= rhs.int_val;
+            case TYPE_FLOAT:
+                return int_val >= rhs.float_val;
+            case TYPE_BIGINT:
+                return int_val >= rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_FLOAT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return float_val >= rhs.int_val;
+            case TYPE_FLOAT:
+                return float_val >= rhs.float_val;
+            case TYPE_BIGINT:
+                return float_val >= rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_BIGINT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return bigint_val >= rhs.int_val;
+            case TYPE_FLOAT:
+                return bigint_val >= rhs.float_val;
+            case TYPE_BIGINT:
+                return bigint_val >= rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_STRING:
+            return str_val >= rhs.str_val;
+        case TYPE_DATETIME:
+            return datetime_val >= rhs.datetime_val;
+        }
+        return false;
     }
 
     bool operator<=(const Value &rhs) const
     {
-        return (*this == rhs || *this < rhs);
+        switch (type)
+        {
+        case TYPE_INT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return int_val <= rhs.int_val;
+            case TYPE_FLOAT:
+                return int_val <= rhs.float_val;
+            case TYPE_BIGINT:
+                return int_val <= rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_FLOAT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return float_val <= rhs.int_val;
+            case TYPE_FLOAT:
+                return float_val <= rhs.float_val;
+            case TYPE_BIGINT:
+                return float_val <= rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_BIGINT:
+            switch (rhs.type)
+            {
+            case TYPE_INT:
+                return bigint_val <= rhs.int_val;
+            case TYPE_FLOAT:
+                return bigint_val <= rhs.float_val;
+            case TYPE_BIGINT:
+                return bigint_val <= rhs.bigint_val;
+            default:
+                return false;
+            }
+            break;
+        case TYPE_STRING:
+            return str_val <= rhs.str_val;
+        case TYPE_DATETIME:
+            return datetime_val <= rhs.datetime_val;
+        }
+        return false;
     }
     void operator+=(const Value &rhs)
     {

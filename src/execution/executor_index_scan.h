@@ -97,7 +97,7 @@ public:
     }
     void beginTuple() override
     {
-        //给表上S锁
+        // 给表上S锁
         if (context_->txn_->get_txn_mode() && context_->lock_mgr_->lock_shared_on_table(context_->txn_, fh_->GetFd()) == false)
             throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
         auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index_col_names_)).get();
@@ -113,22 +113,29 @@ public:
             {
                 std::memcpy(rhs_key + off_set, cond.rhs_val.raw->data, cond.rhs_val.raw->size);
                 off_set += cond.rhs_val.raw->size;
-                if (cond.op == OP_EQ)
+                switch (cond.op)
                 {
+                case OP_EQ:
                     lower = ih->lower_bound(rhs_key);
                     upper = ih->upper_bound(rhs_key);
                     continue;
-                }
-                else if (cond.op == OP_LT)
+                    break;
+                case OP_LT:
                     upper = ih->lower_bound(rhs_key);
-                else if (cond.op == OP_GT)
+                    break;
+                case OP_GT:
                     lower = ih->upper_bound(rhs_key);
-                else if (cond.op == OP_LE)
+                    break;
+                case OP_LE:
                     upper = ih->upper_bound(rhs_key);
-                else if (cond.op == OP_GE)
+                    break;
+                case OP_GE:
                     lower = ih->lower_bound(rhs_key);
-                else
+                    break;
+                default:
                     throw InternalError("Unexpected op type");
+                    break;
+                }
                 break;
             }
             break;
@@ -165,7 +172,7 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        //return fh_->get_record(rid_, context_); //beginTuple可对table上S锁,说明可以对record上S锁.
+        // return fh_->get_record(rid_, context_); //beginTuple可对table上S锁,说明可以对record上S锁.
         if (context_->txn_->get_txn_mode())
         {
             if (context_->lock_mgr_->lock_shared_on_record(context_->txn_, rid_, fh_->GetFd()))
