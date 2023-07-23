@@ -324,7 +324,6 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
 	auto index_name = ix_manager_->get_index_name(tab_name, col_names);
 	ix_manager_->close_index(ihs_.at(index_name).get());
 	ix_manager_->destroy_index(tab_name, col_names);
-	ihs_.at(index_name).~unique_ptr();
 	ihs_.erase(index_name);
 }
 
