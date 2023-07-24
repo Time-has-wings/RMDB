@@ -90,6 +90,7 @@ public:
             else
             {
                 scan_->next();
+                rid_t = scan_->rid();
                 if (cur_page.page->get_page_id().page_no != rid_t.page_no)
                 {
                     fh_->unpin_page_handle(cur_page);
@@ -111,6 +112,7 @@ public:
                             { return eval_cond(cols_, cond, rmd); }))
             {
                 rid_ = scan_->rid();
+                break;
             }
             scan_->next();
             rid_t = scan_->rid();

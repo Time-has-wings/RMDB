@@ -180,6 +180,7 @@ public:
                             { return eval_cond(cols_, cond, rmd); }))
             {
                 rid_ = scan_->rid();
+                break;
             }
             scan_->next();
             rid_t = scan_->rid();
