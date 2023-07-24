@@ -281,11 +281,19 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 	ix_manager_->create_index(tab_name, index_tab.cols);
 	auto ih = ix_manager_->open_index(tab_name, index_tab.cols);
 	auto file_handle = fhs_.at(tab_name).get();
-	for (RmScan rm_scan(file_handle); !rm_scan.is_end(); rm_scan.next())
+	RmScan rm_scan(file_handle);
+	RmPageHandle cur_page = file_handle->fetch_page_handle(rm_scan.rid().page_no);
+	for (; !rm_scan.is_end(); rm_scan.next())
 	{
-		auto rec = file_handle->get_record(rm_scan.rid(), context);
+		auto rid = rm_scan.rid();
+		if (cur_page.page->get_page_id().page_no != rid.page_no)
+		{
+			file_handle->unpin_page_handle(cur_page);
+			cur_page = file_handle->fetch_page_handle(rm_scan.rid().page_no);
+		}
+		auto rec = RmRecord(file_handle->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
 		char key[index_tab.col_tot_len];
-		char *data = rec->data;
+		char *data = rec.data;
 		int offset = 0;
 		for (size_t i = 0; i < index_tab.cols.size(); i++)
 		{
@@ -294,6 +302,7 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 		}
 		ih->insert_entry(key, rm_scan.rid(), context->txn_);
 	}
+	file_handle->unpin_page_handle(cur_page);
 	auto index_name = ix_manager_->get_index_name(tab_name, index_tab.cols);
 	assert(ihs_.count(index_name) == 0);
 	ihs_.emplace(index_name, std::move(ih));
