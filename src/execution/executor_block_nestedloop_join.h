@@ -74,7 +74,7 @@ public:
             for (auto cond : fed_conds_)
             {
                 auto left_col = left_->get_col(left_->cols(), cond.lhs_col);
-                auto left_value = get_value(left_record, *left_col);
+                auto left_value = get_value(*left_record, *left_col);
                 block.emplace_back(left_value);
             }
             blocks.emplace_back(std::pair<std::unique_ptr<RmRecord>, std::vector<Value>>(std::move(left_record), std::move(block)));
@@ -144,7 +144,7 @@ private:
                         if (!cond.is_rhs_val)
                         {
                             auto right_col = *(right_->get_col(right_->cols(), cond.rhs_col));
-                            right_value = get_value(right_record, right_col);
+                            right_value = get_value(*right_record, right_col);
                         }
                         else
                         {

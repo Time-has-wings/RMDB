@@ -149,7 +149,10 @@ RmPageHandle RmFileHandle::fetch_page_handle(int page_no) const
         throw PageNotExistError("page", page_no);
     return RmPageHandle(&file_hdr_, buffer_pool_manager_->fetch_page(PageId{fd_, page_no}));
 }
-
+void RmFileHandle::unpin_page_handle(RmPageHandle &rmp)
+{
+    buffer_pool_manager_->unpin_page(rmp.page->get_page_id(), false);
+}
 /**
  * @description: 创建一个新的page handle
  * @return {RmPageHandle} 新的PageHandle

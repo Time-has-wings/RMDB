@@ -56,27 +56,24 @@ public:
         }
         return pos;
     }
-    Value get_value(const std::unique_ptr<RmRecord> &record, const ColMeta &col) const
+    Value get_value(const RmRecord &record, const ColMeta &col) const
     {
-        char *data = record->data + col.offset;
+        char *data = record.data + col.offset;
         size_t len = col.len;
-        char dat[len];
-        std::memcpy(dat, data, len);
         Value ret;
         if (col.type == TYPE_INT)
-            ret.set_int(*(int *)dat);
+            ret.set_int(*(int *)data);
         else if (col.type == TYPE_FLOAT)
-            ret.set_float(*(float *)dat);
+            ret.set_float(*(float *)data);
         else if (col.type == TYPE_BIGINT)
-            ret.set_bigint(*(int64_t *)dat);
+            ret.set_bigint(*(int64_t *)data);
         else if (col.type == TYPE_DATETIME)
-            ret.set_datetime(*(int64_t *)dat);
+            ret.set_datetime(*(int64_t *)data);
         else if (col.type == TYPE_STRING)
         {
             std::string tmp(data, len);
             ret.set_str(tmp);
         }
-        ret.init_raw(len);
         return ret;
     }
 

@@ -27,6 +27,7 @@ private:
     std::vector<Condition> fed_conds_; // 同conds_，两个字段相同
 
     Rid rid_;
+    Rid rid_t;
     std::unique_ptr<RecScan> scan_; // table_iterator
 
     SmManager *sm_manager_;
@@ -51,7 +52,7 @@ public:
     bool is_end() const override { return scan_->is_end(); }
     size_t tupleLen() const { return len_; };
     std::string getType() { return "SeqScanExecutor"; };
-    bool eval_cond(const std::vector<ColMeta> &rec_cols, const Condition &cond, std::unique_ptr<RmRecord> &target)
+    bool eval_cond(const std::vector<ColMeta> &rec_cols, const Condition &cond, RmRecord &target)
     {
         auto lhs_col = get_col(rec_cols, cond.lhs_col);
         auto lhs_val = get_value(target, *lhs_col);
@@ -70,13 +71,15 @@ public:
 
     void beginTuple() override
     {
-        //给表上S锁
+        // 给表上S锁
         if (context_->txn_->get_txn_mode() && context_->lock_mgr_->lock_shared_on_table(context_->txn_, fh_->GetFd()) == false)
             throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
         scan_ = std::make_unique<RmScan>(fh_);
+        auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
         while (!scan_->is_end())
         {
-            auto rmd = fh_->get_record(scan_->rid(), context_);
+            auto rid = scan_->rid();
+            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
             if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rmd); }))
@@ -87,37 +90,40 @@ public:
             else
             {
                 scan_->next();
+                if (cur_page.page->get_page_id().page_no != rid_t.page_no)
+                {
+                    fh_->unpin_page_handle(cur_page);
+                    cur_page = fh_->fetch_page_handle(rid_t.page_no);
+                }
             }
         }
     }
     void nextTuple() override
     {
-        assert(!is_end());
-        for (scan_->next(); !scan_->is_end(); scan_->next())
+        auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
+        while (!scan_->is_end())
         {
-            auto rmd = fh_->get_record(scan_->rid(), context_);
+            auto rid = scan_->rid();
+            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
             if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rmd); }))
             {
                 rid_ = scan_->rid();
-                break;
+            }
+            scan_->next();
+            rid_t = scan_->rid();
+            if (cur_page.page->get_page_id().page_no != rid_t.page_no)
+            {
+                fh_->unpin_page_handle(cur_page);
+                cur_page = fh_->fetch_page_handle(rid_t.page_no);
             }
         }
     }
 
     std::unique_ptr<RmRecord> Next() override
     {
-        return fh_->get_record(rid_, context_); //beginTuple可对table上S锁,说明可以对record上S锁.
-        // if (context_->txn_->get_txn_mode())
-        // {
-        //     if (context_->lock_mgr_->lock_shared_on_record(context_->txn_, rid_, fh_->GetFd()))
-        //         return fh_->get_record(rid_, context_);
-        //     else
-        //         throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
-        // }
-        // else
-        //     return fh_->get_record(rid_, context_);
+        return fh_->get_record(rid_, context_); // beginTuple可对table上S锁,说明可以对record上S锁.
     }
     Rid &rid() override { return rid_; }
 };

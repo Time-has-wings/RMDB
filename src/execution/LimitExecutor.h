@@ -86,7 +86,7 @@ public:
             std::vector<std::pair<Value, bool>> vec;
             for (int i = 0; i < cols_.size(); i++)
             {
-                auto val = prev_->get_value(rec, cols_.at(i));
+                auto val = prev_->get_value(*rec, cols_.at(i));
                 vec.emplace_back(val, is_descs_.at(i));
             }
             s_map[id] = std::move(rec);

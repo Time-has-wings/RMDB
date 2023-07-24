@@ -29,7 +29,7 @@ private:
 
     std::vector<std::string> index_col_names_; // index scan涉及到的索引包含的字段
     IndexMeta index_meta_;                     // index scan涉及到的索引元数据
-
+    Rid rid_t;
     Rid rid_;
     std::unique_ptr<RecScan> scan_;
     size_t idx = 0;
@@ -79,7 +79,7 @@ public:
     bool is_end() const override { return scan_->is_end(); }
     size_t tupleLen() const { return len_; };
     std::string getType() { return "SeqScanExecutor"; };
-    bool eval_cond(const std::vector<ColMeta> &rec_cols, const Condition &cond, std::unique_ptr<RmRecord> &target)
+    bool eval_cond(const std::vector<ColMeta> &rec_cols, const Condition &cond, const RmRecord &target)
     {
         auto lhs_col = get_col(rec_cols, cond.lhs_col);
         auto lhs_val = get_value(target, *lhs_col);
@@ -142,31 +142,51 @@ public:
             break;
         }
         scan_ = std::make_unique<IxScan>(ih, lower, upper, sm_manager_->get_bpm());
+        auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
         while (!scan_->is_end())
         {
-            auto rec = fh_->get_record(scan_->rid(), context_);
+            auto rid = scan_->rid();
+            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
             if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
-                            { return eval_cond(cols_, cond, rec); }))
+                            { return eval_cond(cols_, cond, rmd); }))
             {
                 rid_ = scan_->rid();
                 break;
             }
-            scan_->next();
+            else
+            {
+                scan_->next();
+                rid_t = scan_->rid();
+                if (cur_page.page->get_page_id().page_no != rid_t.page_no)
+                {
+                    fh_->unpin_page_handle(cur_page);
+                    cur_page = fh_->fetch_page_handle(rid_t.page_no);
+                }
+            }
         }
     }
 
     void nextTuple() override
     {
-        for (scan_->next(); !scan_->is_end(); scan_->next())
+        scan_->next();
+        auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
+        while (!scan_->is_end())
         {
-            auto rec = fh_->get_record(scan_->rid(), context_);
+            auto rid = scan_->rid();
+            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
             if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
-                            { return eval_cond(cols_, cond, rec); }))
+                            { return eval_cond(cols_, cond, rmd); }))
             {
                 rid_ = scan_->rid();
-                break;
+            }
+            scan_->next();
+            rid_t = scan_->rid();
+            if (cur_page.page->get_page_id().page_no != rid_t.page_no)
+            {
+                fh_->unpin_page_handle(cur_page);
+                cur_page = fh_->fetch_page_handle(rid_t.page_no);
             }
         }
     }

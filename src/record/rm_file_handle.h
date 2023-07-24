@@ -92,6 +92,7 @@ public:
     RmPageHandle create_new_page_handle();
 
     RmPageHandle fetch_page_handle(int page_no) const;
+    void unpin_page_handle(RmPageHandle &rmp);
 
 private:
     RmPageHandle create_page_handle();
