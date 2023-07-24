@@ -317,7 +317,6 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
 	for (auto &col_name : col_names)
 	{
 		auto col = tab.get_col(col_name);
-		col->index = false;
 	}
 	auto s = tab.get_index_meta(col_names);
 	tab.indexes.erase(s);

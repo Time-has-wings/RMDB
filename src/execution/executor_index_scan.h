@@ -32,6 +32,7 @@ private:
     Rid rid_t;
     Rid rid_;
     std::unique_ptr<RecScan> scan_;
+    std::shared_ptr<RmPageHandle> cur_page;
     size_t idx = 0;
     SmManager *sm_manager_;
 
@@ -142,11 +143,11 @@ public:
             break;
         }
         scan_ = std::make_unique<IxScan>(ih, lower, upper, sm_manager_->get_bpm());
-        auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
+        cur_page = fh_->get_stable_page_handle(scan_->rid().page_no);
         while (!scan_->is_end())
         {
             auto rid = scan_->rid();
-            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
+            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page->get_slot(rid.slot_no));
             if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rmd); }))
@@ -157,11 +158,16 @@ public:
             else
             {
                 scan_->next();
-                rid_t = scan_->rid();
-                if (cur_page.page->get_page_id().page_no != rid_t.page_no)
+                if (is_end())
                 {
-                    fh_->unpin_page_handle(cur_page);
-                    cur_page = fh_->fetch_page_handle(rid_t.page_no);
+                    fh_->unpin_page_handle(*cur_page);
+                    return;
+                }
+                rid_t = scan_->rid();
+                if (cur_page->page->get_page_id().page_no != rid_t.page_no)
+                {
+                    fh_->unpin_page_handle(*cur_page);
+                    cur_page = fh_->get_stable_page_handle(rid_t.page_no);
                 }
             }
         }
@@ -171,17 +177,19 @@ public:
     {
         scan_->next();
         if (is_end())
+        {
+            fh_->unpin_page_handle(*cur_page);
             return;
-        auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
+        }
         while (!scan_->is_end())
         {
             rid_t = scan_->rid();
-            if (cur_page.page->get_page_id().page_no != rid_t.page_no)
+            if (cur_page->page->get_page_id().page_no != rid_t.page_no)
             {
-                fh_->unpin_page_handle(cur_page);
-                cur_page = fh_->fetch_page_handle(rid_t.page_no);
+                fh_->unpin_page_handle(*cur_page);
+                cur_page = fh_->get_stable_page_handle(rid_t.page_no);
             }
-            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid_t.slot_no));
+            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page->get_slot(rid_t.slot_no));
             if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rmd); }))

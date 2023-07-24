@@ -220,6 +220,7 @@ void BufferPoolManager::flush_all_pages(int fd)
         Page *page = &pages_[i];
         if (page->get_page_id().page_no != INVALID_PAGE_ID && page->get_page_id().fd == fd)
         {
+            page_table_.erase(page->get_page_id());
             disk_manager_->write_page(page->get_page_id().fd, page->get_page_id().page_no, page->get_data(), PAGE_SIZE);
             page->is_dirty_ = false;
         }

@@ -149,6 +149,12 @@ RmPageHandle RmFileHandle::fetch_page_handle(int page_no) const
         throw PageNotExistError("page", page_no);
     return RmPageHandle(&file_hdr_, buffer_pool_manager_->fetch_page(PageId{fd_, page_no}));
 }
+std::shared_ptr<RmPageHandle> RmFileHandle::get_stable_page_handle(int page_no) const
+{
+    if (page_no == INVALID_PAGE_ID)
+        throw PageNotExistError("page", page_no);
+    return std::make_shared<RmPageHandle>(&file_hdr_, buffer_pool_manager_->fetch_page(PageId{fd_, page_no}));
+}
 void RmFileHandle::unpin_page_handle(RmPageHandle &rmp)
 {
     buffer_pool_manager_->unpin_page(rmp.page->get_page_id(), false);
