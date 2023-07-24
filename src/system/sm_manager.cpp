@@ -485,6 +485,7 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 	strStr.str(buffer);
 	getline(strStr, linestr);
 	char str[fh_->get_file_hdr().record_size];
+	RmPageHandle pagehdr = fh_->init_load_pagehandle();
 	while (getline(strStr, linestr))
 	{
 		sin.clear();
@@ -498,7 +499,7 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 				word.erase(word.size() - 1, 1);
 			LoadData::trans(word, col, str, col.offset);
 		}
-		auto rid = fh_->insert_record(str, nullptr);
+		auto rid = fh_->insert_record(str, pagehdr);
 		for (size_t i = 0; i < tab.indexes.size(); ++i)
 		{
 			auto &index = tab.indexes[i];
@@ -513,4 +514,5 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 			ih->recover_insert_entry(key, rid);
 		}
 	}
+	fh_->unpin_page_handle(pagehdr);
 }

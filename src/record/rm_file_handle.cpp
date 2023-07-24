@@ -53,26 +53,21 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
     buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
     return Rid{pageNo, free_slot_no};
 }
-void RmFileHandle::insert_records(char *buf, int size)
+Rid RmFileHandle::insert_record(char *buf, RmPageHandle &page_handle)
 {
-    RmPageHandle page_handle = create_page_handle();
-    for (size_t i = 0; i < size; i++)
+    int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
+    page_id_t pageNo = page_handle.page->get_page_id().page_no;
+    char *free_slot = page_handle.get_slot(free_slot_no);
+    memcpy(free_slot, buf, file_hdr_.record_size);
+    Bitmap::set(page_handle.bitmap, free_slot_no);
+    page_handle.page_hdr->num_records++;
+    if (page_handle.page_hdr->num_records == file_hdr_.num_records_per_page)
     {
-        int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
-        page_id_t pageNo = page_handle.page->get_page_id().page_no;
-        char *free_slot = page_handle.get_slot(free_slot_no);
-        memcpy(free_slot, buf + i * file_hdr_.record_size, file_hdr_.record_size);
-        Bitmap::set(page_handle.bitmap, free_slot_no);
-        page_handle.page_hdr->num_records++;
-        if (page_handle.page_hdr->num_records == file_hdr_.num_records_per_page)
-        {
-            file_hdr_.first_free_page_no = page_handle.page_hdr->next_free_page_no;
-            buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
-            if (i != size - 1)
-                page_handle = create_page_handle();
-        }
+        file_hdr_.first_free_page_no = page_handle.page_hdr->next_free_page_no;
+        buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+        page_handle = create_page_handle();
     }
-    buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), true);
+    return Rid{pageNo, free_slot_no};
 }
 /**
  * @description: 在当前表中的指定位置插入一条记录
@@ -200,7 +195,12 @@ RmPageHandle RmFileHandle::create_page_handle()
     else
         return fetch_page_handle(file_hdr_.first_free_page_no);
 }
-
+RmPageHandle RmFileHandle::init_load_pagehandle(){
+    if (file_hdr_.first_free_page_no == -1)
+        return create_new_page_handle();
+    else
+        return fetch_page_handle(file_hdr_.first_free_page_no);
+}
 /**
  * @description: 当一个页面从没有空闲空间的状态变为有空闲空间状态时，更新文件头和页头中空闲页面相关的元数据
  */
