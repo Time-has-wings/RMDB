@@ -518,7 +518,7 @@ page_id_t IxIndexHandle::insert_entry(const char *key, const Rid &value, Transac
     else
     {
         auto p = fetch_node(leaf_node->get_next_leaf());
-        buffer_pool_manager_->unpin_page(p->get_page_id(), true);
+        buffer_pool_manager_->unpin_page(p->get_page_id(), false);
         return p->get_page_no();
     }
 }
@@ -769,7 +769,7 @@ Iid IxIndexHandle::lower_bound(const char *key)
         if (node->get_page_no() == file_hdr_->last_leaf_)
         {
             node->page->RUnlatch();
-            buffer_pool_manager_->unpin_page(node->get_page_id(), true);
+            buffer_pool_manager_->unpin_page(node->get_page_id(), false);
             return leaf_end();
         }
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
@@ -802,7 +802,7 @@ Iid IxIndexHandle::upper_bound(const char *key)
         if (node->get_page_no() == file_hdr_->last_leaf_)
         {
             node->page->RUnlatch();
-            buffer_pool_manager_->unpin_page(node->get_page_id(), true);
+            buffer_pool_manager_->unpin_page(node->get_page_id(), false);
             return leaf_end();
         }
         iid = {.page_no = node->get_next_leaf(), .slot_no = 0};
@@ -812,7 +812,7 @@ Iid IxIndexHandle::upper_bound(const char *key)
         iid = {.page_no = node->get_page_no(), .slot_no = idx};
     }
     node->page->RUnlatch();
-    buffer_pool_manager_->unpin_page(node->get_page_id(), true);
+    buffer_pool_manager_->unpin_page(node->get_page_id(), false);
     return iid;
 }
 
@@ -1003,7 +1003,7 @@ IxNodeHandle *IxIndexHandle::recover_leaf_page(const char *key)
     while (!ret->is_leaf_page())
     {
         next_page_id = ret->internal_lookup(key);
-        buffer_pool_manager_->unpin_page(ret->get_page_id(), true);
+        buffer_pool_manager_->unpin_page(ret->get_page_id(), false);
         ret = fetch_node(next_page_id);
     }
     return ret;
