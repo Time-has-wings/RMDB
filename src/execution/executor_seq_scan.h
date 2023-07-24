@@ -102,11 +102,18 @@ public:
     void nextTuple() override
     {
         scan_->next();
+        if (is_end())
+            return;
         auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
         while (!scan_->is_end())
         {
-            auto rid = scan_->rid();
-            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
+            rid_t = scan_->rid();
+            if (cur_page.page->get_page_id().page_no != rid_t.page_no)
+            {
+                fh_->unpin_page_handle(cur_page);
+                cur_page = fh_->fetch_page_handle(rid_t.page_no);
+            }
+            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page.get_slot(rid_t.slot_no));
             if (std::all_of(fed_conds_.begin(), fed_conds_.end(),
                             [&](const Condition &cond)
                             { return eval_cond(cols_, cond, rmd); }))
@@ -115,12 +122,6 @@ public:
                 break;
             }
             scan_->next();
-            rid_t = scan_->rid();
-            if (cur_page.page->get_page_id().page_no != rid_t.page_no)
-            {
-                fh_->unpin_page_handle(cur_page);
-                cur_page = fh_->fetch_page_handle(rid_t.page_no);
-            }
         }
     }
 
