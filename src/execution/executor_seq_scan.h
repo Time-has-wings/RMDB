@@ -100,6 +100,7 @@ public:
     }
     void nextTuple() override
     {
+        scan_->next();
         auto cur_page = fh_->fetch_page_handle(scan_->rid().page_no);
         while (!scan_->is_end())
         {
