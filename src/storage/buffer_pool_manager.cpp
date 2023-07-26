@@ -168,16 +168,27 @@ Page *BufferPoolManager::new_page(PageId *page_id)
     // 3.   将frame的数据写回磁盘
     // 4.   固定frame，更新pin_count_
     // 5.   返回获得的page
-     std::lock_guard<std::mutex> guard(latch_);
+          std::lock_guard<std::mutex> guard(latch_);
     frame_id_t fid = INVALID_FRAME_ID;
     if (!find_victim_page(&fid)) // 获取一个可用的frame
     {
         return nullptr;
     }
     Page *page = pages_ + fid;
+    if (const PageId temp = page->get_page_id(); page->is_dirty_) // 检查是否是脏页
+    {
+        disk_manager_->write_page(temp.fd, temp.page_no, page->get_data(), PAGE_SIZE);
+        page->is_dirty_ = false;
+        page->pin_count_ = 0;
+    }
+    page_table_.erase(page->get_page_id());
+    page->reset_memory();
     page_id_t pageno = disk_manager_->allocate_page(page_id->fd);
     page_id->page_no = pageno;
-    update_page(page, *page_id, fid); // 2,3,4
+    page_table_[*page_id] =fid;
+    page->id_ = *page_id;
+    page->pin_count_ = 1;
+    replacer_->pin(fid);
     return page;
 }
 
