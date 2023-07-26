@@ -206,7 +206,7 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        return fh_->get_record(rid_, context_);
+        return std::unique_ptr<RmRecord>(new RmRecord({fh_->get_file_hdr().record_size, cur_page->get_slot(rid_.slot_no)}));
     }
 
     Rid &rid() override { return rid_; }

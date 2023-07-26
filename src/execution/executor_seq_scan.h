@@ -135,7 +135,7 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        return fh_->get_record(rid_, context_); // beginTuple可对table上S锁,说明可以对record上S锁.
+        return std::unique_ptr<RmRecord>(new RmRecord({fh_->get_file_hdr().record_size, cur_page->get_slot(rid_.slot_no)}));
     }
     Rid &rid() override { return rid_; }
 };
