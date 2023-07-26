@@ -34,6 +34,7 @@ private:
     std::unique_ptr<RecScan> scan_;
     std::shared_ptr<RmPageHandle> cur_page;
     size_t idx = 0;
+    RmRecord rmd_;
     SmManager *sm_manager_;
 
 public:
@@ -150,10 +151,10 @@ public:
         while (!scan_->is_end())
         {
             auto rid = scan_->rid();
-            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page->get_slot(rid.slot_no));
+            rmd_ = RmRecord(fh_->get_file_hdr().record_size, cur_page->get_slot(rid.slot_no));
             if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
-                            { return eval_cond(cols_, cond, rmd); }))
+                            { return eval_cond(cols_, cond, rmd_); }))
             {
                 rid_ = scan_->rid();
                 break;
@@ -192,10 +193,10 @@ public:
                 fh_->unpin_page_handle(*cur_page);
                 cur_page = fh_->get_stable_page_handle(rid_t.page_no);
             }
-            auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page->get_slot(rid_t.slot_no));
+            rmd_ = RmRecord(fh_->get_file_hdr().record_size, cur_page->get_slot(rid_t.slot_no));
             if (std::all_of(fed_conds_.begin() + idx, fed_conds_.end(),
                             [&](const Condition &cond)
-                            { return eval_cond(cols_, cond, rmd); }))
+                            { return eval_cond(cols_, cond, rmd_); }))
             {
                 rid_ = scan_->rid();
                 break;
@@ -206,7 +207,7 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        return fh_->get_record(rid_, context_);
+        return std::make_unique<RmRecord>(rmd_);
     }
 
     Rid &rid() override { return rid_; }

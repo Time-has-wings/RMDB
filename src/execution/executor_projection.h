@@ -66,8 +66,9 @@ public:
         auto prev_record = prev_->Next();
         auto ret = std::make_unique<RmRecord>(len_);
         auto &prev_cols = prev_->cols();
+        size_t sel_idx;
         for(size_t i = 0; i < sel_idxs_.size(); i++) {
-            auto sel_idx = sel_idxs_[i];
+            sel_idx = sel_idxs_[i];
             auto &pre_col = prev_cols[sel_idx];
             auto &sel_col = cols_[i];
             memcpy(ret->data + sel_col.offset, prev_record->data + pre_col.offset, sel_col.len);
