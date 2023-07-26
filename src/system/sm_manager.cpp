@@ -495,8 +495,6 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 		{
 			auto &col = tab.cols.at(i);
 			std::getline(sin, word, ',');
-			if (word.back() == '\r')
-				word.erase(word.size() - 1, 1);
 			LoadData::trans(word, col, str, col.offset);
 		}
 		auto rid = fh_->insert_record(str, pagehdr);
