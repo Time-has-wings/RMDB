@@ -473,24 +473,21 @@ void SmManager::rollback_update(const std::string &tab_name,
 }
 void SmManager::load_data_into_table(std::string &tab_name, std::string &file_name)
 {
-	std::ifstream csv_data(file_name);
-	if (!csv_data.is_open())
-		throw InternalError("file cant open");
-	std::string buffer, linestr, word;
-	buffer.assign(std::istreambuf_iterator<char>(csv_data), std::istreambuf_iterator<char>());
+	FILE *fp=fopen(file_name.c_str(), "r");
+	char buffer[1024];
+	std::istringstream sin;
+	std::string word;
 	auto &tab = db_.get_table(tab_name);
 	auto &fh_ = fhs_.at(tab_name);
-	std::stringstream strStr;
-	std::istringstream sin;
-	strStr.str(buffer);
-	getline(strStr, linestr);
 	char str[fh_->get_file_hdr().record_size];
+	fgets(buffer, 1024, fp);
 	RmPageHandle pagehdr = fh_->init_load_pagehandle();
-	while (getline(strStr, linestr))
+	while (fgets(buffer, 1024, fp))
 	{
-		sin.clear();
-		sin.str(linestr);
+		buffer[strlen(buffer) - 1] = '\0';
 		memset(str, '\0', fh_->get_file_hdr().record_size);
+		sin.clear();
+		sin.str(buffer);
 		for (size_t i = 0; i < tab.cols.size(); i++)
 		{
 			auto &col = tab.cols.at(i);
