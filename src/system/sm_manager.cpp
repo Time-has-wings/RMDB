@@ -509,5 +509,6 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 			ih->recover_insert_entry(key, rid);
 		}
 	}
+	fclose(fp);
 	fh_->unpin_page_handle(pagehdr);
 }
