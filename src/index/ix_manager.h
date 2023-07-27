@@ -151,6 +151,7 @@ public:
     void destroy_index(const std::string &filename, const std::vector<std::string> &index_cols)
     {
         std::string ix_name = get_index_name(filename, index_cols);
+        
         disk_manager_->destroy_file(ix_name);
     }
 
@@ -176,6 +177,7 @@ public:
         disk_manager_->write_page(ih->fd_, IX_FILE_HDR_PAGE, data, ih->file_hdr_->tot_len_);
         // 缓冲区的所有页刷到磁盘，注意这句话必须写在close_file前面
         buffer_pool_manager_->flush_all_pages(ih->fd_);
+        buffer_pool_manager_->close_all_pages(ih->fd_);
         disk_manager_->close_file(ih->fd_);
     }
 };
