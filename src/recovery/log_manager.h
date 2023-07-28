@@ -240,7 +240,11 @@ public:
         printf("insert rid: %d, %d\n", rid_.page_no, rid_.slot_no);
         printf("table name: %s\n", table_name_);
     }
-
+    ~InsertLogRecord()
+    {
+        if (table_name_ != nullptr)
+            delete[] table_name_;
+    }
     RmRecord insert_value_;  // 插入的记录
     Rid rid_;                // 记录插入的位置
     char *table_name_;       // 插入记录的表名称
@@ -313,7 +317,11 @@ public:
         printf("delete rid: %d, %d\n", rid_.page_no, rid_.slot_no);
         printf("table name: %s\n", table_name_);
     }
-
+    ~DeleteLogRecord()
+    {
+        if (table_name_ != nullptr)
+            delete[] table_name_;
+    }
     RmRecord delete_value_;  // 删除的记录
     Rid rid_;                // 记录删除的位置
     char *table_name_;       // 删除记录的表名称
@@ -395,7 +403,11 @@ public:
         printf("update rid: %d, %d\n", rid_.page_no, rid_.slot_no);
         printf("table name: %s\n", table_name_);
     }
-
+    ~UpdateLogRecord()
+    {
+       if (table_name_ != nullptr)
+            delete[] table_name_;
+    }
     RmRecord orign_value_;   // 更新的原始值
     RmRecord update_value_;  // 更新的值
     Rid rid_;                // 记录更新的位置

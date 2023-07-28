@@ -41,7 +41,7 @@ Transaction *TransactionManager::begin(Transaction *txn, LogManager *log_manager
     log_manager->add_log_to_buffer(&beginLog); // 写入日志缓冲区
     txn->set_prev_lsn(beginLog.lsn_);
     // log_manager->flush_log_to_disk(); // 写入日志缓冲区
-    return txn;                       // 4
+    return txn; // 4
 }
 
 /**
@@ -59,8 +59,11 @@ void TransactionManager::commit(Transaction *txn, LogManager *log_manager)
     // 5. 更新事务状态
     // 提交所有写操作
     auto write_set = txn->get_write_set();
-    while (write_set->size())
-        write_set->pop_back();
+    for (auto &rec : *write_set)
+    {
+        delete rec;
+    }
+    write_set->clear();
     // 释放所有锁
     auto lock_set = txn->get_lock_set();
     for (auto i = lock_set->begin(); i != lock_set->end(); i++)
@@ -73,7 +76,7 @@ void TransactionManager::commit(Transaction *txn, LogManager *log_manager)
     CommitLogRecord commitLog(txn->get_transaction_id());
     commitLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
     log_manager->add_log_to_buffer(&commitLog); // 写入日志缓冲区
-    //txn->set_prev_lsn(commitLog.lsn_); // 设置无效
+    // txn->set_prev_lsn(commitLog.lsn_); // 设置无效
     log_manager->flush_log_to_disk(); // 日志刷盘
     // 更新事务状态
     txn->set_state(TransactionState::COMMITTED);
@@ -110,6 +113,7 @@ void TransactionManager::abort(Transaction *txn, LogManager *log_manager)
         {
             sm_manager_->rollback_update(write_set->back()->GetTableName(), write_set->back()->GetRid(), write_set->back()->GetRecord(), context);
         }
+        delete write_set->back();
         write_set->pop_back(); // 删除
     }
     // 释放锁
@@ -122,7 +126,7 @@ void TransactionManager::abort(Transaction *txn, LogManager *log_manager)
     AbortLogRecord abortLog(txn->get_transaction_id());
     abortLog.prev_lsn_ = txn->get_prev_lsn();  // 设置日志的prev_lsn
     log_manager->add_log_to_buffer(&abortLog); // 写入日志缓冲区
-    log_manager->flush_log_to_disk(); // 日志刷盘
+    log_manager->flush_log_to_disk();          // 日志刷盘
     // 更新
     txn->set_state(TransactionState::ABORTED);
 }

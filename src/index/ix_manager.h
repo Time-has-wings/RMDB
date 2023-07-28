@@ -137,7 +137,8 @@ public:
         }
 
         disk_manager_->set_fd2pageno(fd, IX_INIT_NUM_PAGES - 1); // DEBUG
-
+        delete[] data;
+        delete fhdr;
         // Close index file
         disk_manager_->close_file(fd);
     }
@@ -179,5 +180,6 @@ public:
         buffer_pool_manager_->flush_all_pages(ih->fd_);
         buffer_pool_manager_->close_all_pages(ih->fd_);
         disk_manager_->close_file(ih->fd_);
+        delete data;
     }
 };

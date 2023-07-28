@@ -142,6 +142,7 @@ void SmManager::close_db()
 		ix_manager_->close_index(entry.second.get());
 	fhs_.clear();
 	ihs_.clear();
+	ofs.close();
 	if (chdir("..") < 0)
 		throw UnixError();
 }
@@ -397,7 +398,7 @@ void SmManager::rollback_delete(const std::string &tab_name,
 	{
 		std::vector<ColMeta> index_cols = index.cols;									 // 索引包含的字段
 		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); // 获得索引所在文件名
-		char *key = new char[index.col_tot_len];										 // 索引字段下的key
+		char key[index.col_tot_len];										 // 索引字段下的key
 		char *data = record.data;														 // 这条记录的序列化数据
 		int offset = 0;
 		for (size_t i = 0; i < index_cols.size(); i++)
@@ -420,7 +421,7 @@ void SmManager::rollback_insert(const std::string &tab_name, const Rid &tuple_ri
 	{
 		std::vector<ColMeta> index_cols = index.cols;									  // 索引包含的字段
 		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
-		char *key = new char[index.col_tot_len];										  // 索引字段下的key
+		char key[index.col_tot_len];										  // 索引字段下的key
 		char *data = fhs_.at(tab_name).get()->get_record(tuple_rid, context).get()->data; // 这条记录的序列化数据
 		int offset = 0;
 		for (size_t i = 0; i < index_cols.size(); i++)
@@ -445,7 +446,7 @@ void SmManager::rollback_update(const std::string &tab_name,
 	{
 		std::vector<ColMeta> index_cols = index.cols;									  // 索引包含的字段
 		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
-		char *key = new char[index.col_tot_len];										  // 索引字段下的key
+		char key[index.col_tot_len];										  // 索引字段下的key
 		char *data = fhs_.at(tab_name).get()->get_record(tuple_rid, context).get()->data; // 这条记录的序列化数据
 		int offset = 0;
 		for (size_t i = 0; i < index_cols.size(); i++)
@@ -460,7 +461,7 @@ void SmManager::rollback_update(const std::string &tab_name,
 	{
 		std::vector<ColMeta> index_cols = index.cols;									 // 索引包含的字段
 		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); // 获得索引所在文件名
-		char *key = new char[index.col_tot_len];
+		char key[index.col_tot_len];
 		char *data = record.data; // 这条记录的序列化数据
 		int offset = 0;
 		for (size_t i = 0; i < index_cols.size(); i++)

@@ -106,7 +106,7 @@ void *client_handler(void *sock_fd)
 			break;
 		}
 
-		std::cout<<"i_recvBytes: "<<i_recvBytes <<"\n";
+		std::cout << "i_recvBytes: " << i_recvBytes << "\n";
 
 		if (strcmp(data_recv, "exit") == 0)
 		{
@@ -213,7 +213,7 @@ void *client_handler(void *sock_fd)
 			txn_manager->commit(context->txn_, context->log_mgr_);
 		}
 	}
-
+	delete[] data_send;
 	// Clear
 	std::cout << "Terminating current client_connection..." << std::endl;
 	close(fd);			// close a file descriptor.
