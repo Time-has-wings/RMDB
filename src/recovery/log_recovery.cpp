@@ -227,8 +227,8 @@ void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
 	for (auto &index : tab_.indexes)
 	{
 		auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
-		char *update = new char[index.col_tot_len];
-		char *orign = new char[index.col_tot_len];
+		char update[index.col_tot_len];
+		char orign[index.col_tot_len];
 		int offset = 0;
 		for (size_t i = 0; i < index.col_num; ++i)
 		{

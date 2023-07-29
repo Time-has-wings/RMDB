@@ -259,6 +259,7 @@ public:
     void recover_insert_entry(const char *key, const Rid &value);
     void recover_delete_entry(const char *key);
     IxNodeHandle * recover_leaf_page(const char *key);
+    ~IxIndexHandle();
 private:
     // 辅助函数
     void update_root_page_no(page_id_t root) { file_hdr_->root_page_ = root; }
