@@ -163,13 +163,13 @@ public:
                 scan_->next();
                 if (is_end())
                 {
-                    fh_->unpin_page_handle(*cur_page);
+                    fh_->unpin_page_handle(*cur_page, false);
                     return;
                 }
                 rid_t = scan_->rid();
                 if (cur_page->page->get_page_id().page_no != rid_t.page_no)
                 {
-                    fh_->unpin_page_handle(*cur_page);
+                    fh_->unpin_page_handle(*cur_page, false);
                     cur_page = fh_->get_stable_page_handle(rid_t.page_no);
                 }
             }
@@ -181,7 +181,7 @@ public:
         scan_->next();
         if (is_end())
         {
-            fh_->unpin_page_handle(*cur_page);
+            fh_->unpin_page_handle(*cur_page, false);
             return;
         }
         while (!scan_->is_end())
@@ -189,7 +189,7 @@ public:
             rid_t = scan_->rid();
             if (cur_page->page->get_page_id().page_no != rid_t.page_no)
             {
-                fh_->unpin_page_handle(*cur_page);
+                fh_->unpin_page_handle(*cur_page, false);
                 cur_page = fh_->get_stable_page_handle(rid_t.page_no);
             }
             auto rmd = RmRecord(fh_->get_file_hdr().record_size, cur_page->get_slot(rid_t.slot_no));

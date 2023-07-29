@@ -288,7 +288,7 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 		auto rid = rm_scan.rid();
 		if (cur_page.page->get_page_id().page_no != rid.page_no)
 		{
-			file_handle->unpin_page_handle(cur_page);
+			file_handle->unpin_page_handle(cur_page, true);
 			cur_page = file_handle->fetch_page_handle(rm_scan.rid().page_no);
 		}
 		auto rec = RmRecord(file_handle->get_file_hdr().record_size, cur_page.get_slot(rid.slot_no));
@@ -302,7 +302,7 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 		}
 		ih->insert_entry(key, rm_scan.rid(), context->txn_);
 	}
-	file_handle->unpin_page_handle(cur_page);
+	file_handle->unpin_page_handle(cur_page, true);
 	auto index_name = ix_manager_->get_index_name(tab_name, index_tab.cols);
 	assert(ihs_.count(index_name) == 0);
 	ihs_.emplace(index_name, std::move(ih));
@@ -473,7 +473,7 @@ void SmManager::rollback_update(const std::string &tab_name,
 }
 void SmManager::load_data_into_table(std::string &tab_name, std::string &file_name)
 {
-	FILE *fp=fopen(file_name.c_str(), "r");
+	FILE *fp = fopen(file_name.c_str(), "r");
 	char buffer[1024];
 	std::istringstream sin;
 	std::string word;
@@ -510,5 +510,5 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 		}
 	}
 	fclose(fp);
-	fh_->unpin_page_handle(pagehdr);
+	fh_->unpin_page_handle(pagehdr, true);
 }

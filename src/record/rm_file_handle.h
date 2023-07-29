@@ -93,8 +93,9 @@ public:
 
     RmPageHandle fetch_page_handle(int page_no) const;
     std::shared_ptr<RmPageHandle> get_stable_page_handle(int page_no) const;
-    void unpin_page_handle(RmPageHandle &rmp);
+    void unpin_page_handle(RmPageHandle &rmp, bool dirty);
     RmPageHandle init_load_pagehandle();
+
 private:
     RmPageHandle create_page_handle();
 

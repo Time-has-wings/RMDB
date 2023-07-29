@@ -150,9 +150,9 @@ std::shared_ptr<RmPageHandle> RmFileHandle::get_stable_page_handle(int page_no) 
         throw PageNotExistError("page", page_no);
     return std::make_shared<RmPageHandle>(&file_hdr_, buffer_pool_manager_->fetch_page(PageId{fd_, page_no}));
 }
-void RmFileHandle::unpin_page_handle(RmPageHandle &rmp)
+void RmFileHandle::unpin_page_handle(RmPageHandle &rmp, bool dirty = false)
 {
-    buffer_pool_manager_->unpin_page(rmp.page->get_page_id(), false);
+    buffer_pool_manager_->unpin_page(rmp.page->get_page_id(), dirty);
 }
 /**
  * @description: 创建一个新的page handle
@@ -195,7 +195,8 @@ RmPageHandle RmFileHandle::create_page_handle()
     else
         return fetch_page_handle(file_hdr_.first_free_page_no);
 }
-RmPageHandle RmFileHandle::init_load_pagehandle(){
+RmPageHandle RmFileHandle::init_load_pagehandle()
+{
     if (file_hdr_.first_free_page_no == -1)
         return create_new_page_handle();
     else
