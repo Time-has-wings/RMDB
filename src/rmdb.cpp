@@ -90,7 +90,7 @@ void *client_handler(void *sock_fd)
 	bool outputfile = true;
 	while (true)
 	{
-		std::cout << "Waiting for request..." << std::endl;
+		std::cout << "Waiting for request...\n";
 		memset(data_recv, 0, BUFFER_LENGTH);
 
 		i_recvBytes = read(fd, data_recv, BUFFER_LENGTH);
@@ -106,7 +106,7 @@ void *client_handler(void *sock_fd)
 			break;
 		}
 
-		printf("i_recvBytes: %d \n ", i_recvBytes);
+		std::cout<<"i_recvBytes: "<<i_recvBytes <<"\n";
 
 		if (strcmp(data_recv, "exit") == 0)
 		{
@@ -118,14 +118,14 @@ void *client_handler(void *sock_fd)
 			std::cout << "Server crash" << std::endl;
 			exit(1);
 		}
-		if (strcmp(data_recv, "set output_file off") == 0||strcmp(data_recv, "\"set output_file off\"") == 0)
+		if (strcmp(data_recv, "set output_file off") == 0 || strcmp(data_recv, "\"set output_file off\"") == 0)
 		{
 			outputfile = false;
 			ql_manager->outputfile = false;
 			sm_manager->outputfile = false;
 		}
 
-		std::cout << "Read from client " << fd << ": " << data_recv << std::endl;
+		std::cout << "Read from client " << fd << ": " << data_recv << "\n";
 
 		memset(data_send, '\0', BUFFER_LENGTH);
 		offset = 0;

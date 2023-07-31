@@ -63,7 +63,6 @@ public:
     };
 
     std::unique_ptr<RmRecord> Next() override {
-        assert(!is_end());
         auto prev_record = prev_->Next();
         auto ret = std::make_unique<RmRecord>(len_);
         auto &prev_cols = prev_->cols();

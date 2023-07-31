@@ -83,7 +83,7 @@ public:
     Rid insert_record(char *buf, Context *context);
 
     void insert_record(const Rid &rid, char *buf);
-    void insert_records(char *, int);
+    Rid insert_record(char *buf, RmPageHandle &page_handle);
 
     void delete_record(const Rid &rid, Context *context);
 
@@ -94,7 +94,7 @@ public:
     RmPageHandle fetch_page_handle(int page_no) const;
     std::shared_ptr<RmPageHandle> get_stable_page_handle(int page_no) const;
     void unpin_page_handle(RmPageHandle &rmp);
-
+    RmPageHandle init_load_pagehandle();
 private:
     RmPageHandle create_page_handle();
 
