@@ -102,8 +102,7 @@ public:
         if (context_->txn_->get_txn_mode() && context_->lock_mgr_->lock_shared_on_table(context_->txn_, fh_->GetFd()) == false)
             throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
         auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index_col_names_)).get();
-        Iid lower = ih->leaf_begin();
-        Iid upper = ih->leaf_end();
+        Iid lower{-1, -1}, upper{-1, -1};
         char rhs_key[index_meta_.col_tot_len];
         std::memset(rhs_key, 0, sizeof(char) * index_meta_.col_tot_len);
         int off_set = 0;
@@ -142,6 +141,10 @@ public:
             }
             break;
         }
+        if (lower.page_no == -1)
+            lower = ih->leaf_begin();
+        if (upper.page_no == -1)
+            upper = ih->leaf_end();
         scan_ = std::make_unique<IxScan>(ih, lower, upper, sm_manager_->get_bpm());
         cur_page = fh_->get_stable_page_handle(scan_->rid().page_no);
         while (!scan_->is_end())
@@ -203,7 +206,7 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        return fh_->get_record(rid_, context_);
+        return std::make_unique<RmRecord>(fh_->get_file_hdr().record_size, cur_page->get_slot(rid_.slot_no));
     }
 
     Rid &rid() override { return rid_; }

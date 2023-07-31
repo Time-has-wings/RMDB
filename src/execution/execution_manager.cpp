@@ -160,14 +160,15 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			captions.emplace_back(sel_col.col_name);
 	}
 	// Print header into buffer
-	RecordPrinter rec_printer(sel_cols.size());
-	rec_printer.print_separator(context);
-	rec_printer.print_record(captions, context);
-	rec_printer.print_separator(context);
-	// print header into file
+
 	std::fstream outfile;
+	RecordPrinter rec_printer(sel_cols.size());
 	if (outputfile)
 	{
+		rec_printer.print_separator(context);
+		rec_printer.print_record(captions, context);
+		rec_printer.print_separator(context);
+		// print header into file
 		outfile.open("output.txt", std::ios::out | std::ios::app);
 		outfile << "|";
 		for (int i = 0; i < captions.size(); ++i)
@@ -180,12 +181,12 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 	// Print records
 	size_t num_rec = 0;
 	std::vector<std::string> columns;
+	columns.reserve(sel_cols.size());
 	// 执行query_plan
 	for (executorTreeRoot->beginTuple(); !executorTreeRoot->is_end(); executorTreeRoot->nextTuple())
 	{
 		auto Tuple = executorTreeRoot->Next();
 		columns.clear();
-		columns.shrink_to_fit();
 		for (auto &col : executorTreeRoot->cols())
 		{
 			std::string col_str;
@@ -213,26 +214,27 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			}
 			columns.emplace_back(col_str);
 		}
-
-		rec_printer.print_record(columns, context);
-		// print record into file
 		if (outputfile)
 		{
+			rec_printer.print_record(columns, context);
+			// print record into file
 			outfile << "|";
 			for (int i = 0; i < columns.size(); ++i)
 			{
 				outfile << " " << columns[i] << " |";
 			}
 			outfile << "\n";
+			num_rec++;
 		}
-		num_rec++;
 	}
 	if (outputfile)
+	{
 		outfile.close();
-	// Print footer into buffer
-	rec_printer.print_separator(context);
-	// Print record count into buffer
-	RecordPrinter::print_record_count(num_rec, context);
+		// Print footer into buffer
+		rec_printer.print_separator(context);
+		// Print record count into buffer
+		RecordPrinter::print_record_count(num_rec, context);
+	}
 }
 
 // 执行DML语句
