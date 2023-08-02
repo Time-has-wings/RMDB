@@ -11,25 +11,24 @@ See the Mulan PSL v2 for more details. */
 #include "ix_scan.h"
 
 /**
- * @brief 
+ * @brief
  * @todo 加上读锁（需要使用缓冲池得到page）
  */
-void IxScan::next() {
-    assert(!is_end());
-    IxNodeHandle *node = ih_->fetch_node(iid_.page_no);
-    bpm_->unpin_page(node->get_page_id(),true);
-    assert(node->is_leaf_page());
-    assert(iid_.slot_no < node->get_size());
-    // increment slot no
-    iid_.slot_no++;
-    if (iid_.page_no != ih_->file_hdr_->last_leaf_ && iid_.slot_no == node->get_size()) {
-        // go to next leaf
-        iid_.slot_no = 0;
-        iid_.page_no = node->get_next_leaf();
-    }
-    delete node;
+void IxScan::next()
+{
+	iid_.slot_no++;
+	if (iid_.page_no != ih_->file_hdr_->last_leaf_ && iid_.slot_no == node_->get_size())
+	{
+		// go to next leaf
+		iid_.slot_no = 0;
+		iid_.page_no = node_->get_next_leaf();
+		bpm_->unpin_page(node_->get_page_id(), false);
+		delete node_;
+		node_ = ih_->fetch_node(iid_.page_no);
+	}
 }
 
-Rid IxScan::rid() const {
-    return ih_->get_rid(iid_);
+Rid IxScan::rid() const
+{
+	return *(node_->get_rid(iid_.slot_no));
 }
