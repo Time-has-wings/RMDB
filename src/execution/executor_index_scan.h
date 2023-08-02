@@ -37,7 +37,7 @@ class IndexScanExecutor : public AbstractExecutor
 	std::shared_ptr<RmPageHandle> cur_page;
 	SmManager* sm_manager_;
 	std::vector<std::vector<ColMeta>::const_iterator> l_cols;
-	std::shared_ptr<Value> l_val, r_val;
+	Value l_val, r_val;
 	std::shared_ptr<RmRecord> rmd;
 
  public:
@@ -79,8 +79,6 @@ class IndexScanExecutor : public AbstractExecutor
 			}
 		}
 		fed_conds_ = conds_;
-		l_val = std::make_shared<Value>();
-		r_val = std::make_shared<Value>();
 		for (auto& cond : conds_)
 		{
 			l_cols.emplace_back(get_col(cols_, cond.lhs_col));
@@ -115,7 +113,7 @@ class IndexScanExecutor : public AbstractExecutor
 			{
 				auto rhs_col = get_col(cols_, cond.rhs_col);
 				set_value(target, *rhs_col, r_val);
-				if (!compare_value(*l_val, *r_val, cond.op))
+				if (!compare_value(l_val, r_val, cond.op))
 				{
 					flag = false;
 					break;
@@ -123,7 +121,7 @@ class IndexScanExecutor : public AbstractExecutor
 			}
 			else
 			{
-				if (!compare_value(*l_val, cond.rhs_val, cond.op))
+				if (!compare_value(l_val, cond.rhs_val, cond.op))
 				{
 					flag = false;
 					break;

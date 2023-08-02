@@ -90,22 +90,22 @@ class AbstractExecutor
 		}
 		return ret;
 	}
-	static void set_value(const RmRecord& record, const ColMeta& col, std::shared_ptr<Value>& val)
+	static void set_value(const RmRecord& record, const ColMeta& col, Value& val)
 	{
 		char* data = record.data + col.offset;
 		size_t len = col.len;
 		if (col.type == TYPE_INT)
-			val->set_int(*(int*)data);
+			val.set_int(*(int*)data);
 		else if (col.type == TYPE_FLOAT)
-			val->set_float(*(float*)data);
+			val.set_float(*(float*)data);
 		else if (col.type == TYPE_BIGINT)
-			val->set_bigint(*(int64_t*)data);
+			val.set_bigint(*(int64_t*)data);
 		else if (col.type == TYPE_DATETIME)
-			val->set_datetime(*(int64_t*)data);
+			val.set_datetime(*(int64_t*)data);
 		else if (col.type == TYPE_STRING)
 		{
 			std::string tmp(data, len);
-			val->set_str(tmp);
+			val.set_str(tmp);
 		}
 	}
 
