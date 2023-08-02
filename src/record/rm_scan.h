@@ -9,20 +9,28 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
 #pragma once
-
+#include "rm_file_handle.h"
 #include "rm_defs.h"
 
 class RmFileHandle;
 
-class RmScan : public RecScan {
-    const RmFileHandle *file_handle_;
-    Rid rid_;
-public:
-    RmScan(const RmFileHandle *file_handle);
+class RmScan : public RecScan
+{
+	const RmFileHandle* file_handle_;
+	Rid rid_{};
+	std::shared_ptr<RmPageHandle> cur_page;
+	size_t rec_size;
 
-    void next() override;
+ public:
+	explicit RmScan(const RmFileHandle* file_handle);
 
-    bool is_end() const override;
+	void next() override;
 
-    Rid rid() const override;
+	[[nodiscard]] bool is_end() const override;
+
+	[[nodiscard]] Rid rid() const override;
+	~RmScan() override
+	{
+		file_handle_->buffer_pool_manager_->unpin_page(cur_page->page->get_page_id(), false);
+	}
 };
