@@ -44,10 +44,10 @@ void RecoveryManager::analyze()
 				InsertLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + off_set);
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_; // redo_lsn最开始在定义时便有了最大值 下同
-				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
+				if (std::find_if(DPT.begin(), DPT.end(), [&temp](const page_id_t& s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
 					DPT.emplace_back(temp.rid_.page_no);
-				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
+				auto t_id = std::find_if(ATT.begin(), ATT.end(), [&temp](const std::pair<txn_id_t, lsn_t>& s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
 					t_id->second = t->lsn_;
@@ -57,10 +57,10 @@ void RecoveryManager::analyze()
 				DeleteLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + off_set);
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
-				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
+				if (std::find_if(DPT.begin(), DPT.end(), [&temp](const page_id_t& s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
 					DPT.emplace_back(temp.rid_.page_no);
-				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
+				auto t_id = std::find_if(ATT.begin(), ATT.end(), [&temp](const std::pair<txn_id_t, lsn_t>& s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
 					t_id->second = t->lsn_;
@@ -70,10 +70,10 @@ void RecoveryManager::analyze()
 				UpdateLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + off_set);
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
-				if (std::find_if(DPT.begin(), DPT.end(), [temp](const page_id_t &s)
+				if (std::find_if(DPT.begin(), DPT.end(), [&temp](const page_id_t& s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
 					DPT.emplace_back(temp.rid_.page_no);
-				auto t_id = std::find_if(ATT.begin(), ATT.end(), [temp](const std::pair<txn_id_t, lsn_t> &s)
+				auto t_id = std::find_if(ATT.begin(), ATT.end(), [&temp](const std::pair<txn_id_t, lsn_t>& s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
 					t_id->second = t->lsn_;
