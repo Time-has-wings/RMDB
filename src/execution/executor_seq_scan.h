@@ -74,7 +74,7 @@ class SeqScanExecutor : public AbstractExecutor
 		bool flag = true;
 		for (size_t i = 0; i < conds_.size(); i++)
 		{
-			auto lhs_col = l_cols[i];
+			auto& lhs_col = l_cols[i];
 			auto& cond = conds_[i];
 			set_value(target, (*lhs_col), l_val);
 			if (!cond.is_rhs_val)
