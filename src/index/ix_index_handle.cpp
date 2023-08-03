@@ -100,7 +100,7 @@ bool IxNodeHandle::leaf_lookup(const char *key, Rid **value)
  * @param key 目标key
  * @return page_id_t 目标key所在的孩子节点（子树）的存储页面编号
  */
-page_id_t IxNodeHandle::internal_lookup(const char *key)
+page_id_t IxNodeHandle::internal_lookup(const char* key) const
 {
     // Todo:
     // 1. 查找当前非叶子节点中目标key所在孩子节点（子树）的位置
@@ -228,10 +228,10 @@ IxIndexHandle::IxIndexHandle(DiskManager *disk_manager, BufferPoolManager *buffe
     : disk_manager_(disk_manager), buffer_pool_manager_(buffer_pool_manager), fd_(fd)
 {
     // init file_hdr_
-    disk_manager_->read_page(fd, IX_FILE_HDR_PAGE, (char *)&file_hdr_, sizeof(file_hdr_));
+	DiskManager::read_page(fd, IX_FILE_HDR_PAGE, (char*)&file_hdr_, sizeof(file_hdr_));
     char *buf = new char[PAGE_SIZE];
     memset(buf, 0, PAGE_SIZE);
-    disk_manager_->read_page(fd, IX_FILE_HDR_PAGE, buf, PAGE_SIZE);
+	DiskManager::read_page(fd, IX_FILE_HDR_PAGE, buf, PAGE_SIZE);
     file_hdr_ = new IxFileHdr();
     file_hdr_->deserialize(buf);
 
@@ -303,7 +303,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
             if (operation == Operation::FIND)
             {
                 unlatch_and_unpin_pageset(transaction, operation);
-                assert(transaction->get_index_latch_page_set()->size() == 0);
+				assert(transaction->get_index_latch_page_set()->empty());
             }
             else if (is_safe(ret, operation))
             {
@@ -523,7 +523,7 @@ page_id_t IxIndexHandle::insert_entry(const char *key, const Rid &value, Transac
     }
     unlatch_and_unpin_pageset(transaction, Operation::INSERT);
     // 需要考虑分裂后 插入的结点可能有变化
-    if (!(leaf_node->get_size() >= leaf_node->get_max_size()))
+	if (leaf_node->get_size() < leaf_node->get_max_size())
     {
         auto p_no = leaf_node->get_page_no();
         delete leaf_node;
@@ -787,7 +787,7 @@ Iid IxIndexHandle::lower_bound(const char *key)
     int idx = node->lower_bound(key);
     if (node->is_root_page())
         root_latch_.unlock();
-    Iid iid;
+	Iid iid{};
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
@@ -822,7 +822,7 @@ Iid IxIndexHandle::upper_bound(const char *key)
     int idx = node->upper_bound(key);
     if (node->is_root_page())
         root_latch_.unlock();
-    Iid iid;
+	Iid iid{};
     if (idx == node->get_size())
     {
         if (node->get_page_no() == file_hdr_->last_leaf_)
@@ -881,7 +881,7 @@ Iid IxIndexHandle::leaf_begin() const
 IxNodeHandle *IxIndexHandle::fetch_node(int page_no) const
 {
     Page *page = buffer_pool_manager_->fetch_page(PageId{fd_, page_no});
-    IxNodeHandle *node = new IxNodeHandle(file_hdr_, page);
+	auto* node = new IxNodeHandle(file_hdr_, page);
     return node;
 }
 

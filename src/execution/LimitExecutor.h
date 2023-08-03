@@ -54,9 +54,8 @@ public:
     {
         prev_ = std::move(prev);
         auto &prev_cols = prev_->cols();
-        for (int i = 0; i < orders.size(); i++)
+		for (const auto& order : orders)
         {
-            auto order = orders.at(i);
             auto pos = get_col(prev_cols, order.first);
             auto col = *pos;
             cols_.emplace_back(col);
@@ -105,7 +104,7 @@ public:
             tuples.pop();
         }
     }
-    const std::vector<ColMeta> &cols() const
+	const std::vector<ColMeta>& cols() const override
     {
         return prev_->cols();
     };

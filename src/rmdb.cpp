@@ -11,8 +11,8 @@ See the Mulan PSL v2 for more details. */
 #include <netinet/in.h>
 #include <readline/history.h>
 #include <readline/readline.h>
-#include <setjmp.h>
-#include <signal.h>
+#include <csetjmp>
+#include <csignal>
 #include <unistd.h>
 #include <atomic>
 
@@ -131,7 +131,7 @@ void *client_handler(void *sock_fd)
 		offset = 0;
 
 		// 开启事务，初始化系统所需的上下文信息（包括事务对象指针、锁管理器指针、日志管理器指针、存放结果的buffer、记录结果长度的变量）
-		Context *context = new Context(lock_manager.get(), log_manager.get(), nullptr, data_send, &offset);
+		auto* context = new Context(lock_manager.get(), log_manager.get(), nullptr, data_send, &offset);
 		SetTransaction(&txn_id, context);
 
 		// 用于判断是否已经调用了yy_delete_buffer来删除buf
@@ -217,7 +217,7 @@ void *client_handler(void *sock_fd)
 	// Clear
 	std::cout << "Terminating current client_connection..." << std::endl;
 	close(fd);			// close a file descriptor.
-	pthread_exit(NULL); // terminate calling thread!
+	pthread_exit(nullptr); // terminate calling thread!
 }
 
 void start_server()

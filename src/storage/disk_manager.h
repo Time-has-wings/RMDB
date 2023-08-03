@@ -32,23 +32,23 @@ class DiskManager {
 
     ~DiskManager() = default;
 
-    void write_page(int fd, page_id_t page_no, const char *offset, int num_bytes);
+	static void write_page(int fd, page_id_t page_no, const char* offset, int num_bytes);
 
-    void read_page(int fd, page_id_t page_no, char *offset, int num_bytes);
+	static void read_page(int fd, page_id_t page_no, char* offset, int num_bytes);
 
     page_id_t allocate_page(int fd);
 
     void deallocate_page(page_id_t page_id);
 
     /*目录操作*/
-    bool is_dir(const std::string &path);
+	static bool is_dir(const std::string& path);
 
-    void create_dir(const std::string &path);
+	static void create_dir(const std::string& path);
 
-    void destroy_dir(const std::string &path);
+	static void destroy_dir(const std::string& path);
 
     /*文件操作*/
-    bool is_file(const std::string &path);
+	static bool is_file(const std::string& path);
 
     void create_file(const std::string &path);
 
@@ -58,7 +58,7 @@ class DiskManager {
 
     void close_file(int fd);
 
-    int get_file_size(const std::string &file_name);
+	static int get_file_size(const std::string& file_name);
 
     std::string get_file_name(int fd);
 
@@ -71,7 +71,10 @@ class DiskManager {
 
     void SetLogFd(int log_fd) { log_fd_ = log_fd; }
 
-    int GetLogFd() { return log_fd_; }
+	int GetLogFd() const
+	{
+		return log_fd_;
+	}
 
     /**
      * @description: 设置文件已经分配的页面个数

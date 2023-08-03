@@ -32,24 +32,28 @@ private:
     SmManager *sm_manager_;
 
 public:
-    Planner(SmManager *sm_manager) : sm_manager_(sm_manager) {}
+	explicit Planner(SmManager* sm_manager) : sm_manager_(sm_manager)
+	{
+	}
 
     std::shared_ptr<Plan> do_planner(std::shared_ptr<Query> query, Context *context);
 
 private:
-    std::shared_ptr<Query> logical_optimization(std::shared_ptr<Query> query, Context *context);
-    std::shared_ptr<Plan> physical_optimization(std::shared_ptr<Query> query, Context *context);
+	static std::shared_ptr<Query> logical_optimization(std::shared_ptr<Query> query, Context* context);
+	std::shared_ptr<Plan> physical_optimization(const std::shared_ptr<Query>& query, Context* context);
 
-    std::shared_ptr<Plan> make_one_rel(std::shared_ptr<Query> query);
+	std::shared_ptr<Plan> make_one_rel(const std::shared_ptr<Query>& query);
 
-    std::shared_ptr<Plan> generate_sort_plan(std::shared_ptr<Query> query, std::shared_ptr<Plan> plan);
-    std::shared_ptr<Plan> generate_group_plan(std::shared_ptr<Query> query, std::shared_ptr<Plan> plan);
+	static std::shared_ptr<Plan> generate_sort_plan(const std::shared_ptr<Query>& query, std::shared_ptr<Plan> plan);
+	static std::shared_ptr<Plan> generate_group_plan(const std::shared_ptr<Query>& query, std::shared_ptr<Plan> plan);
 
     std::shared_ptr<Plan> generate_select_plan(std::shared_ptr<Query> query, Context *context);
 
-    bool get_index_cols(std::string tab_name, std::vector<Condition> &curr_conds, std::vector<std::string> &index_col_names);
+	bool get_index_cols(const std::string& tab_name,
+		std::vector<Condition>& curr_conds,
+		std::vector<std::string>& index_col_names);
 
-    ColType interp_sv_type(ast::SvType sv_type)
+	static ColType interp_sv_type(ast::SvType sv_type)
     {
         std::map<ast::SvType, ColType> m = {
             {ast::SV_TYPE_INT, TYPE_INT}, {ast::SV_TYPE_FLOAT, TYPE_FLOAT}, {ast::SV_TYPE_STRING, TYPE_STRING}, {ast::SV_TYPE_BIGINT, TYPE_BIGINT}, {ast::SV_TYPE_DATETIME, TYPE_DATETIME}, {ast::SV_TYPE_INVALID, TYPE_INVALID}};

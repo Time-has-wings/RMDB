@@ -9,6 +9,8 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
 #pragma once
+#include <utility>
+
 #include "execution_defs.h"
 #include "execution_manager.h"
 #include "executor_abstract.h"
@@ -33,18 +35,21 @@ public:
         tab_name_ = tab_name;
         tab_ = sm_manager_->db_.get_table(tab_name);
         fh_ = sm_manager_->fhs_.at(tab_name).get();
-        conds_ = conds;
-        rids_ = rids;
+		conds_ = std::move(conds);
+		rids_ = std::move(rids);
         context_ = context;
     }
 
-    virtual std::string getType() { return "DeleteExecutor"; };
+	std::string getType() override
+	{
+		return "DeleteExecutor";
+	};
     std::unique_ptr<RmRecord> Next() override
     {
         if (context_->txn_->get_txn_mode())
         {
             bool res = (context_->lock_mgr_->lock_exclusive_on_table(context_->txn_, fh_->GetFd()));
-            if (res == false)
+			if (!res)
                 throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
         }
         for (auto rid : rids_)
@@ -56,20 +61,20 @@ public:
             context_->txn_->set_prev_lsn(delete_log.lsn_);
             for (auto &index : tab_.indexes)
             {
-                auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+				auto ihs = sm_manager_->ihs_.at(IxManager::get_index_name(tab_.name, index.cols)).get();
                 char key[index.col_tot_len];
                 int offset = 0;
-                for (size_t i = 0; i < index.cols.size(); i++)
+				for (auto& col : index.cols)
                 {
-                    memcpy(key + offset, rec->data + index.cols[i].offset, index.cols[i].len);
-                    offset += index.cols[i].len;
+					memcpy(key + offset, rec->data + col.offset, col.len);
+					offset += col.len;
                 }
                 ihs->delete_entry(key, context_->txn_);
             }
             RmRecord delete_record(rec->size);
             memcpy(delete_record.data, rec->data, rec->size);
             fh_->delete_record(rid, context_);
-            WriteRecord *wrec = new WriteRecord(WType::DELETE_TUPLE, tab_name_, rid, delete_record);
+			auto* wrec = new WriteRecord(WType::DELETE_TUPLE, tab_name_, rid, delete_record);
             context_->txn_->append_write_record(wrec);
         }
         return nullptr;

@@ -10,7 +10,7 @@ See the Mulan PSL v2 for more details. */
 
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 
 #include "bitmap.h"
 #include "rm_defs.h"
@@ -50,7 +50,7 @@ class RmManager {
 
         // 将file header写入磁盘文件（名为file name，文件描述符为fd）中的第0页
         // head page直接写入磁盘，没有经过缓冲区的NewPage，那么也就不需要FlushPage
-        disk_manager_->write_page(fd, RM_FILE_HDR_PAGE, (char *)&file_hdr, sizeof(file_hdr));
+		DiskManager::write_page(fd, RM_FILE_HDR_PAGE, (char*)&file_hdr, sizeof(file_hdr));
         disk_manager_->close_file(fd);
     }
 
@@ -75,7 +75,7 @@ class RmManager {
      * @param {RmFileHandle*} file_handle 要关闭文件的句柄
      */
     void close_file(const RmFileHandle* file_handle) {
-        disk_manager_->write_page(file_handle->fd_, RM_FILE_HDR_PAGE, (char *)&file_handle->file_hdr_,
+		DiskManager::write_page(file_handle->fd_, RM_FILE_HDR_PAGE, (char*)&file_handle->file_hdr_,
                                   sizeof(file_handle->file_hdr_));
         // 缓冲区的所有页刷到磁盘，注意这句话必须写在close_file前面
         buffer_pool_manager_->flush_all_pages(file_handle->fd_);

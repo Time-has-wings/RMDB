@@ -40,7 +40,7 @@ void BufferPoolManager::update_page(Page *page, PageId new_page_id, frame_id_t n
     // 3 重置page的data，更新page id
     if (const PageId temp = page->get_page_id(); page->is_dirty_) // 检查是否是脏页
     {
-        disk_manager_->write_page(temp.fd, temp.page_no, page->get_data(), PAGE_SIZE);
+		DiskManager::write_page(temp.fd, temp.page_no, page->get_data(), PAGE_SIZE);
         page->is_dirty_ = false;
         page->pin_count_ = 0;
     }
@@ -50,7 +50,7 @@ void BufferPoolManager::update_page(Page *page, PageId new_page_id, frame_id_t n
     Page *newpage = pages_ + new_frame_id;
     newpage->id_ = new_page_id;
     newpage->pin_count_ = 1;
-    disk_manager_->read_page(new_page_id.fd, new_page_id.page_no, page->get_data(), PAGE_SIZE);
+	DiskManager::read_page(new_page_id.fd, new_page_id.page_no, page->get_data(), PAGE_SIZE);
     replacer_->pin(new_frame_id);
 }
 
@@ -150,7 +150,7 @@ bool BufferPoolManager::flush_page(PageId page_id)
     Page *page = pages_ + page_table_[page_id];
     if (page->is_dirty_)
     {
-        disk_manager_->write_page(page->get_page_id().fd, page->get_page_id().page_no, page->get_data(), PAGE_SIZE);
+		DiskManager::write_page(page->get_page_id().fd, page->get_page_id().page_no, page->get_data(), PAGE_SIZE);
         page->is_dirty_ = false;
     }
     return true;
@@ -177,7 +177,7 @@ Page *BufferPoolManager::new_page(PageId *page_id)
     Page *page = pages_ + fid;
     if (const PageId temp = page->get_page_id(); page->is_dirty_) // 检查是否是脏页
     {
-        disk_manager_->write_page(temp.fd, temp.page_no, page->get_data(), PAGE_SIZE);
+		DiskManager::write_page(temp.fd, temp.page_no, page->get_data(), PAGE_SIZE);
         page->is_dirty_ = false;
         page->pin_count_ = 0;
     }
@@ -209,7 +209,7 @@ bool BufferPoolManager::delete_page(PageId page_id)
     Page *page = pages_ + frameId;
     if (page->pin_count_ != 0)
         return false;
-    disk_manager_->write_page(page->get_page_id().fd, page->get_page_id().page_no, page->get_data(), PAGE_SIZE);
+	DiskManager::write_page(page->get_page_id().fd, page->get_page_id().page_no, page->get_data(), PAGE_SIZE);
     disk_manager_->deallocate_page(page_id.page_no);
     page_table_.erase(page_id);
     page->id_.page_no = INVALID_PAGE_ID;

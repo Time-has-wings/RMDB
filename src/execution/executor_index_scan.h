@@ -135,8 +135,7 @@ class IndexScanExecutor : public AbstractExecutor
 		// 给表上S锁
 		if (context_->txn_->get_txn_mode() && !context_->lock_mgr_->lock_shared_on_table(context_->txn_, fh_->GetFd()))
 			throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
-		auto
-			ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index_col_names_)).get();
+		auto ih = sm_manager_->ihs_.at(IxManager::get_index_name(tab_name_, index_col_names_)).get();
 		Iid lower{ -1, -1 }, upper{ -1, -1 };
 		char rhs_key[index_meta_.col_tot_len];
 		std::memset(rhs_key, 0, sizeof(char) * index_meta_.col_tot_len);

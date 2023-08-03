@@ -129,13 +129,13 @@ bool LockManager::lock_shared_on_table(Transaction *txn, int tab_fd)
     if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
     { // 原先有加锁 说明如果存在其他事务,其他事务的可能级别为IS,IX,S,SIX
         bool flag = true;
-        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+		for (auto& i : lock_table_[newid].request_queue_)
         {
-            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
+			if (i.txn_id_ != txn->get_transaction_id() && i.granted_)
             { // 判断非txn事务的锁是否与本事务加S锁冲突
-                if (i->lock_mode_ == LockMode::EXLUCSIVE ||
-                    i->lock_mode_ == LockMode::INTENTION_EXCLUSIVE ||
-                    i->lock_mode_ == LockMode::S_IX)
+				if (i.lock_mode_ == LockMode::EXLUCSIVE ||
+					i.lock_mode_ == LockMode::INTENTION_EXCLUSIVE ||
+					i.lock_mode_ == LockMode::S_IX)
                 {
                     flag = false;
                     break;
@@ -211,9 +211,9 @@ bool LockManager::lock_exclusive_on_table(Transaction *txn, int tab_fd)
     if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
     { // 原先有加锁 说明如果存在其他事务,其他事务的可能级别为IS,IX,S,SIX
         bool flag = true;
-        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+		for (auto& i : lock_table_[newid].request_queue_)
         {
-            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
+			if (i.txn_id_ != txn->get_transaction_id() && i.granted_)
             { // 判断非txn事务的锁是否与本事务加X锁冲突(存在其他事务就冲突)
                 flag = false;
                 break;
@@ -273,11 +273,11 @@ bool LockManager::lock_IS_on_table(Transaction *txn, int tab_fd)
     if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
     { // 原先有加锁 说明如果存在其他事务,其他事务的可能级别为IS,IX,S,SIX
         bool flag = true;
-        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+		for (auto& i : lock_table_[newid].request_queue_)
         {
-            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
+			if (i.txn_id_ != txn->get_transaction_id() && i.granted_)
             { // 判断非txn事务的锁是否与本事务加IS锁冲突
-                if (i->lock_mode_ == LockMode::EXLUCSIVE)
+				if (i.lock_mode_ == LockMode::EXLUCSIVE)
                 {
                     flag = false;
                     break;
@@ -327,13 +327,13 @@ bool LockManager::lock_IX_on_table(Transaction *txn, int tab_fd)
     if (txn->get_lock_set()->find(newid) != txn->get_lock_set()->end())
     { // 原先有加锁 说明如果存在其他事务,其他事务的可能级别为IS,IX,S,SIX
         bool flag = true;
-        for (auto i = lock_table_[newid].request_queue_.begin(); i != lock_table_[newid].request_queue_.end(); i++)
+		for (auto& i : lock_table_[newid].request_queue_)
         {
-            if (i->txn_id_ != txn->get_transaction_id() && i->granted_)
+			if (i.txn_id_ != txn->get_transaction_id() && i.granted_)
             { // 判断非txn事务的锁是否与本事务加IS锁冲突
-                if (i->lock_mode_ == LockMode::SHARED ||
-                    i->lock_mode_ == LockMode::EXLUCSIVE ||
-                    i->lock_mode_ == LockMode::S_IX)
+				if (i.lock_mode_ == LockMode::SHARED ||
+					i.lock_mode_ == LockMode::EXLUCSIVE ||
+					i.lock_mode_ == LockMode::S_IX)
                 {
                     flag = false;
                     break;
@@ -405,19 +405,19 @@ bool LockManager::unlock(Transaction *txn, LockDataId lock_data_id)
         lock_table_[lock_data_id].request_queue_.remove_if([](LockRequest it){return it.txn_id_ == unlock_txn_id;});
         // 重新评判队列的锁模式
         GroupLockMode mode = GroupLockMode::NON_LOCK;
-        for (auto i = lock_table_[lock_data_id].request_queue_.begin(); i != lock_table_[lock_data_id].request_queue_.end(); i++)
+		for (auto& i : lock_table_[lock_data_id].request_queue_)
         {
-            if (i->granted_)
+			if (i.granted_)
             {
-                if (i->lock_mode_ == LockMode::EXLUCSIVE)
+				if (i.lock_mode_ == LockMode::EXLUCSIVE)
                     mode = GroupLockMode::X;
-                else if (i->lock_mode_ == LockMode::SHARED && mode != GroupLockMode::SIX)
+				else if (i.lock_mode_ == LockMode::SHARED && mode != GroupLockMode::SIX)
                     mode = mode == GroupLockMode::IX ? GroupLockMode::SIX : GroupLockMode::S;
-                else if (i->lock_mode_ == LockMode::S_IX)
+				else if (i.lock_mode_ == LockMode::S_IX)
                     mode = GroupLockMode::SIX;
-                else if (i->lock_mode_ == LockMode::INTENTION_EXCLUSIVE && mode != GroupLockMode::SIX)
+				else if (i.lock_mode_ == LockMode::INTENTION_EXCLUSIVE && mode != GroupLockMode::SIX)
                     mode = mode == GroupLockMode::S ? GroupLockMode::SIX : GroupLockMode::IX;
-                else if (i->lock_mode_ == LockMode::INTENTION_SHARED)
+				else if (i.lock_mode_ == LockMode::INTENTION_SHARED)
                     mode = mode == GroupLockMode::NON_LOCK ? GroupLockMode::IS : mode == GroupLockMode::IS ? GroupLockMode::IS
                                                                                                            : mode;
             }

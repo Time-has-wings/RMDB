@@ -72,7 +72,7 @@ public:
 
     virtual void next() = 0;
 
-    virtual bool is_end() const = 0;
+	[[nodiscard]] virtual bool is_end() const = 0;
 
-    virtual Rid rid() const = 0;
+	[[nodiscard]] virtual Rid rid() const = 0;
 };

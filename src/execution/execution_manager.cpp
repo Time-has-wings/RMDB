@@ -202,7 +202,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 		// Print footer into buffer
 		rec_printer.print_separator(context);
 		// Print record count into buffer
-		rec_printer.print_record_count(num_rec, context);
+		RecordPrinter::print_record_count(num_rec, context);
 	}
 }
 

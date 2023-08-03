@@ -110,7 +110,7 @@ void SmManager::open_db(const std::string &db_name)
 		fhs_.emplace(tab.name, rm_manager_->open_file(tab.name));
 		for (const auto& index : tab.indexes)
 		{
-			auto index_name = get_ix_manager()->get_index_name(tab.name, index.cols);
+			auto index_name = IxManager::get_index_name(tab.name, index.cols);
 			assert(ihs_.count(index_name) == 0);
 			ihs_.emplace(index_name, ix_manager_->open_index(tab.name, index.cols));
 		}
@@ -120,7 +120,7 @@ void SmManager::open_db(const std::string &db_name)
 /**
  * @description: 把数据库相关的元数据刷入磁盘中
  */
-void SmManager::flush_meta()
+void SmManager::flush_meta() const
 {
 	// 默认清空文件
 	std::ofstream ofs(DB_META_NAME);
@@ -304,7 +304,7 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 		ih->insert_entry(key, rm_scan.rid(), context->txn_);
 	}
 	file_handle->unpin_page_handle(cur_page, true);
-	auto index_name = get_ix_manager()->get_index_name(tab_name, index_tab.cols);
+	auto index_name = IxManager::get_index_name(tab_name, index_tab.cols);
 	assert(ihs_.count(index_name) == 0);
 	ihs_.emplace(index_name, std::move(ih));
 	tab.indexes.emplace_back(index_tab);
@@ -330,7 +330,7 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
 	}
 	auto s = tab.get_index_meta(col_names);
 	tab.indexes.erase(s);
-	auto index_name = get_ix_manager()->get_index_name(tab_name, col_names);
+	auto index_name = IxManager::get_index_name(tab_name, col_names);
 	ix_manager_->close_index(ihs_.at(index_name).get());
 	ix_manager_->destroy_index(tab_name, col_names);
 	ihs_.erase(index_name);
@@ -397,7 +397,7 @@ void SmManager::rollback_delete(const std::string &tab_name,
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									 // 索引包含的字段
-		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols); // 获得索引所在文件名
+		std::string index_file_name = IxManager::get_index_name(tab_name, index_cols); // 获得索引所在文件名
 		char key[index.col_tot_len];                                                     // 索引字段下的key
 		char *data = record.data;														 // 这条记录的序列化数据
 		int offset = 0;
@@ -420,7 +420,7 @@ void SmManager::rollback_insert(const std::string &tab_name, const Rid &tuple_ri
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									  // 索引包含的字段
-		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
+		std::string index_file_name = IxManager::get_index_name(tab_name, index_cols);  // 获得索引所在文件名
 		char key[index.col_tot_len];                                                      // 索引字段下的key
 		char* data = fhs_.at(tab_name).get()->get_record(tuple_rid, context)->data; // 这条记录的序列化数据
 		int offset = 0;
@@ -445,7 +445,7 @@ void SmManager::rollback_update(const std::string &tab_name,
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									  // 索引包含的字段
-		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
+		std::string index_file_name = IxManager::get_index_name(tab_name, index_cols);  // 获得索引所在文件名
 		char key[index.col_tot_len];                                                      // 索引字段下的key
 		char* data = fhs_.at(tab_name).get()->get_record(tuple_rid, context)->data; // 这条记录的序列化数据
 		int offset = 0;
@@ -460,7 +460,7 @@ void SmManager::rollback_update(const std::string &tab_name,
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									 // 索引包含的字段
-		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols); // 获得索引所在文件名
+		std::string index_file_name = IxManager::get_index_name(tab_name, index_cols); // 获得索引所在文件名
 		char key[index.col_tot_len];
 		char *data = record.data; // 这条记录的序列化数据
 		int offset = 0;
@@ -505,7 +505,7 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 		auto rid = fh_->insert_record(str, pagehdr);
 		for (auto& index : tab.indexes)
 		{
-			auto ih = ihs_.at(get_ix_manager()->get_index_name(tab_name, index.cols)).get();
+			auto ih = ihs_.at(IxManager::get_index_name(tab_name, index.cols)).get();
 			char key[index.col_tot_len];
 			int offset = 0;
 			for (size_t i = 0; i < index.col_num; ++i)

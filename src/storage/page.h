@@ -17,7 +17,7 @@ See the Mulan PSL v2 for more details. */
  */
 struct PageId
 {
-    int fd; //  Page所在的磁盘文件开启后的文件描述符, 来定位打开的文件在内存中的位置
+    int fd{}; //  Page所在的磁盘文件开启后的文件描述符, 来定位打开的文件在内存中的位置
     page_id_t page_no = INVALID_PAGE_ID;
 
     friend bool operator==(const PageId &x, const PageId &y) { return x.fd == y.fd && x.page_no == y.page_no; }
@@ -28,12 +28,12 @@ struct PageId
         return page_no < x.page_no;
     }
 
-    std::string toString()
+    [[nodiscard]] std::string toString() const
     {
         return "{fd: " + std::to_string(fd) + " page_no: " + std::to_string(page_no) + "}";
     }
 
-    inline int64_t Get() const
+    [[nodiscard]] inline int64_t Get() const
     {
         return (static_cast<int64_t>(fd << 16) | page_no);
     }
@@ -64,11 +64,11 @@ public:
 
     ~Page() = default;
 
-    PageId get_page_id() const { return id_; }
+    [[nodiscard]] PageId get_page_id() const { return id_; }
 
     inline char *get_data() { return data_; }
 
-    bool is_dirty() const { return is_dirty_; }
+    [[nodiscard]] bool is_dirty() const { return is_dirty_; }
 
     static constexpr size_t OFFSET_PAGE_START = 0;
     static constexpr size_t OFFSET_LSN = 0;

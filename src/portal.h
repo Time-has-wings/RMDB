@@ -53,8 +53,10 @@ private:
     SmManager *sm_manager_;
 
 public:
-    Portal(SmManager *sm_manager) : sm_manager_(sm_manager) {}
-    ~Portal() {}
+	explicit Portal(SmManager* sm_manager) : sm_manager_(sm_manager)
+	{
+	}
+	~Portal() = default;
 
     // 将查询执行计划转换成对应的算子树
     std::shared_ptr<PortalStmt> start(std::shared_ptr<Plan> plan, Context *context)
@@ -127,19 +129,19 @@ public:
     }
 
     // 遍历算子树并执行算子生成执行结果
-    void run(std::shared_ptr<PortalStmt> portal, QlManager *ql, txn_id_t *txn_id, Context *context)
+	static void run(const std::shared_ptr<PortalStmt>& portal, QlManager* ql, txn_id_t* txn_id, Context* context)
     {
         switch (portal->tag)
         {
         case PORTAL_ONE_SELECT:
         {
-            ql->select_from(std::move(portal->root), std::move(portal->sel_cols), context);
+			ql->select_from(std::move(portal->root), portal->sel_cols, context);
             break;
         }
 
         case PORTAL_DML_WITHOUT_SELECT:
         {
-            ql->run_dml(std::move(portal->root));
+			QlManager::run_dml(std::move(portal->root));
             break;
         }
         case PORTAL_MULTI_QUERY:
@@ -162,7 +164,7 @@ public:
     // 清空资源
     void drop() {}
 
-    std::unique_ptr<AbstractExecutor> convert_plan_executor(std::shared_ptr<Plan> plan, Context *context)
+	std::unique_ptr<AbstractExecutor> convert_plan_executor(const std::shared_ptr<Plan>& plan, Context* context)
     {
         if (auto x = std::dynamic_pointer_cast<ProjectionPlan>(plan))
         {

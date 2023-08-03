@@ -37,9 +37,9 @@ public:
     void analyze();
     void redo();
     void undo();
-    void insert_record(char *, char *, Rid &);
-    void delete_record(char *, Rid &);
-    void update_record(char *, char *, Rid &);
+	void insert_record(const char*, char*, Rid&);
+	void delete_record(const char*, Rid&);
+	void update_record(const char*, char*, Rid&);
 
 private:
     LogBuffer buffer_;                       // 读入日志

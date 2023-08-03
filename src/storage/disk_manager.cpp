@@ -10,8 +10,8 @@ See the Mulan PSL v2 for more details. */
 
 #include "storage/disk_manager.h"
 
-#include <assert.h>   // for assert
-#include <string.h>   // for memset
+#include <cassert>   // for assert
+#include <cstring>   // for memset
 #include <sys/stat.h> // for stat
 #include <unistd.h>   // for lseek
 
@@ -74,7 +74,7 @@ void DiskManager::deallocate_page(__attribute__((unused)) page_id_t page_id) {}
 
 bool DiskManager::is_dir(const std::string &path)
 {
-    struct stat st;
+	struct stat st{};
     return stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
 }
 
@@ -105,7 +105,7 @@ void DiskManager::destroy_dir(const std::string &path)
 bool DiskManager::is_file(const std::string &path)
 {
     // 用struct stat获取文件信息
-    struct stat st;
+	struct stat st{};
     return stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode);
 }
 
@@ -194,7 +194,7 @@ void DiskManager::close_file(int fd)
  */
 int DiskManager::get_file_size(const std::string &file_name)
 {
-    struct stat stat_buf;
+	struct stat stat_buf{};
     int rc = stat(file_name.c_str(), &stat_buf);
     return rc == 0 ? stat_buf.st_size : -1;
 }

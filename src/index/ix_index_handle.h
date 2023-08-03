@@ -114,10 +114,16 @@ public:
 
     int get_min_size() { return get_max_size() / 2; }
 
-    int key_at(int i) { return *(int *)get_key(i); }
+	[[nodiscard]] int key_at(int i) const
+	{
+		return *(int*)get_key(i);
+	}
 
     /* 得到第i个孩子结点的page_no */
-    page_id_t value_at(int i) { return get_rid(i)->page_no; }
+	[[nodiscard]] page_id_t value_at(int i) const
+	{
+		return get_rid(i)->page_no;
+	}
 
     page_id_t get_page_no() { return page->get_page_id().page_no; }
 
@@ -138,9 +144,15 @@ public:
     void set_prev_leaf(page_id_t page_no) { page_hdr->prev_leaf = page_no; }
 
     void set_parent_page_no(page_id_t parent) { page_hdr->parent = parent; }
-    char *get_key(int key_idx) const { return keys + key_idx * file_hdr->col_tot_len_; }
+	[[nodiscard]] char* get_key(int key_idx) const
+	{
+		return keys + key_idx * file_hdr->col_tot_len_;
+	}
 
-    Rid *get_rid(int rid_idx) const { return &rids[rid_idx]; }
+	[[nodiscard]] Rid* get_rid(int rid_idx) const
+	{
+		return &rids[rid_idx];
+	}
 
     void set_key(int key_idx, const char *key) { memcpy(keys + key_idx * file_hdr->col_tot_len_, key, file_hdr->col_tot_len_); }
 
@@ -154,7 +166,7 @@ public:
 
     void insert_pairs(int pos, const char *key, const Rid *rid, int n);
 
-    page_id_t internal_lookup(const char *key);
+	page_id_t internal_lookup(const char* key) const;
 
     bool leaf_lookup(const char *key, Rid **value);
 
@@ -253,9 +265,9 @@ public:
 
     Iid upper_bound(const char *key);
 
-    Iid leaf_end() const;
+	[[nodiscard]] Iid leaf_end() const;
 
-    Iid leaf_begin() const;
+	[[nodiscard]] Iid leaf_begin() const;
     void recover_insert_entry(const char *key, const Rid &value);
     void recover_delete_entry(const char *key);
     IxNodeHandle * recover_leaf_page(const char *key);
@@ -264,11 +276,14 @@ private:
     // 辅助函数
     void update_root_page_no(page_id_t root) { file_hdr_->root_page_ = root; }
 
-    bool is_empty() const { return file_hdr_->root_page_ == IX_NO_PAGE; }
-    bool is_safe(IxNodeHandle *node, Operation op);
+	[[nodiscard]] bool is_empty() const
+	{
+		return file_hdr_->root_page_ == IX_NO_PAGE;
+	}
+	static bool is_safe(IxNodeHandle* node, Operation op);
     void unlatch_and_unpin_pageset(Transaction *transation, Operation operation);
     // for get/create node
-    IxNodeHandle *fetch_node(int page_no) const;
+	[[nodiscard]] IxNodeHandle* fetch_node(int page_no) const;
 
     IxNodeHandle *create_node();
 
@@ -282,5 +297,5 @@ private:
     void maintain_child(IxNodeHandle *node, int child_idx);
 
     // for index test
-    Rid get_rid(const Iid &iid) const;
+	[[nodiscard]] Rid get_rid(const Iid& iid) const;
 };

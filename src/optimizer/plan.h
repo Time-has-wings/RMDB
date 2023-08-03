@@ -14,6 +14,7 @@ See the Mulan PSL v2 for more details. */
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "parser/ast.h"
 
@@ -68,15 +69,15 @@ public:
         cols_ = tab.cols;
         len_ = cols_.back().offset + cols_.back().len;
         fed_conds_ = conds_;
-        index_col_names_ = index_col_names;
+        index_col_names_ = std::move(index_col_names);
     }
-    ~ScanPlan() {}
+    ~ScanPlan() override = default;
     // 以下变量同ScanExecutor中的变量
     std::string tab_name_;
-    std::vector<ColMeta> cols_;
-    std::vector<Condition> conds_;
-    size_t len_;
-    std::vector<Condition> fed_conds_;
+    std::vector<ColMeta> cols_{};
+    std::vector<Condition> conds_{};
+    size_t len_{};
+    std::vector<Condition> fed_conds_{};
     std::vector<std::string> index_col_names_;
 };
 
@@ -91,13 +92,13 @@ public:
         conds_ = std::move(conds);
         type = INNER_JOIN;
     }
-    ~JoinPlan() {}
+    ~JoinPlan() override = default;
     // 左节点
     std::shared_ptr<Plan> left_;
     // 右节点
     std::shared_ptr<Plan> right_;
     // 连接条件
-    std::vector<Condition> conds_;
+    std::vector<Condition> conds_{};
     // future TODO: 后续可以支持的连接类型
     JoinType type;
 };
@@ -111,9 +112,9 @@ public:
         subplan_ = std::move(subplan);
         sel_cols_ = std::move(sel_cols);
     }
-    ~ProjectionPlan() {}
+    ~ProjectionPlan() override = default;
     std::shared_ptr<Plan> subplan_;
-    std::vector<TabCol> sel_cols_;
+    std::vector<TabCol> sel_cols_{};
 };
 
 class SortPlan : public Plan
@@ -125,9 +126,9 @@ public:
         orders = std::move(orders_);
         Plan::tag = tag;
     }
-    ~SortPlan() {}
+    ~SortPlan() override = default;
     std::shared_ptr<Plan> subplan_;
-    std::vector<std::pair<TabCol, bool>> orders;
+    std::vector<std::pair<TabCol, bool>> orders{};
 };
 class LimitPlan : public Plan
 {
@@ -139,10 +140,10 @@ public:
         limit = limit_;
         Plan::tag = tag;
     }
-    ~LimitPlan() {}
+    ~LimitPlan() override = default;
     
     std::shared_ptr<Plan> subplan_;
-    std::vector<std::pair<TabCol, bool>> orders;
+    std::vector<std::pair<TabCol, bool>> orders{};
     int limit;
 };
 class GroupPlan : public Plan
@@ -154,9 +155,9 @@ public:
         Plan::tag = tag;
         group_ = std::move(group);
     }
-    ~GroupPlan() {}
+    ~GroupPlan() override = default;
     std::shared_ptr<Plan> subplan_;
-    Group group_;
+    Group group_{};
 };
 // dml语句，包括insert; delete; update; select语句　
 class DMLPlan : public Plan
@@ -173,11 +174,11 @@ public:
         conds_ = std::move(conds);
         set_clauses_ = std::move(set_clauses);
     }
-    ~DMLPlan() {}
+    ~DMLPlan() override = default;
     std::shared_ptr<Plan> subplan_;
     std::string tab_name_;
     std::vector<Value> values_;
-    std::vector<Condition> conds_;
+    std::vector<Condition> conds_{};
     std::vector<SetClause> set_clauses_;
 };
 
@@ -192,7 +193,7 @@ public:
         cols_ = std::move(cols);
         tab_col_names_ = std::move(col_names);
     }
-    ~DDLPlan() {}
+    ~DDLPlan() override = default;
     std::string tab_name_;
     std::vector<std::string> tab_col_names_;
     std::vector<ColDef> cols_;
@@ -213,7 +214,7 @@ public:
         tab_name_ = std::move(tab_name);
         file_name_ = std::move(file_name);
     }
-    ~OtherPlan() {}
+    ~OtherPlan() override = default;
     std::string tab_name_;
     std::string file_name_;
 };
@@ -222,10 +223,10 @@ class plannerInfo
 {
 public:
     std::shared_ptr<ast::SelectStmt> parse;
-    std::vector<Condition> where_conds;
-    std::vector<TabCol> sel_cols;
+    std::vector<Condition> where_conds{};
+    std::vector<TabCol> sel_cols{};
     std::shared_ptr<Plan> plan;
     std::vector<std::shared_ptr<Plan>> table_scan_executors;
     std::vector<SetClause> set_clauses;
-    plannerInfo(std::shared_ptr<ast::SelectStmt> parse_) : parse(std::move(parse_)) {}
+    explicit plannerInfo(std::shared_ptr<ast::SelectStmt> parse_) : parse(std::move(parse_)) {}
 };

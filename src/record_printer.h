@@ -26,7 +26,7 @@ class RecordPrinter
     size_t num_cols;
 
 public:
-    RecordPrinter(size_t num_cols_) : num_cols(num_cols_)
+	explicit RecordPrinter(size_t num_cols_) : num_cols(num_cols_)
     {
         assert(num_cols_ > 0);
     }
@@ -59,7 +59,7 @@ public:
         }
     }
 
-    void print_record_index(const std::vector<ColMeta> &cols, Context *context) const
+	static void print_record_index(const std::vector<ColMeta>& cols, Context* context)
     {
         int i = 1;
         for (auto col : cols)
@@ -125,7 +125,7 @@ public:
     static void print_record_count(size_t num_rec, Context *context)
     {
         // std::cout << "Total record(s): " << num_rec << '\n';
-        std::string str = "";
+		std::string str;
         if (context->ellipsis_ == true)
         {
             str = "... ...\n";

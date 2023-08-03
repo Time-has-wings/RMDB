@@ -37,8 +37,8 @@ public:
     // orderby 的 排序所需值
     std::vector<std::pair<TabCol, bool>> orders;
     Group group;
-    int limit;
-    Query() {}
+	int limit{};
+	Query() = default;
 };
 
 class Analyze
@@ -47,16 +47,19 @@ private:
     SmManager *sm_manager_;
 
 public:
-    Analyze(SmManager *sm_manager) : sm_manager_(sm_manager) {}
-    ~Analyze() {}
+	explicit Analyze(SmManager* sm_manager) : sm_manager_(sm_manager)
+	{
+	}
+	~Analyze() = default;
 
     std::shared_ptr<Query> do_analyze(std::shared_ptr<ast::TreeNode> root);
 
 private:
-    TabCol check_column(const std::vector<ColMeta> &all_cols, TabCol target);
+	static TabCol check_column(const std::vector<ColMeta>& all_cols, TabCol target);
     void get_all_cols(const std::vector<std::string> &tab_names, std::vector<ColMeta> &all_cols);
-    void get_clause(const std::vector<std::shared_ptr<ast::BinaryExpr>> &sv_conds, std::vector<Condition> &conds);
+	static void get_clause(const std::vector<std::shared_ptr<ast::BinaryExpr>>& sv_conds,
+		std::vector<Condition>& conds);
     void check_clause(const std::vector<std::string> &tab_names, std::vector<Condition> &conds);
-    Value convert_sv_value(const std::shared_ptr<ast::Value> &sv_val);
-    CompOp convert_sv_comp_op(ast::SvCompOp op);
+	static Value convert_sv_value(const std::shared_ptr<ast::Value>& sv_val);
+	static CompOp convert_sv_comp_op(ast::SvCompOp op);
 };

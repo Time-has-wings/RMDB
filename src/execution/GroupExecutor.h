@@ -26,7 +26,7 @@ class GroupExecutor : public AbstractExecutor
     size_t offset;
 
 public:
-    GroupExecutor(std::unique_ptr<AbstractExecutor> prev, Group group)
+	GroupExecutor(std::unique_ptr<AbstractExecutor> prev, const Group& group)
     {
         prev_ = std::move(prev);
         if (group.func_name == "COUNT")
@@ -105,11 +105,11 @@ public:
     {
         isend_ = true;
     }
-    const std::vector<ColMeta> &cols() const
+	[[nodiscard]] const std::vector<ColMeta>& cols() const override
     {
         return cols_;
     };
-    bool is_end() const override
+	[[nodiscard]] bool is_end() const override
     {
         return isend_;
     };

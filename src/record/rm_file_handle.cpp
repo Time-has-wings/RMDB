@@ -10,6 +10,8 @@ See the Mulan PSL v2 for more details. */
 
 #include "rm_file_handle.h"
 
+#include <memory>
+
 /**
  * @description: 获取当前表中记录号为rid的记录
  * @param {Rid&} rid 记录号，指定记录的位置
@@ -22,7 +24,7 @@ std::unique_ptr<RmRecord> RmFileHandle::get_record(const Rid &rid, Context *cont
     // 1. 获取指定记录所在的page handle
     // 2. 初始化一个指向RmRecord的指针（赋值其内部的data和size）
     RmPageHandle page_handle = fetch_page_handle(rid.page_no);
-    auto res = std::unique_ptr<RmRecord>(new RmRecord({file_hdr_.record_size, page_handle.get_slot(rid.slot_no)}));
+	auto res = std::make_unique<RmRecord>(file_hdr_.record_size, page_handle.get_slot(rid.slot_no));
     buffer_pool_manager_->unpin_page(page_handle.page->get_page_id(), false);
     return res;
 }
@@ -42,7 +44,7 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
     // 4. 更新page_handle.page_hdr中的数据结构
     // 注意考虑插入一条记录后页面已满的情况，需要更新file_hdr_.first_free_page_no
     RmPageHandle page_handle = create_page_handle();
-    int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
+	int free_slot_no = Bitmap::first_bit(false, page_handle.bitmap, file_hdr_.num_records_per_page);
     page_id_t pageNo = page_handle.page->get_page_id().page_no;
     char *free_slot = page_handle.get_slot(free_slot_no);
     memcpy(free_slot, buf, file_hdr_.record_size);
@@ -55,7 +57,7 @@ Rid RmFileHandle::insert_record(char *buf, Context *context)
 }
 Rid RmFileHandle::insert_record(char *buf, RmPageHandle &page_handle)
 {
-    int free_slot_no = Bitmap::first_bit(0, page_handle.bitmap, file_hdr_.num_records_per_page);
+	int free_slot_no = Bitmap::first_bit(false, page_handle.bitmap, file_hdr_.num_records_per_page);
     page_id_t pageNo = page_handle.page->get_page_id().page_no;
     char *free_slot = page_handle.get_slot(free_slot_no);
     memcpy(free_slot, buf, file_hdr_.record_size);

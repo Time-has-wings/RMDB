@@ -11,6 +11,7 @@ See the Mulan PSL v2 for more details. */
 #pragma once
 
 #include <atomic>
+#include <utility>
 
 #include "common/config.h"
 #include "defs.h"
@@ -41,12 +42,16 @@ class WriteRecord {
     WriteRecord() = default;
 
     // constructor for insert operation
-    WriteRecord(WType wtype, const std::string &tab_name, const Rid &rid)
-        : wtype_(wtype), tab_name_(tab_name), rid_(rid) {}
+	WriteRecord(WType wtype, std::string tab_name, const Rid& rid)
+		: wtype_(wtype), tab_name_(std::move(tab_name)), rid_(rid)
+	{
+	}
 
     // constructor for delete & update operation
-    WriteRecord(WType wtype, const std::string &tab_name, const Rid &rid, const RmRecord &record)
-        : wtype_(wtype), tab_name_(tab_name), rid_(rid), record_(record) {}
+	WriteRecord(WType wtype, std::string tab_name, const Rid& rid, const RmRecord& record)
+		: wtype_(wtype), tab_name_(std::move(tab_name)), rid_(rid), record_(record)
+	{
+	}
 
     ~WriteRecord() = default;
 
@@ -61,7 +66,7 @@ class WriteRecord {
    private:
     WType wtype_;
     std::string tab_name_;
-    Rid rid_;
+	Rid rid_{};
     RmRecord record_;
 };
 
@@ -90,7 +95,8 @@ class LockDataId {
         type_ = type;
     }
 
-    inline int64_t Get() const {
+	[[nodiscard]] inline int64_t Get() const
+	{
         if (type_ == LockDataType::TABLE) {
             // fd_
             return static_cast<int64_t>(fd_);
@@ -107,7 +113,7 @@ class LockDataId {
         return rid_ == other.rid_;
     }
     int fd_;
-    Rid rid_;
+	Rid rid_{};
     LockDataType type_;
 };
 
@@ -127,7 +133,10 @@ class TransactionAbortException : public std::exception {
    public:
     explicit TransactionAbortException(txn_id_t txn_id, AbortReason abort_reason)
         : txn_id_(txn_id), abort_reason_(abort_reason) {}
-    txn_id_t get_transaction_id() { return txn_id_; }
+	[[nodiscard]] txn_id_t get_transaction_id() const
+	{
+		return txn_id_;
+	}
     AbortReason GetAbortReason() { return abort_reason_; }
     std::string GetInfo() {
         switch (abort_reason_) {

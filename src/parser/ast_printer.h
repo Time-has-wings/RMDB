@@ -93,13 +93,13 @@ private:
             std::cout << "CREATE_INDEX\n";
             print_val(x->tab_name, offset);
             // print_val(x->col_name, offset);
-            for(auto col_name: x->col_names)
+			for (const auto& col_name : x->col_names)
                 print_val(col_name, offset);
         } else if (auto x = std::dynamic_pointer_cast<DropIndex>(node)) {
             std::cout << "DROP_INDEX\n";
             print_val(x->tab_name, offset);
             // print_val(x->col_name, offset);
-            for(auto col_name: x->col_names)
+			for (const auto& col_name : x->col_names)
                 print_val(col_name, offset);
         } else if (auto x = std::dynamic_pointer_cast<ColDef>(node)) {
             std::cout << "COL_DEF\n";

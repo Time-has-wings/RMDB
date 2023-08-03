@@ -18,17 +18,17 @@ See the Mulan PSL v2 for more details. */
 class NestedLoopJoinExecutor : public AbstractExecutor
 {
 private:
-    std::unique_ptr<AbstractExecutor> left_;  // 左儿子节点（需要join的表）
-    std::unique_ptr<AbstractExecutor> right_; // 右儿子节点（需要join的表）
-    size_t len_;                              // join后获得的每条记录的长度
-    std::vector<ColMeta> cols_;               // join后获得的记录的字段
-    std::vector<Condition> fed_conds_;        // join条件
+	std::unique_ptr<AbstractExecutor> left_{};  // 左儿子节点（需要join的表）
+	std::unique_ptr<AbstractExecutor> right_{}; // 右儿子节点（需要join的表）
+	size_t len_{};                              // join后获得的每条记录的长度
+	std::vector<ColMeta> cols_{};               // join后获得的记录的字段
+	std::vector<Condition> fed_conds_{};        // join条件
     int64_t join_buffer_size = 41943040;
     std::vector<std::pair<std::unique_ptr<RmRecord>, std::vector<Value>>> blocks;
-    std::vector<Value> rVals;
+	std::vector<Value> rVals{};
     int64_t now_size = 0;
-    int64_t rec_size;
-    int64_t idx;
+	int64_t rec_size{};
+	int64_t idx{};
     bool isend;
 
 public:
@@ -49,19 +49,25 @@ public:
         fed_conds_ = std::move(conds);
     }
 
-    const std::vector<ColMeta> &cols() const
+	[[nodiscard]] const std::vector<ColMeta>& cols() const override
     {
         return cols_;
     };
 
-    bool is_end() const override
+	[[nodiscard]] bool is_end() const override
     {
         return isend;
     };
 
-    size_t tupleLen() const { return len_; };
+	[[nodiscard]] size_t tupleLen() const override
+	{
+		return len_;
+	};
 
-    std::string getType() { return "BlockNestedLoopJoinExecutor"; };
+	std::string getType() override
+	{
+		return "BlockNestedLoopJoinExecutor";
+	};
     void nextBlock()
     {
         now_size = 0;
@@ -71,13 +77,13 @@ public:
         {
             auto left_record = left_->Next();
             now_size += rec_size;
-            for (auto cond : fed_conds_)
+			for (const auto& cond : fed_conds_)
             {
                 auto left_col = left_->get_col(left_->cols(), cond.lhs_col);
                 auto left_value = get_value(*left_record, *left_col);
                 block.emplace_back(left_value);
             }
-            blocks.emplace_back(std::pair<std::unique_ptr<RmRecord>, std::vector<Value>>(std::move(left_record), std::move(block)));
+			blocks.emplace_back(std::move(left_record), std::move(block));
             block.clear();
             if (now_size > join_buffer_size - rec_size)
                 break;
@@ -117,7 +123,7 @@ public:
 private:
     bool eval_cond(const std::pair<std::unique_ptr<RmRecord>, std::vector<Value>> &block)
     {
-        if (fed_conds_.size() == 0)
+		if (fed_conds_.empty())
             return true;
         for (int i = 0; i < fed_conds_.size(); i++)
         {
@@ -129,7 +135,7 @@ private:
     }
     void valid_tuple()
     {
-        while (blocks.size() > 0)
+		while (!blocks.empty())
         {
             // 取两边的record
             while (!right_->is_end())
@@ -137,9 +143,8 @@ private:
                 if (idx == 0)
                 {
                     auto right_record = right_->Next();
-                    for (int i = 0; i < fed_conds_.size(); i++)
+					for (const auto& cond : fed_conds_)
                     {
-                        auto cond = fed_conds_.at(i);
                         Value right_value;
                         if (!cond.is_rhs_val)
                         {

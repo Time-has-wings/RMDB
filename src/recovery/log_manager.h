@@ -39,10 +39,10 @@ class LogRecord
 {
 public:
     LogType log_type_;     /* 日志对应操作的类型 */
-    lsn_t lsn_;            /* 当前日志的lsn */
-    uint32_t log_tot_len_; /* 整个日志记录的长度 */
-    txn_id_t log_tid_;     /* 创建当前日志的事务ID */
-    lsn_t prev_lsn_;       /* 事务创建的前一条日志记录的lsn，用于undo */
+	lsn_t lsn_{};            /* 当前日志的lsn */
+	uint32_t log_tot_len_{}; /* 整个日志记录的长度 */
+	txn_id_t log_tid_{};     /* 创建当前日志的事务ID */
+	lsn_t prev_lsn_{};       /* 事务创建的前一条日志记录的lsn，用于undo */
 
     // 把日志记录序列化到dest中
     virtual void serialize(char *dest) const
@@ -86,7 +86,7 @@ public:
         log_tid_ = INVALID_TXN_ID;
         prev_lsn_ = INVALID_LSN;
     }
-    BeginLogRecord(txn_id_t txn_id) : BeginLogRecord()
+	explicit BeginLogRecord(txn_id_t txn_id) : BeginLogRecord()
     {
         log_tid_ = txn_id;
     }
@@ -100,7 +100,7 @@ public:
     {
         LogRecord::deserialize(src);
     }
-    virtual void format_print() override
+	void format_print() override
     {
         std::cout << "log type in son_function: " << LogTypeStr[log_type_] << "\n";
         LogRecord::format_print();
@@ -121,7 +121,7 @@ public:
         log_tid_ = INVALID_TXN_ID;
         prev_lsn_ = INVALID_LSN;
     }
-    CommitLogRecord(txn_id_t txn_id) : CommitLogRecord()
+	explicit CommitLogRecord(txn_id_t txn_id) : CommitLogRecord()
     {
         log_tid_ = txn_id;
     }
@@ -135,7 +135,7 @@ public:
     {
         LogRecord::deserialize(src);
     }
-    virtual void format_print() override
+	void format_print() override
     {
         std::cout << "log type in son_function: " << LogTypeStr[log_type_] << "\n";
         LogRecord::format_print();
@@ -156,7 +156,7 @@ public:
         log_tid_ = INVALID_TXN_ID;
         prev_lsn_ = INVALID_LSN;
     }
-    AbortLogRecord(txn_id_t txn_id) : AbortLogRecord()
+	explicit AbortLogRecord(txn_id_t txn_id) : AbortLogRecord()
     {
         log_tid_ = txn_id;
     }
@@ -170,7 +170,7 @@ public:
     {
         LogRecord::deserialize(src);
     }
-    virtual void format_print() override
+	void format_print() override
     {
         std::cout << "log type in son_function: " << LogTypeStr[log_type_] << "\n";
         LogRecord::format_print();
@@ -189,7 +189,7 @@ public:
         prev_lsn_ = INVALID_LSN;
         table_name_ = nullptr;
     }
-    InsertLogRecord(txn_id_t txn_id, RmRecord &insert_value, Rid &rid, std::string table_name)
+	InsertLogRecord(txn_id_t txn_id, RmRecord& insert_value, Rid& rid, const std::string& table_name)
         : InsertLogRecord()
     {
         log_tid_ = txn_id;
@@ -242,13 +242,13 @@ public:
     }
     ~InsertLogRecord()
     {
-        if (table_name_ != nullptr)
+
             delete[] table_name_;
     }
     RmRecord insert_value_;  // 插入的记录
-    Rid rid_;                // 记录插入的位置
+	Rid rid_{};                // 记录插入的位置
     char *table_name_;       // 插入记录的表名称
-    size_t table_name_size_; // 表名称的大小
+	size_t table_name_size_{}; // 表名称的大小
 };
 
 /**
@@ -266,7 +266,7 @@ public:
         prev_lsn_ = INVALID_LSN;
         table_name_ = nullptr;
     }
-    DeleteLogRecord(txn_id_t txn_id, RmRecord &delete_value, Rid &rid, std::string table_name)
+	DeleteLogRecord(txn_id_t txn_id, RmRecord& delete_value, Rid& rid, const std::string& table_name)
         : DeleteLogRecord()
     {
         log_tid_ = txn_id;
@@ -319,13 +319,13 @@ public:
     }
     ~DeleteLogRecord()
     {
-        if (table_name_ != nullptr)
+
             delete[] table_name_;
     }
     RmRecord delete_value_;  // 删除的记录
-    Rid rid_;                // 记录删除的位置
+	Rid rid_{};                // 记录删除的位置
     char *table_name_;       // 删除记录的表名称
-    size_t table_name_size_; // 表名称的大小
+	size_t table_name_size_{}; // 表名称的大小
 };
 
 /**
@@ -343,7 +343,11 @@ public:
         prev_lsn_ = INVALID_LSN;
         table_name_ = nullptr;
     }
-    UpdateLogRecord(txn_id_t txn_id, RmRecord &orign_value, RmRecord &update_value, Rid &rid, std::string table_name)
+	UpdateLogRecord(txn_id_t txn_id,
+		RmRecord& orign_value,
+		RmRecord& update_value,
+		Rid& rid,
+		const std::string& table_name)
         : UpdateLogRecord()
     {
         log_tid_ = txn_id;
@@ -405,14 +409,14 @@ public:
     }
     ~UpdateLogRecord()
     {
-       if (table_name_ != nullptr)
+
             delete[] table_name_;
     }
     RmRecord orign_value_;   // 更新的原始值
     RmRecord update_value_;  // 更新的值
-    Rid rid_;                // 记录更新的位置
+	Rid rid_{};                // 记录更新的位置
     char *table_name_;       // 更新记录的表名称
-    size_t table_name_size_; // 表名称的大小
+	size_t table_name_size_{}; // 表名称的大小
 };
 
 /* 日志缓冲区，只有一个buffer，因此需要阻塞地去把日志写入缓冲区中 */
@@ -426,14 +430,14 @@ public:
         memset(buffer_, 0, sizeof(buffer_));
     }
 
-    bool is_full(int append_size)
+	[[nodiscard]] bool is_full(int append_size) const
     {
         if (offset_ + append_size > LOG_BUFFER_SIZE)
             return true;
         return false;
     }
 
-    char buffer_[LOG_BUFFER_SIZE + 1];
+	char buffer_[LOG_BUFFER_SIZE + 1]{};
     int offset_; // 写入log的offset
 };
 
@@ -441,7 +445,10 @@ public:
 class LogManager
 {
 public:
-    LogManager(DiskManager *disk_manager) { disk_manager_ = disk_manager; }
+	explicit LogManager(DiskManager* disk_manager)
+	{
+		disk_manager_ = disk_manager;
+	}
 
     lsn_t add_log_to_buffer(LogRecord *log_record);
     void flush_log_to_disk();
@@ -452,6 +459,6 @@ private:
     std::atomic<lsn_t> global_lsn_{0}; // 全局lsn，递增，用于为每条记录分发lsn
     std::mutex latch_;                 // 用于对log_buffer_的互斥访问
     LogBuffer log_buffer_;             // 日志缓冲区
-    lsn_t persist_lsn_;                // 记录已经持久化到磁盘中的最后一条日志的日志号
+	lsn_t persist_lsn_{};                // 记录已经持久化到磁盘中的最后一条日志的日志号
     DiskManager *disk_manager_;
 };

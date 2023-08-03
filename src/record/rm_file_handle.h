@@ -10,7 +10,7 @@ See the Mulan PSL v2 for more details. */
 
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 
 #include <memory>
 
@@ -31,13 +31,13 @@ struct RmPageHandle
 
     RmPageHandle(const RmFileHdr *fhdr_, Page *page_) : file_hdr(fhdr_), page(page_)
     {
-        page_hdr = reinterpret_cast<RmPageHdr *>(page->get_data() + page->OFFSET_PAGE_HDR);
-        bitmap = page->get_data() + sizeof(RmPageHdr) + page->OFFSET_PAGE_HDR;
+		page_hdr = reinterpret_cast<RmPageHdr*>(page->get_data() + Page::OFFSET_PAGE_HDR);
+		bitmap = page->get_data() + sizeof(RmPageHdr) + Page::OFFSET_PAGE_HDR;
         slots = bitmap + file_hdr->bitmap_size;
     }
 
     // 返回指定slot_no的slot存储收地址
-    char *get_slot(int slot_no) const
+	[[nodiscard]] char* get_slot(int slot_no) const
     {
         return slots + slot_no * file_hdr->record_size; // slots的首地址 + slot个数 * 每个slot的大小(每个record的大小)
     }
@@ -53,7 +53,7 @@ private:
     DiskManager *disk_manager_;
     BufferPoolManager *buffer_pool_manager_;
     int fd_;             // 打开文件后产生的文件句柄
-    RmFileHdr file_hdr_; // 文件头，维护当前表文件的元数据
+	RmFileHdr file_hdr_{}; // 文件头，维护当前表文件的元数据
     LockManager lock_manager_;
 
 public:
@@ -63,13 +63,16 @@ public:
         // 注意：这里从磁盘中读出文件描述符为fd的文件的file_hdr，读到内存中
         // 这里实际就是初始化file_hdr，只不过是从磁盘中读出进行初始化
         // init file_hdr_
-        disk_manager_->read_page(fd, RM_FILE_HDR_PAGE, (char *)&file_hdr_, sizeof(file_hdr_));
+		DiskManager::read_page(fd, RM_FILE_HDR_PAGE, (char*)&file_hdr_, sizeof(file_hdr_));
         // disk_manager管理的fd对应的文件中，设置从file_hdr_.num_pages开始分配page_no
         disk_manager_->set_fd2pageno(fd, file_hdr_.num_pages);
     }
 
     RmFileHdr get_file_hdr() { return file_hdr_; }
-    int GetFd() { return fd_; }
+	int GetFd() const
+	{
+		return fd_;
+	}
 
     /* 判断指定位置上是否已经存在一条记录，通过Bitmap来判断 */
     bool is_record(const Rid &rid) const

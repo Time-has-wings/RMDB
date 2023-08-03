@@ -32,22 +32,34 @@ class Transaction {
 
     ~Transaction() = default;
 
-    inline txn_id_t get_transaction_id() { return txn_id_; }
+	[[nodiscard]] inline txn_id_t get_transaction_id() const
+	{
+		return txn_id_;
+	}
 
     inline std::thread::id get_thread_id() { return thread_id_; }
 
     inline void set_txn_mode(bool txn_mode) { txn_mode_ = txn_mode; }
-    inline bool get_txn_mode() { return txn_mode_; }
+	[[nodiscard]] inline bool get_txn_mode() const
+	{
+		return txn_mode_;
+	}
 
     inline void set_start_ts(timestamp_t start_ts) { start_ts_ = start_ts; }
-    inline timestamp_t get_start_ts() { return start_ts_; }
+	[[nodiscard]] inline timestamp_t get_start_ts() const
+	{
+		return start_ts_;
+	}
 
     inline IsolationLevel get_isolation_level() { return isolation_level_; }
 
     inline TransactionState get_state() { return state_; }
     inline void set_state(TransactionState state) { state_ = state; }
 
-    inline lsn_t get_prev_lsn() { return prev_lsn_; }
+	[[nodiscard]] inline lsn_t get_prev_lsn() const
+	{
+		return prev_lsn_;
+	}
     inline void set_prev_lsn(lsn_t prev_lsn) { prev_lsn_ = prev_lsn; }
 
     inline std::shared_ptr<std::deque<WriteRecord *>> get_write_set() { return write_set_; }  
@@ -62,13 +74,13 @@ class Transaction {
     inline std::shared_ptr<std::unordered_set<LockDataId>> get_lock_set() { return lock_set_; }
 
    private:
-    bool txn_mode_;                   // 用于标识当前事务为显式事务还是单条SQL语句的隐式事务
+	bool txn_mode_{};                   // 用于标识当前事务为显式事务还是单条SQL语句的隐式事务
     TransactionState state_;          // 事务状态
     IsolationLevel isolation_level_;  // 事务的隔离级别，默认隔离级别为可串行化
     std::thread::id thread_id_;       // 当前事务对应的线程id
     lsn_t prev_lsn_;                  // 当前事务执行的最后一条操作对应的lsn，用于系统故障恢复
     txn_id_t txn_id_;                 // 事务的ID，唯一标识符
-    timestamp_t start_ts_;            // 事务的开始时间戳
+	timestamp_t start_ts_{};            // 事务的开始时间戳
 
     std::shared_ptr<std::deque<WriteRecord *>> write_set_;  // 事务包含的所有写操作
     std::shared_ptr<std::unordered_set<LockDataId>> lock_set_;  // 事务申请的所有锁

@@ -67,25 +67,7 @@ class UpdateExecutor : public AbstractExecutor
 			{
 				throw IncompatibleTypeError(coltype2str(col->type), coltype2str(clause.rhs.type));
 			}
-
-			switch (clause.rhs.type)
-			{
-			case TYPE_INT:
-			case TYPE_FLOAT:
-				clause.rhs.init_raw(4);
-				break;
-			case TYPE_STRING:
-				clause.rhs.init_raw(col->len);
-				break;
-			case TYPE_DATETIME:
-				clause.rhs.init_raw(col->len);
-				break;
-			case TYPE_BIGINT:
-				clause.rhs.init_raw(8);
-				break;
-			case TYPE_INVALID:
-				break;
-			}
+			clause.rhs.init_raw(col->len);
 			if (clause.is_update_col && clause.op == ast::SV_OP_SUB)
 			{
 				switch (clause.rhs.type)
@@ -176,7 +158,7 @@ class UpdateExecutor : public AbstractExecutor
 			for (auto& index : index_queue)
 			{
 				auto ihs =
-					sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+					sm_manager_->ihs_.at(IxManager::get_index_name(tab_.name, index.cols)).get();
 				char update[index.col_tot_len];
 				char orign[index.col_tot_len];
 				int offset = 0;

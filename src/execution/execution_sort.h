@@ -53,9 +53,8 @@ public:
     {
         prev_ = std::move(prev);
         auto &prev_cols = prev_->cols();
-        for (int i = 0; i < orders.size(); i++)
+		for (const auto& order : orders)
         {
-            auto order = orders.at(i);
             auto pos = get_col(prev_cols, order.first);
             auto col = *pos;
             cols_.emplace_back(col);
@@ -64,11 +63,11 @@ public:
         tuple_num = 0;
         sort();
     }
-    const std::vector<ColMeta> &cols() const
+	[[nodiscard]] const std::vector<ColMeta>& cols() const override
     {
         return prev_->cols();
     };
-    bool is_end() const override
+	[[nodiscard]] bool is_end() const override
     {
         return idx >tuple_num;
     }
@@ -104,9 +103,9 @@ public:
             prev_->nextTuple();
         }
         std::sort(v.begin(), v.end());
-        for (int i = 0; i < v.size(); i++)
+		for (auto& i : v)
         {
-            sorted_tuples.emplace_back(std::move(v.at(i).id));
+			sorted_tuples.emplace_back(std::move(i.id));
         }
     }
     Rid &rid() override { return _abstract_rid; }

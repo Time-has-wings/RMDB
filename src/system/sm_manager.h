@@ -47,7 +47,7 @@ public:
           rm_manager_(rm_manager),
           ix_manager_(ix_manager) {}
 
-    ~SmManager() {}
+	~SmManager() = default;
 
     BufferPoolManager *get_bpm() { return buffer_pool_manager_; }
 
@@ -55,17 +55,17 @@ public:
 
     IxManager *get_ix_manager() { return ix_manager_; }
 
-    bool is_dir(const std::string &db_name);
+	static bool is_dir(const std::string& db_name);
 
     void create_db(const std::string &db_name);
 
-    void drop_db(const std::string &db_name);
+	static void drop_db(const std::string& db_name);
 
     void open_db(const std::string &db_name);
 
     void close_db();
 
-    void flush_meta();
+	void flush_meta() const;
 
     void show_tables(Context *context);
 

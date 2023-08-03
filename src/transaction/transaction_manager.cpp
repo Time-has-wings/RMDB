@@ -66,9 +66,9 @@ void TransactionManager::commit(Transaction *txn, LogManager *log_manager)
     write_set->clear();
     // 释放所有锁
     auto lock_set = txn->get_lock_set();
-    for (auto i = lock_set->begin(); i != lock_set->end(); i++)
+	for (auto i : *lock_set)
     {
-        lock_manager_->unlock(txn, *i);
+		lock_manager_->unlock(txn, i);
     }
     // 释放资源
     lock_set->clear();
@@ -97,9 +97,9 @@ void TransactionManager::abort(Transaction *txn, LogManager *log_manager)
     // 5. 更新事务状态
     // 回滚
     auto write_set = txn->get_write_set();
-    while (write_set->size())
+	while (!write_set->empty())
     {
-        Context *context = new Context(lock_manager_, log_manager, txn);
+		auto* context = new Context(lock_manager_, log_manager, txn);
         WType &cur_type = write_set->back()->GetWriteType();
         if (cur_type == WType::INSERT_TUPLE)
         {
@@ -118,8 +118,8 @@ void TransactionManager::abort(Transaction *txn, LogManager *log_manager)
     }
     // 释放锁
     auto lock_set = txn->get_lock_set();
-    for (auto it = lock_set->begin(); it != lock_set->end(); it++)
-        lock_manager_->unlock(txn, *it);
+	for (auto it : *lock_set)
+		lock_manager_->unlock(txn, it);
     // 清空
     lock_set->clear();
     // 刷入

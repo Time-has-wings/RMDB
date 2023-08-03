@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.5.1.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,8 +31,9 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Undocumented macros, especially those whose name start with YY_,
-   are private implementation details.  Do not rely on them.  */
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
 
 #ifndef YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED
 # define YY_YY_HOME_PYGONE_PROJECTS_DB2023_ONE_SRC_PARSER_YACC_TAB_H_INCLUDED
@@ -44,64 +45,69 @@
 extern int yydebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-	  SHOW = 258,
-	  TABLES = 259,
-	  CREATE = 260,
-	  TABLE = 261,
-	  DROP = 262,
-	  DESC = 263,
-	  INSERT = 264,
-	  INTO = 265,
-	  VALUES = 266,
-	  DELETE = 267,
-	  FROM = 268,
-	  ASC = 269,
-	  ORDER = 270,
-	  BY = 271,
-	  COUNT = 272,
-	  MIN = 273,
-	  MAX = 274,
-	  SUM = 275,
-	  AS = 276,
-	  LIMIT = 277,
-	  LOAD = 278,
-	  WHERE = 279,
-	  UPDATE = 280,
-	  SET = 281,
-	  SELECT = 282,
-	  INT = 283,
-	  BIGINT = 284,
-	  DATETIME = 285,
-	  CHAR = 286,
-	  FLOAT = 287,
-	  INDEX = 288,
-	  AND = 289,
-	  JOIN = 290,
-	  EXIT = 291,
-	  HELP = 292,
-	  TXN_BEGIN = 293,
-	  TXN_COMMIT = 294,
-	  TXN_ABORT = 295,
-	  TXN_ROLLBACK = 296,
-	  ORDER_BY = 297,
-	  LEQ = 298,
-	  NEQ = 299,
-	  GEQ = 300,
-	  T_EOF = 301,
-	  IDENTIFIER = 302,
-	  VALUE_STRING = 303,
-	  FILENAME = 304,
-	  VALUE_INT = 305,
-	  VALUE_BIGINT = 306,
-	  VALUE_DATETIME = 307,
-	  VALUE_INVALID = 308,
-	  VALUE_FLOAT = 309
+	  YYEMPTY = -2,
+	  YYEOF = 0,                     /* "end of file"  */
+	  YYerror = 256,                 /* error  */
+	  YYUNDEF = 257,                 /* "invalid token"  */
+	  SHOW = 258,                    /* SHOW  */
+	  TABLES = 259,                  /* TABLES  */
+	  CREATE = 260,                  /* CREATE  */
+	  TABLE = 261,                   /* TABLE  */
+	  DROP = 262,                    /* DROP  */
+	  DESC = 263,                    /* DESC  */
+	  INSERT = 264,                  /* INSERT  */
+	  INTO = 265,                    /* INTO  */
+	  VALUES = 266,                  /* VALUES  */
+	  DELETE = 267,                  /* DELETE  */
+	  FROM = 268,                    /* FROM  */
+	  ASC = 269,                     /* ASC  */
+	  ORDER = 270,                   /* ORDER  */
+	  BY = 271,                      /* BY  */
+	  COUNT = 272,                   /* COUNT  */
+	  MIN = 273,                     /* MIN  */
+	  MAX = 274,                     /* MAX  */
+	  SUM = 275,                     /* SUM  */
+	  AS = 276,                      /* AS  */
+	  LIMIT = 277,                   /* LIMIT  */
+	  LOAD = 278,                    /* LOAD  */
+	  WHERE = 279,                   /* WHERE  */
+	  UPDATE = 280,                  /* UPDATE  */
+	  SET = 281,                     /* SET  */
+	  SELECT = 282,                  /* SELECT  */
+	  INT = 283,                     /* INT  */
+	  BIGINT = 284,                  /* BIGINT  */
+	  DATETIME = 285,                /* DATETIME  */
+	  CHAR = 286,                    /* CHAR  */
+	  FLOAT = 287,                   /* FLOAT  */
+	  INDEX = 288,                   /* INDEX  */
+	  AND = 289,                     /* AND  */
+	  JOIN = 290,                    /* JOIN  */
+	  EXIT = 291,                    /* EXIT  */
+	  HELP = 292,                    /* HELP  */
+	  TXN_BEGIN = 293,               /* TXN_BEGIN  */
+	  TXN_COMMIT = 294,              /* TXN_COMMIT  */
+	  TXN_ABORT = 295,               /* TXN_ABORT  */
+	  TXN_ROLLBACK = 296,            /* TXN_ROLLBACK  */
+	  ORDER_BY = 297,                /* ORDER_BY  */
+	  LEQ = 298,                     /* LEQ  */
+	  NEQ = 299,                     /* NEQ  */
+	  GEQ = 300,                     /* GEQ  */
+	  T_EOF = 301,                   /* T_EOF  */
+	  IDENTIFIER = 302,              /* IDENTIFIER  */
+	  VALUE_STRING = 303,            /* VALUE_STRING  */
+	  FILENAME = 304,                /* FILENAME  */
+	  VALUE_INT = 305,               /* VALUE_INT  */
+	  VALUE_BIGINT = 306,            /* VALUE_BIGINT  */
+	  VALUE_DATETIME = 307,          /* VALUE_DATETIME  */
+	  VALUE_INVALID = 308,           /* VALUE_INVALID  */
+	  VALUE_FLOAT = 309              /* VALUE_FLOAT  */
   };
+typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -119,8 +125,6 @@ struct YYLTYPE
 # define YYLTYPE_IS_DECLARED 1
 # define YYLTYPE_IS_TRIVIAL 1
 #endif
-
-
 
 int yyparse (void);
 

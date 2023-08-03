@@ -27,21 +27,21 @@ public:
     IxManager(DiskManager *disk_manager, BufferPoolManager *buffer_pool_manager)
         : disk_manager_(disk_manager), buffer_pool_manager_(buffer_pool_manager) {}
 
-    std::string get_index_name(const std::string &filename, const std::vector<std::string> &index_cols)
+	static std::string get_index_name(const std::string& filename, const std::vector<std::string>& index_cols)
     {
         std::string index_name = filename;
-        for (size_t i = 0; i < index_cols.size(); ++i)
-            index_name += "_" + index_cols[i];
+		for (const auto& index_col : index_cols)
+			index_name += "_" + index_col;
         index_name += ".idx";
 
         return index_name;
     }
 
-    std::string get_index_name(const std::string &filename, const std::vector<ColMeta> &index_cols)
+	static std::string get_index_name(const std::string& filename, const std::vector<ColMeta>& index_cols)
     {
         std::string index_name = filename;
-        for (size_t i = 0; i < index_cols.size(); ++i)
-            index_name += "_" + index_cols[i].name;
+		for (const auto& index_col : index_cols)
+			index_name += "_" + index_col.name;
         index_name += ".idx";
 
         return index_name;
@@ -50,13 +50,13 @@ public:
     bool exists(const std::string &filename, const std::vector<ColMeta> &index_cols)
     {
         auto ix_name = get_index_name(filename, index_cols);
-        return disk_manager_->is_file(ix_name);
+		return DiskManager::is_file(ix_name);
     }
 
     bool exists(const std::string &filename, const std::vector<std::string> &index_cols)
     {
         auto ix_name = get_index_name(filename, index_cols);
-        return disk_manager_->is_file(ix_name);
+		return DiskManager::is_file(ix_name);
     }
 
     void create_index(const std::string &filename, const std::vector<ColMeta> &index_cols)
@@ -87,7 +87,7 @@ public:
         assert(btree_order > 2);
 
         // Create file header and write to file
-        IxFileHdr *fhdr = new IxFileHdr(IX_NO_PAGE, IX_INIT_NUM_PAGES, IX_INIT_ROOT_PAGE,
+		auto* fhdr = new IxFileHdr(IX_NO_PAGE, IX_INIT_NUM_PAGES, IX_INIT_ROOT_PAGE,
                                         col_num, col_tot_len, btree_order, (btree_order + 1) * col_tot_len,
                                         IX_INIT_ROOT_PAGE, IX_INIT_ROOT_PAGE);
         for (int i = 0; i < col_num; ++i)
@@ -100,7 +100,7 @@ public:
         char *data = new char[fhdr->tot_len_];
         fhdr->serialize(data);
 
-        disk_manager_->write_page(fd, IX_FILE_HDR_PAGE, data, fhdr->tot_len_);
+		DiskManager::write_page(fd, IX_FILE_HDR_PAGE, data, fhdr->tot_len_);
 
         char page_buf[PAGE_SIZE]; // 在内存中初始化page_buf中的内容，然后将其写入磁盘
         memset(page_buf, 0, PAGE_SIZE);
@@ -117,7 +117,7 @@ public:
                 .prev_leaf = IX_INIT_ROOT_PAGE,
                 .next_leaf = IX_INIT_ROOT_PAGE,
             };
-            disk_manager_->write_page(fd, IX_LEAF_HEADER_PAGE, page_buf, PAGE_SIZE);
+			DiskManager::write_page(fd, IX_LEAF_HEADER_PAGE, page_buf, PAGE_SIZE);
         }
         // 注意root node页号为2，也标记为叶子结点，其前一个/后一个叶子均指向leaf header
         // Create root node and write to file
@@ -133,7 +133,7 @@ public:
                 .next_leaf = IX_LEAF_HEADER_PAGE,
             };
             // Must write PAGE_SIZE here in case of future fetch_node()
-            disk_manager_->write_page(fd, IX_INIT_ROOT_PAGE, page_buf, PAGE_SIZE);
+			DiskManager::write_page(fd, IX_INIT_ROOT_PAGE, page_buf, PAGE_SIZE);
         }
 
         disk_manager_->set_fd2pageno(fd, IX_INIT_NUM_PAGES - 1); // DEBUG
@@ -175,11 +175,11 @@ public:
     {
         char *data = new char[ih->file_hdr_->tot_len_];
         ih->file_hdr_->serialize(data);
-        disk_manager_->write_page(ih->fd_, IX_FILE_HDR_PAGE, data, ih->file_hdr_->tot_len_);
+		DiskManager::write_page(ih->fd_, IX_FILE_HDR_PAGE, data, ih->file_hdr_->tot_len_);
         // 缓冲区的所有页刷到磁盘，注意这句话必须写在close_file前面
         buffer_pool_manager_->flush_all_pages(ih->fd_);
         buffer_pool_manager_->close_all_pages(ih->fd_);
         disk_manager_->close_file(ih->fd_);
-        delete data;
+		delete[] data;
     }
 };

@@ -22,12 +22,15 @@ private:
     std::vector<Value> values_; // 需要插入的数据
     RmFileHandle *fh_;          // 表的数据文件句柄
     std::string tab_name_;      // 表名称
-    Rid rid_;                   // 插入的位置，由于系统默认插入时不指定位置，因此当前rid_在插入后才赋值
+	Rid rid_{};                   // 插入的位置，由于系统默认插入时不指定位置，因此当前rid_在插入后才赋值
     SmManager *sm_manager_;
     std::vector<RmRecord> s;
 
 public:
-    InsertExecutor(SmManager *sm_manager, const std::string &tab_name, std::vector<Value> values, Context *context)
+	InsertExecutor(SmManager* sm_manager,
+		const std::string& tab_name,
+		const std::vector<Value>& values,
+		Context* context)
     {
         sm_manager_ = sm_manager;
         tab_ = sm_manager_->db_.get_table(tab_name);
@@ -46,7 +49,7 @@ public:
         if (context_->txn_->get_txn_mode())
         {
             bool res = (context_->lock_mgr_->lock_exclusive_on_table(context_->txn_, fh_->GetFd()));
-            if (res == false)
+			if (!res)
                 throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
         }
         RmRecord rec(fh_->get_file_hdr().record_size);
@@ -66,7 +69,7 @@ public:
         {
             auto &index = tab_.indexes[i];
             s.emplace_back(index.col_tot_len);
-            auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index.cols)).get();
+			auto ih = sm_manager_->ihs_.at(IxManager::get_index_name(tab_name_, index.cols)).get();
             int offset = 0;
             for (size_t j = 0; j < index.col_num; ++j)
             {
@@ -77,7 +80,7 @@ public:
                 throw IndexEnrtyExistsError();
         }
         rid_ = fh_->insert_record(rec.data, context_);
-        WriteRecord *wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
+		auto* wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
         context_->txn_->append_write_record(wrec);
         InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_, tab_name_);
         insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();
@@ -86,7 +89,7 @@ public:
         for (size_t i = 0; i < tab_.indexes.size(); ++i)
         {
             auto &index = tab_.indexes[i];
-            auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name_, index.cols)).get();
+			auto ih = sm_manager_->ihs_.at(IxManager::get_index_name(tab_name_, index.cols)).get();
             ih->insert_entry(s[i].data, rid_, context_->txn_);
         }
         return nullptr;

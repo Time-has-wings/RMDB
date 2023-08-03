@@ -15,7 +15,8 @@ See the Mulan PSL v2 for more details. */
  */
 void RecoveryManager::analyze()
 {
-	int log_file_size = disk_manager_->get_file_size(LOG_FILE_NAME);												   // 日志文件大小
+	int log_file_size =
+		DiskManager::get_file_size(LOG_FILE_NAME);                                                   // 日志文件大小
 	int log_length_min = (int)(sizeof(LogType) + sizeof(lsn_t) + sizeof(uint32_t) + sizeof(txn_id_t) + sizeof(lsn_t)); // 最短的记录的长度
 	int buffer_size = sizeof(buffer_);																				   // buffer_大小
 	int read_log_offset = 0;																						   // 仍旧按照一整个buffer_的大小进行读取,但是偏移量不再以page_id*sizeof(buffer_)为标准
@@ -32,7 +33,7 @@ void RecoveryManager::analyze()
 				break;
 			if (t->log_type_ == begin)
 			{
-				ATT.emplace_back(std::pair<txn_id_t, lsn_t>{t->log_tid_, t->lsn_});
+				ATT.emplace_back(t->log_tid_, t->lsn_);
 			}
 			else if (t->log_type_ == commit) // abort也是需要undo
 			{
@@ -94,7 +95,8 @@ void RecoveryManager::analyze()
  */
 void RecoveryManager::redo()
 {
-	int log_file_size = disk_manager_->get_file_size(LOG_FILE_NAME);												   // 日志文件大小
+	int log_file_size =
+		DiskManager::get_file_size(LOG_FILE_NAME);                                                   // 日志文件大小
 	int log_length_min = (int)(sizeof(LogType) + sizeof(lsn_t) + sizeof(uint32_t) + sizeof(txn_id_t) + sizeof(lsn_t)); // 最短的记录的长度
 	int buffer_size = sizeof(buffer_);																				   // buffer_大小
 	int read_log_offset = 0;																						   // 仍旧按照一整个buffer_的大小进行读取,但是偏移量不再以page_id*sizeof(buffer_)为标准
@@ -200,15 +202,14 @@ void RecoveryManager::undo()
 		}
 	}
 }
-void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
+void RecoveryManager::insert_record(const char* tab_name, char* buf, Rid& rid)
 {
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
 	fh_->insert_record(rid, buf);
-	for (size_t i = 0; i < tab_.indexes.size(); ++i)
+	for (auto& index : tab_.indexes)
 	{
-		auto &index = tab_.indexes[i];
-		auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name, index.cols)).get();
+		auto ih = sm_manager_->ihs_.at(IxManager::get_index_name(tab_name, index.cols)).get();
 		char key[index.col_tot_len];
 		int offset = 0;
 		for (size_t i = 0; i < index.col_num; ++i)
@@ -219,14 +220,14 @@ void RecoveryManager::insert_record(char *tab_name, char *buf, Rid &rid)
 		ih->recover_insert_entry(key, rid);
 	}
 }
-void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
+void RecoveryManager::update_record(const char* tab_name, char* buf, Rid& rid)
 {
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
 	auto rec = fh_->get_record(rid, nullptr);
 	for (auto &index : tab_.indexes)
 	{
-		auto ihs = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_.name, index.cols)).get();
+		auto ihs = sm_manager_->ihs_.at(IxManager::get_index_name(tab_.name, index.cols)).get();
 		char update[index.col_tot_len];
 		char orign[index.col_tot_len];
 		int offset = 0;
@@ -241,15 +242,14 @@ void RecoveryManager::update_record(char *tab_name, char *buf, Rid &rid)
 	}
 	fh_->update_record(rid, buf, nullptr);
 }
-void RecoveryManager::delete_record(char *tab_name, Rid &rid)
+void RecoveryManager::delete_record(const char* tab_name, Rid& rid)
 {
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);
 	auto fh_ = sm_manager_->fhs_.at(tab_name).get();
 	auto rec = fh_->get_record(rid, nullptr);
-	for (size_t i = 0; i < tab_.indexes.size(); ++i)
+	for (auto& index : tab_.indexes)
 	{
-		auto &index = tab_.indexes[i];
-		auto ih = sm_manager_->ihs_.at(sm_manager_->get_ix_manager()->get_index_name(tab_name, index.cols)).get();
+		auto ih = sm_manager_->ihs_.at(IxManager::get_index_name(tab_name, index.cols)).get();
 		char key[index.col_tot_len];
 		int offset = 0;
 		for (size_t i = 0; i < index.col_num; ++i)

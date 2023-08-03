@@ -24,9 +24,9 @@ struct ColMeta {
     std::string tab_name;   // 字段所属表名称
     std::string name;       // 字段名称
     ColType type;           // 字段类型
-    int len;                // 字段长度
-    int offset;             // 字段位于记录中的偏移量
-    bool index;             /** unused */
+	int len{};                // 字段长度
+	int offset{};             // 字段位于记录中的偏移量
+	bool index{};             /** unused */
 
     friend std::ostream &operator<<(std::ostream &os, const ColMeta &col) {
         // ColMeta中有各个基本类型的变量，然后调用重载的这些变量的操作符<<（具体实现逻辑在defs.h）
@@ -42,8 +42,8 @@ struct ColMeta {
 /* 索引元数据 */
 struct IndexMeta {
     std::string tab_name;           // 索引所属表名称
-    int col_tot_len;                // 索引字段长度总和
-    int col_num;                    // 索引字段数量
+	int col_tot_len{};                // 索引字段长度总和
+	int col_num{};                    // 索引字段数量
     std::vector<ColMeta> cols;      // 索引包含的字段
 
     friend std::ostream &operator<<(std::ostream &os, const IndexMeta &index) {
@@ -71,26 +71,28 @@ struct TabMeta {
     std::vector<ColMeta> cols;          // 表包含的字段
     std::vector<IndexMeta> indexes;     // 表上建立的索引
 
-    TabMeta(){}
+	TabMeta() = default;
 
     TabMeta(const TabMeta &other) {
         name = other.name;
-        for(auto col : other.cols) cols.push_back(col);
+		for (const auto& col : other.cols) cols.push_back(col);
     }
 
     /* 判断当前表中是否存在名为col_name的字段 */
-    bool is_col(const std::string &col_name) const {
+	[[nodiscard]] bool is_col(const std::string& col_name) const
+	{
         auto pos = std::find_if(cols.begin(), cols.end(), [&](const ColMeta &col) { return col.name == col_name; });
         return pos != cols.end();
     }
 
     /* 判断当前表上是否建有指定索引，索引包含的字段为col_names */
-    bool is_index(const std::vector<std::string>& col_names) const {
+	[[nodiscard]] bool is_index(const std::vector<std::string>& col_names) const
+	{
         for(auto& index: indexes) {
             if(index.col_num == col_names.size()) {
                 size_t i = 0;
                 for(; i < index.col_num; ++i) {
-                    if(index.cols[i].name.compare(col_names[i]) != 0)
+					if (index.cols[i].name != col_names[i])
                         break;
                 }
                 if(i == index.col_num) return true;
@@ -107,7 +109,7 @@ struct TabMeta {
             auto& index_cols = (*index).cols;
             size_t i = 0;
             for(; i < col_names.size(); ++i) {
-                if(index_cols[i].name.compare(col_names[i]) != 0) 
+				if (index_cols[i].name != col_names[i])
                     break;
             }
             if(i == col_names.size()) return index;
@@ -167,7 +169,10 @@ class DbMeta {
     // DbMeta(std::string name) : name_(name) {}
 
     /* 判断数据库中是否存在指定名称的表 */
-    bool is_table(const std::string &tab_name) const { return tabs_.find(tab_name) != tabs_.end(); }
+	[[nodiscard]] bool is_table(const std::string& tab_name) const
+	{
+		return tabs_.find(tab_name) != tabs_.end();
+	}
 
     void SetTabMeta(const std::string &tab_name, const TabMeta &meta) {
         tabs_[tab_name] = meta;

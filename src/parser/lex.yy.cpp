@@ -1,6 +1,6 @@
-#line 2 "lex.yy.cpp"
+#line 2 "/home/pygone/projects/db2023-one/src/parser/lex.yy.cpp"
 
-#line 4 "lex.yy.cpp"
+#line 4 "/home/pygone/projects/db2023-one/src/parser/lex.yy.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -772,9 +772,9 @@ char *yytext;
         } \
     }
 
-#line 776 "lex.yy.cpp"
+#line 776 "/home/pygone/projects/db2023-one/src/parser/lex.yy.cpp"
 
-#line 778 "lex.yy.cpp"
+#line 778 "/home/pygone/projects/db2023-one/src/parser/lex.yy.cpp"
 
 #define INITIAL 0
 #define STATE_COMMENT 1
@@ -1012,7 +1012,7 @@ YY_DECL
 
 #line 51 "lex.l"
     /* block comment */
-#line 1016 "lex.yy.cpp"
+#line 1016 "/home/pygone/projects/db2023-one/src/parser/lex.yy.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1427,7 +1427,7 @@ YY_RULE_SETUP
 #line 158 "lex.l"
 ECHO;
 	YY_BREAK
-#line 1431 "lex.yy.cpp"
+#line 1431 "/home/pygone/projects/db2023-one/src/parser/lex.yy.cpp"
 
 	case YY_END_OF_BUFFER:
 		{
