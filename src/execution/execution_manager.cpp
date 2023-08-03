@@ -12,7 +12,7 @@ See the Mulan PSL v2 for more details. */
 
 #include "record_printer.h"
 #include "sourcelib/to_string.h"
-const char *help_info = "Supported SQL syntax:\n"
+const char* help_info = "Supported SQL syntax:\n"
 						"  command ;\n"
 						"command:\n"
 						"  CREATE TABLE table_name (column_name type [, column_name type ...])\n"
@@ -139,7 +139,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 {
 	std::vector<std::string> captions;
 	captions.reserve(sel_cols.size());
-	for (auto &sel_col : sel_cols)
+	for (auto& sel_col : sel_cols)
 	{
 		if (sel_col.isGroup)
 		{
@@ -177,10 +177,11 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 	{
 		auto Tuple = executorTreeRoot->Next();
 		columns.clear();
-		for (auto &col : executorTreeRoot->cols())
+		for (auto& col : executorTreeRoot->cols())
 		{
-			char *rec_buf = Tuple->data + col.offset;
+			char* rec_buf = Tuple->data + col.offset;
 			columns.emplace_back(To_string(rec_buf, col));
+			if (col.type == TYPE_STRING)columns.back().resize(strlen(columns.back().c_str()));
 		}
 		if (Output_file)
 		{
