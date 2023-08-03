@@ -146,7 +146,7 @@ struct Value
         {
             if (Type == TYPE_STRING)
             {
-                set_str(datetime::trans_datetime(datetime_val));
+				set_str(trans_datetime(datetime_val));
             }
         }
     }

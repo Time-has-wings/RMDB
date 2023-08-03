@@ -27,19 +27,20 @@ See the Mulan PSL v2 for more details. */
 
 class QlManager
 {
-private:
-    SmManager *sm_manager_;
-    TransactionManager *txn_mgr_;
-    
+ private:
+	SmManager* sm_manager_;
+	TransactionManager* txn_mgr_;
 
-public:
-    QlManager(SmManager *sm_manager, TransactionManager *txn_mgr)
-        : sm_manager_(sm_manager), txn_mgr_(txn_mgr) {}
+ public:
+	QlManager(SmManager* sm_manager, TransactionManager* txn_mgr)
+		: sm_manager_(sm_manager), txn_mgr_(txn_mgr)
+	{
+	}
 
-    void run_mutli_query(std::shared_ptr<Plan> plan, Context *context);
-    void run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Context *context);
-    void select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
-                     Context *context);
-bool outputfile = true;
-    void run_dml(std::unique_ptr<AbstractExecutor> exec);
+	void run_mutli_query(const std::shared_ptr<Plan>& plan, Context* context);
+	void run_cmd_utility(const std::shared_ptr<Plan>& plan, const txn_id_t* txn_id, Context* context);
+	void select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, const std::vector<TabCol>& sel_cols,
+		Context* context) const;
+	bool Output_file = true;
+	static void run_dml(std::unique_ptr<AbstractExecutor> exec);
 };

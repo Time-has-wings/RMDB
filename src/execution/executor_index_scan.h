@@ -224,7 +224,7 @@ class IndexScanExecutor : public AbstractExecutor
 			if (eval_conds(*rmd))
 			{
 				rid_ = scan_->rid();
-				break;
+				return;
 			}
 			scan_->next();
 		}

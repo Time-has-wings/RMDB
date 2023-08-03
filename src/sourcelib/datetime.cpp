@@ -1,15 +1,9 @@
 #include "datetime.h"
+#include "algorithm"
+#include "fmt/format.h"
 void strim(std::string& str, const char c)
 {
-
-	int index = 0;
-	if (!str.empty())
-	{
-		while ((index = str.find(c, index)) != std::string::npos)
-		{
-			str.erase(index, 1);
-		}
-	}
+	str.erase(std::remove(str.begin(), str.end(), c), str.end());
 }
 bool IsLeapYear(int year)
 {
@@ -26,30 +20,47 @@ bool CheckDate(int year, int month, int day)
 		return false;
 	if (IsLeapYear(year))
 		mon[2]++;
-	if (1 <= month && month <= 12 && 1 <= day && day <= mon[month])
+	if (month <= 12 && day <= mon[month])
 		return true;
 	else
 		return false;
 }
-bool check_invalidate(std::string& s)
+int64_t check_invalidate(std::string& s)
 {
 	if (s.size() != 14)
-		return true;
-	int year = atoi((s.substr(0, 4)).c_str());
-	if (year > 9999 || year < 1000)
-		return true;
-	int month = atoi((s.substr(4, 2)).c_str());
-	int day = atoi((s.substr(6, 2)).c_str());
+		return -1;
+	int64_t num = std::strtoll(s.c_str(), nullptr, 10);
+	int year = num / 10000000000;
+	int month = num / 100000000 % 100;
+	int day = num / 1000000 % 100;
 	if (!CheckDate(year, month, day))
-		return true;
-	int time = atoi((s.substr(8, 2)).c_str());
+		return -1;
+	int time = num / 10000 % 100;
 	if (time > 23)
-		return true;
-	time = atoi((s.substr(10, 2)).c_str());
+		return -1;
+	time = num / 100 % 100;
 	if (time > 59)
-		return true;
-	time = atoi((s.substr(12, 2)).c_str());
+		return -1;
+	time = num % 100;
 	if (time > 59)
-		return true;
-	return false;
-};
+		return -1;
+	return num;
+}
+std::string trans_datetime(int64_t val_)
+{
+	std::string s = fmt::to_string<int64_t>(val_);
+	s.insert(4, 1, '-');
+	s.insert(7, 1, '-');
+	s.insert(10, 1, ' ');
+	s.insert(13, 1, ':');
+	s.insert(16, 1, ':');
+	return s;
+}
+int64_t datetime_trans(const char* s, size_t size)
+{
+	std::string str(s, size);
+	strim(str, ':');
+	strim(str, '-');
+	strim(str, ' ');
+	return check_invalidate(str);
+}

@@ -29,7 +29,7 @@ See the Mulan PSL v2 for more details. */
  */
 bool SmManager::is_dir(const std::string &db_name)
 {
-	struct stat st;
+	struct stat st{};
 	return stat(db_name.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
 }
 
@@ -54,7 +54,7 @@ void SmManager::create_db(const std::string &db_name)
 		throw UnixError();
 	}
 	// 创建系统目录
-	DbMeta *new_db = new DbMeta();
+	auto* new_db = new DbMeta();
 	new_db->name_ = db_name;
 
 	// 注意，此处ofstream会在当前目录创建(如果没有此文件先创建)和打开一个名为DB_META_NAME的文件
@@ -108,9 +108,9 @@ void SmManager::open_db(const std::string &db_name)
 	{
 		auto &tab = itab.second;
 		fhs_.emplace(tab.name, rm_manager_->open_file(tab.name));
-		for (auto index : tab.indexes)
+		for (const auto& index : tab.indexes)
 		{
-			auto index_name = ix_manager_->get_index_name(tab.name, index.cols);
+			auto index_name = get_ix_manager()->get_index_name(tab.name, index.cols);
 			assert(ihs_.count(index_name) == 0);
 			ihs_.emplace(index_name, ix_manager_->open_index(tab.name, index.cols));
 		}
@@ -161,12 +161,12 @@ void SmManager::show_tables(Context *context)
 	}
 	RecordPrinter printer(1);
 	printer.print_separator(context);
-	printer.print_record({"Tables"}, context);
+	printer.print_record({ "Tables" }, context);
 	printer.print_separator(context);
 	for (auto &entry : db_.tabs_)
 	{
 		auto &tab = entry.second;
-		printer.print_record({tab.name}, context);
+		printer.print_record({ tab.name }, context);
 		if (outfile)
 			outfile << "| " << tab.name << " |\n";
 	}
@@ -219,11 +219,11 @@ void SmManager::create_table(const std::string &tab_name, const std::vector<ColD
 	for (auto &col_def : col_defs)
 	{
 		ColMeta col = {.tab_name = tab_name,
-					   .name = col_def.name,
-					   .type = col_def.type,
-					   .len = col_def.len,
-					   .offset = curr_offset,
-					   .index = false};
+			.name = col_def.name,
+			.type = col_def.type,
+			.len = col_def.len,
+			.offset = curr_offset,
+			.index = false };
 		curr_offset += col_def.len;
 		tab.cols.emplace_back(col);
 	}
@@ -296,15 +296,15 @@ void SmManager::create_index(const std::string &tab_name, const std::vector<std:
 		char key[index_tab.col_tot_len];
 		char *data = rec.data;
 		int offset = 0;
-		for (size_t i = 0; i < index_tab.cols.size(); i++)
+		for (auto& col : index_tab.cols)
 		{
-			std::memcpy(key + offset, data + index_tab.cols[i].offset, index_tab.cols[i].len);
-			offset += index_tab.cols[i].len;
+			std::memcpy(key + offset, data + col.offset, col.len);
+			offset += col.len;
 		}
 		ih->insert_entry(key, rm_scan.rid(), context->txn_);
 	}
 	file_handle->unpin_page_handle(cur_page, true);
-	auto index_name = ix_manager_->get_index_name(tab_name, index_tab.cols);
+	auto index_name = get_ix_manager()->get_index_name(tab_name, index_tab.cols);
 	assert(ihs_.count(index_name) == 0);
 	ihs_.emplace(index_name, std::move(ih));
 	tab.indexes.emplace_back(index_tab);
@@ -330,7 +330,7 @@ void SmManager::drop_index(const std::string &tab_name, const std::vector<std::s
 	}
 	auto s = tab.get_index_meta(col_names);
 	tab.indexes.erase(s);
-	auto index_name = ix_manager_->get_index_name(tab_name, col_names);
+	auto index_name = get_ix_manager()->get_index_name(tab_name, col_names);
 	ix_manager_->close_index(ihs_.at(index_name).get());
 	ix_manager_->destroy_index(tab_name, col_names);
 	ihs_.erase(index_name);
@@ -378,7 +378,7 @@ void SmManager::show_indexes(const std::string &tab_name, Context *context)
 		}
 		RecordPrinter printer(1);
 		printer.print_separator(context);
-		printer.print_record({tab_name}, context);
+		printer.print_record({ tab_name }, context);
 		printer.print_separator(context);
 		printer.print_record_index(index.cols, context);
 		printer.print_separator(context);
@@ -388,23 +388,23 @@ void SmManager::show_indexes(const std::string &tab_name, Context *context)
 }
 
 void SmManager::rollback_delete(const std::string &tab_name,
-								const Rid &tuple_rid,
-								const RmRecord &record,
-								Context *context)
+	const Rid& tuple_rid,
+	const RmRecord& record,
+	Context* context)
 {
 	auto tab = db_.get_table(tab_name); // 获取表元数据
 	// 索引文件插入key
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									 // 索引包含的字段
-		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); // 获得索引所在文件名
-		char key[index.col_tot_len];										 // 索引字段下的key
+		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols); // 获得索引所在文件名
+		char key[index.col_tot_len];                                                     // 索引字段下的key
 		char *data = record.data;														 // 这条记录的序列化数据
 		int offset = 0;
-		for (size_t i = 0; i < index_cols.size(); i++)
+		for (auto& index_col : index_cols)
 		{ // 获取record下的key
-			std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
-			offset += index_cols[i].len;
+			std::memcpy(key + offset, data + index_col.offset, index_col.len);
+			offset += index_col.len;
 		}
 		ihs_.at(index_file_name).get()->insert_entry(key, tuple_rid, context->txn_); // 删除
 	}
@@ -420,14 +420,14 @@ void SmManager::rollback_insert(const std::string &tab_name, const Rid &tuple_ri
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									  // 索引包含的字段
-		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
-		char key[index.col_tot_len];										  // 索引字段下的key
-		char *data = fhs_.at(tab_name).get()->get_record(tuple_rid, context).get()->data; // 这条记录的序列化数据
+		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
+		char key[index.col_tot_len];                                                      // 索引字段下的key
+		char* data = fhs_.at(tab_name).get()->get_record(tuple_rid, context)->data; // 这条记录的序列化数据
 		int offset = 0;
-		for (size_t i = 0; i < index_cols.size(); i++)
+		for (auto& index_col : index_cols)
 		{ // 获取record下的key
-			std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
-			offset += index_cols[i].len;
+			std::memcpy(key + offset, data + index_col.offset, index_col.len);
+			offset += index_col.len;
 		}
 		ihs_.at(index_file_name).get()->delete_entry(key, nullptr); // 删除
 	}
@@ -436,23 +436,23 @@ void SmManager::rollback_insert(const std::string &tab_name, const Rid &tuple_ri
 }
 
 void SmManager::rollback_update(const std::string &tab_name,
-								const Rid &tuple_rid,
-								const RmRecord &record,
-								Context *context)
+	const Rid& tuple_rid,
+	const RmRecord& record,
+	Context* context)
 {
 	auto tab = db_.get_table(tab_name); // 获取表元数据
 	// 索引文件更新key
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									  // 索引包含的字段
-		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
-		char key[index.col_tot_len];										  // 索引字段下的key
-		char *data = fhs_.at(tab_name).get()->get_record(tuple_rid, context).get()->data; // 这条记录的序列化数据
+		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols);  // 获得索引所在文件名
+		char key[index.col_tot_len];                                                      // 索引字段下的key
+		char* data = fhs_.at(tab_name).get()->get_record(tuple_rid, context)->data; // 这条记录的序列化数据
 		int offset = 0;
-		for (size_t i = 0; i < index_cols.size(); i++)
+		for (auto& index_col : index_cols)
 		{ // 获取record下的key
-			std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
-			offset += index_cols[i].len;
+			std::memcpy(key + offset, data + index_col.offset, index_col.len);
+			offset += index_col.len;
 		}
 		ihs_.at(index_file_name).get()->delete_entry(key, nullptr);
 	}
@@ -460,14 +460,14 @@ void SmManager::rollback_update(const std::string &tab_name,
 	for (IndexMeta &index : tab.indexes)
 	{
 		std::vector<ColMeta> index_cols = index.cols;									 // 索引包含的字段
-		std::string index_file_name = ix_manager_->get_index_name(tab_name, index_cols); // 获得索引所在文件名
+		std::string index_file_name = get_ix_manager()->get_index_name(tab_name, index_cols); // 获得索引所在文件名
 		char key[index.col_tot_len];
 		char *data = record.data; // 这条记录的序列化数据
 		int offset = 0;
-		for (size_t i = 0; i < index_cols.size(); i++)
+		for (auto& index_col : index_cols)
 		{ // 获取record下的key
-			std::memcpy(key + offset, data + index_cols[i].offset, index_cols[i].len);
-			offset += index_cols[i].len;
+			std::memcpy(key + offset, data + index_col.offset, index_col.len);
+			offset += index_col.len;
 		}
 		ihs_.at(index_file_name).get()->insert_entry(key, tuple_rid, context->txn_);
 	}
@@ -480,25 +480,31 @@ void SmManager::load_data_into_table(std::string &tab_name, std::string &file_na
 	std::string word;
 	auto &tab = db_.get_table(tab_name);
 	auto &fh_ = fhs_.at(tab_name);
-	char str[fh_->get_file_hdr().record_size];
+	size_t rec_size = fh_->get_file_hdr().record_size;
+	char str[rec_size];
 	fgets(buffer, 1024, fp);
 	RmPageHandle pagehdr = fh_->init_load_pagehandle();
 	while (fgets(buffer, 1024, fp))
 	{
-		buffer[strlen(buffer) - 1] = '\0';
-		memset(str, '\0', fh_->get_file_hdr().record_size);
-		sin.clear();
-		sin.str(buffer);
-		for (size_t i = 0; i < tab.cols.size(); i++)
+		size_t t = strlen(buffer);
+		buffer[t - 1] = '\0';
+		memset(str, '\0', rec_size);
+		size_t end_ = 0, front_;
+		for (auto& col : tab.cols)
 		{
-			auto &col = tab.cols.at(i);
-			std::getline(sin, word, ',');
-			LoadData::trans(word, col, str, col.offset);
+			front_ = end_;
+			while (end_ < t)
+			{
+				if (buffer[end_] == ',' || buffer[end_] == '\r' || buffer[end_] == '\n')
+					break;
+				++end_;
+			}
+			LoadData::trans(buffer + front_, col, str, col.offset, end_ - front_);
+			++end_;
 		}
 		auto rid = fh_->insert_record(str, pagehdr);
-		for (size_t i = 0; i < tab.indexes.size(); ++i)
+		for (auto& index : tab.indexes)
 		{
-			auto &index = tab.indexes[i];
 			auto ih = ihs_.at(get_ix_manager()->get_index_name(tab_name, index.cols)).get();
 			char key[index.col_tot_len];
 			int offset = 0;

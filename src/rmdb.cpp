@@ -121,7 +121,7 @@ void *client_handler(void *sock_fd)
 		if (strcmp(data_recv, "set output_file off") == 0 || strcmp(data_recv, "\"set output_file off\"") == 0)
 		{
 			outputfile = false;
-			ql_manager->outputfile = false;
+			ql_manager->Output_file = false;
 			sm_manager->outputfile = false;
 		}
 

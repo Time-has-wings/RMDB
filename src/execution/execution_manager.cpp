@@ -10,16 +10,8 @@ See the Mulan PSL v2 for more details. */
 
 #include "execution_manager.h"
 
-#include "executor_delete.h"
-#include "executor_index_scan.h"
-#include "executor_insert.h"
-#include "executor_block_nestedloop_join.h"
-#include "executor_projection.h"
-#include "executor_seq_scan.h"
-#include "executor_update.h"
-#include "index/ix.h"
 #include "record_printer.h"
-
+#include "sourcelib/to_string.h"
 const char *help_info = "Supported SQL syntax:\n"
 						"  command ;\n"
 						"command:\n"
@@ -45,7 +37,7 @@ const char *help_info = "Supported SQL syntax:\n"
 						"  {* | column [, column ...]}\n";
 
 // 主要负责执行DDL语句
-void QlManager::run_mutli_query(std::shared_ptr<Plan> plan, Context *context)
+void QlManager::run_mutli_query(const std::shared_ptr<Plan>& plan, Context* context)
 {
 	if (auto x = std::dynamic_pointer_cast<DDLPlan>(plan))
 	{
@@ -73,13 +65,12 @@ void QlManager::run_mutli_query(std::shared_ptr<Plan> plan, Context *context)
 		}
 		default:
 			throw InternalError("Unexpected field type");
-			break;
 		}
 	}
 }
 
 // 执行help; show tables; desc table; begin; commit; abort;语句
-void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Context *context)
+void QlManager::run_cmd_utility(const std::shared_ptr<Plan>& plan, const txn_id_t* txn_id, Context* context)
 {
 	if (auto x = std::dynamic_pointer_cast<OtherPlan>(plan))
 	{
@@ -138,14 +129,13 @@ void QlManager::run_cmd_utility(std::shared_ptr<Plan> plan, txn_id_t *txn_id, Co
 
 		default:
 			throw InternalError("Unexpected field type");
-			break;
 		}
 	}
 }
 
 // 执行select语句，select语句的输出除了需要返回客户端外，还需要写入output.txt文件中
-void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, std::vector<TabCol> sel_cols,
-							Context *context)
+void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, const std::vector<TabCol>& sel_cols,
+	Context* context) const
 {
 	std::vector<std::string> captions;
 	captions.reserve(sel_cols.size());
@@ -163,7 +153,7 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 
 	std::fstream outfile;
 	RecordPrinter rec_printer(sel_cols.size());
-	if (outputfile)
+	if (Output_file)
 	{
 		rec_printer.print_separator(context);
 		rec_printer.print_record(captions, context);
@@ -171,9 +161,9 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 		// print header into file
 		outfile.open("output.txt", std::ios::out | std::ios::app);
 		outfile << "|";
-		for (int i = 0; i < captions.size(); ++i)
+		for (const auto& caption : captions)
 		{
-			outfile << " " << captions[i] << " |";
+			outfile << " " << caption << " |";
 		}
 		outfile << "\n";
 	}
@@ -189,51 +179,29 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 		columns.clear();
 		for (auto &col : executorTreeRoot->cols())
 		{
-			std::string col_str;
 			char *rec_buf = Tuple->data + col.offset;
-			if (col.type == TYPE_INT)
-				col_str = std::to_string(*(int *)rec_buf);
-
-			else if (col.type == TYPE_FLOAT)
-			{
-				col_str = std::to_string(*(float *)rec_buf);
-			}
-			else if (col.type == TYPE_BIGINT)
-			{
-				col_str = std::to_string(*(int64_t *)rec_buf);
-			}
-			else if (col.type == TYPE_STRING)
-			{
-				col_str = std::string((char *)rec_buf, col.len);
-				col_str.resize(strlen(col_str.c_str()));
-			}
-			else if (col.type == TYPE_DATETIME)
-			{
-				int64_t temp = *(int64_t *)rec_buf;
-				col_str = datetime::trans_datetime(temp);
-			}
-			columns.emplace_back(col_str);
+			columns.emplace_back(To_string(rec_buf, col));
 		}
-		if (outputfile)
+		if (Output_file)
 		{
 			rec_printer.print_record(columns, context);
 			// print record into file
 			outfile << "|";
-			for (int i = 0; i < columns.size(); ++i)
+			for (const auto& column : columns)
 			{
-				outfile << " " << columns[i] << " |";
+				outfile << " " << column << " |";
 			}
 			outfile << "\n";
 			num_rec++;
 		}
 	}
-	if (outputfile)
+	if (Output_file)
 	{
 		outfile.close();
 		// Print footer into buffer
 		rec_printer.print_separator(context);
 		// Print record count into buffer
-		RecordPrinter::print_record_count(num_rec, context);
+		rec_printer.print_record_count(num_rec, context);
 	}
 }
 
