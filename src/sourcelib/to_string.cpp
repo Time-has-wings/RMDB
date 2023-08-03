@@ -8,8 +8,7 @@ std::string To_string(const char* src, const ColMeta& col)
 	case TYPE_INT:
 		return fmt::to_string<int>(*(int*)src);
 	case TYPE_FLOAT:
-		fmt::format_to(std::back_inserter(s), "{:.6f}", *(float*)src);
-		return s;
+		return std::to_string(*(float*)src);
 	case TYPE_BIGINT:
 		return fmt::to_string<int64_t>(*(int64_t*)src);
 	case TYPE_DATETIME:
