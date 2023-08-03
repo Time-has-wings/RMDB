@@ -27,6 +27,7 @@ WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP 
 %token LEQ NEQ GEQ T_EOF
 
 // type-specific tokens
+%type <sv_arithmetic_op> arithmetic_op
 %token <sv_str> IDENTIFIER VALUE_STRING FILENAME
 %token <sv_int> VALUE_INT
 %token <sv_bigint> VALUE_BIGINT
@@ -52,7 +53,7 @@ WHERE UPDATE SET SELECT INT BIGINT DATETIME CHAR FLOAT INDEX AND JOIN EXIT HELP 
 %type <sv_set_clauses> setClauses
 %type <sv_cond> condition
 %type <sv_conds> whereClause optWhereClause
-%type <sv_orderby>  order_clause 
+%type <sv_orderby>  order_clause
 %type <sv_orders> order_clauses
 %type <sv_order_clause> opt_order_clause
 %type <sv_orderby_dir> opt_asc_desc
@@ -230,7 +231,16 @@ valueList:
         $$.push_back($3);
     }
     ;
-
+arithmetic_op:
+      '+'
+    {
+        $$ = SV_OP_ADD;
+    }
+    | '-'
+    {
+        $$ = SV_OP_SUB;
+    }
+    ;
 value:
         VALUE_INT
     {
@@ -274,7 +284,7 @@ optWhereClause:
     ;
 
 whereClause:
-        condition 
+        condition
     {
         $$ = std::vector<std::shared_ptr<BinaryExpr>>{$1};
     }
@@ -302,7 +312,7 @@ groupVal:
     SUM '(' col ')' AS asName
     {
         $$ = std::make_shared<GroupValue>("SUM", $6, $3);
-    }; 
+    };
     |
     COUNT '(' '*' ')' AS asName
     {
@@ -378,11 +388,18 @@ setClauses:
         $$.push_back($3);
     }
     ;
-
 setClause:
         colName '=' value
     {
         $$ = std::make_shared<SetClause>($1, $3);
+    }
+    |  colName '=' colName arithmetic_op value
+    {
+        $$ = std::make_shared<SetClause>($1, $5, $4);
+    }
+    |  colName '=' colName value
+    {
+        $$ = std::make_shared<SetClause>($1, $4, SV_OP_ADD);
     }
     ;
 

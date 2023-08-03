@@ -15,346 +15,426 @@ See the Mulan PSL v2 for more details. */
 
 enum JoinType
 {
-    INNER_JOIN,
-    LEFT_JOIN,
-    RIGHT_JOIN,
-    FULL_JOIN
+	INNER_JOIN,
+	LEFT_JOIN,
+	RIGHT_JOIN,
+	FULL_JOIN
 };
 namespace ast
 {
 
-    enum SvType
-    {
-        SV_TYPE_INT,
-        SV_TYPE_FLOAT,
-        SV_TYPE_STRING,
-        SV_TYPE_BIGINT,
-        SV_TYPE_DATETIME,
-        SV_TYPE_INVALID
-    };
+	enum SvType
+	{
+		SV_TYPE_INT,
+		SV_TYPE_FLOAT,
+		SV_TYPE_STRING,
+		SV_TYPE_BIGINT,
+		SV_TYPE_DATETIME,
+		SV_TYPE_INVALID
+	};
 
-    enum SvCompOp
-    {
-        SV_OP_EQ,
-        SV_OP_NE,
-        SV_OP_LT,
-        SV_OP_GT,
-        SV_OP_LE,
-        SV_OP_GE
-    };
+	enum SvCompOp
+	{
+		SV_OP_EQ,
+		SV_OP_NE,
+		SV_OP_LT,
+		SV_OP_GT,
+		SV_OP_LE,
+		SV_OP_GE
+	};
+	enum SvArithmeticOp
+	{
+		SV_OP_ADD,
+		SV_OP_SUB
+	};
+	enum OrderByDir
+	{
+		OrderBy_DEFAULT,
+		OrderBy_ASC,
+		OrderBy_DESC
+	};
 
-    enum OrderByDir
-    {
-        OrderBy_DEFAULT,
-        OrderBy_ASC,
-        OrderBy_DESC
-    };
+	// Base class for tree nodes
+	struct TreeNode
+	{
+		virtual ~TreeNode() = default; // enable polymorphism
+	};
 
-    // Base class for tree nodes
-    struct TreeNode
-    {
-        virtual ~TreeNode() = default; // enable polymorphism
-    };
+	struct Help : public TreeNode
+	{
+	};
 
-    struct Help : public TreeNode
-    {
-    };
+	struct ShowTables : public TreeNode
+	{
+	};
 
-    struct ShowTables : public TreeNode
-    {
-    };
+	struct TxnBegin : public TreeNode
+	{
+	};
 
-    struct TxnBegin : public TreeNode
-    {
-    };
+	struct TxnCommit : public TreeNode
+	{
+	};
 
-    struct TxnCommit : public TreeNode
-    {
-    };
+	struct TxnAbort : public TreeNode
+	{
+	};
 
-    struct TxnAbort : public TreeNode
-    {
-    };
+	struct TxnRollback : public TreeNode
+	{
+	};
 
-    struct TxnRollback : public TreeNode
-    {
-    };
+	struct TypeLen : public TreeNode
+	{
+		SvType type;
+		int len;
 
-    struct TypeLen : public TreeNode
-    {
-        SvType type;
-        int len;
+		TypeLen(SvType type_, int len_) : type(type_), len(len_)
+		{
+		}
+	};
 
-        TypeLen(SvType type_, int len_) : type(type_), len(len_) {}
-    };
+	struct Field : public TreeNode
+	{
+	};
 
-    struct Field : public TreeNode
-    {
-    };
+	struct ColDef : public Field
+	{
+		std::string col_name;
+		std::shared_ptr<TypeLen> type_len;
 
-    struct ColDef : public Field
-    {
-        std::string col_name;
-        std::shared_ptr<TypeLen> type_len;
+		ColDef(std::string col_name_, std::shared_ptr<TypeLen> type_len_)
+			: col_name(std::move(col_name_)), type_len(std::move(type_len_))
+		{
+		}
+	};
 
-        ColDef(std::string col_name_, std::shared_ptr<TypeLen> type_len_) : col_name(std::move(col_name_)), type_len(std::move(type_len_)) {}
-    };
+	struct CreateTable : public TreeNode
+	{
+		std::string tab_name;
+		std::vector<std::shared_ptr<Field>> fields;
 
-    struct CreateTable : public TreeNode
-    {
-        std::string tab_name;
-        std::vector<std::shared_ptr<Field>> fields;
+		CreateTable(std::string tab_name_, std::vector<std::shared_ptr<Field>> fields_)
+			: tab_name(std::move(tab_name_)), fields(std::move(fields_))
+		{
+		}
+	};
 
-        CreateTable(std::string tab_name_, std::vector<std::shared_ptr<Field>> fields_) : tab_name(std::move(tab_name_)), fields(std::move(fields_)) {}
-    };
+	struct DropTable : public TreeNode
+	{
+		std::string tab_name;
 
-    struct DropTable : public TreeNode
-    {
-        std::string tab_name;
+		explicit DropTable(std::string tab_name_) : tab_name(std::move(tab_name_))
+		{
+		}
+	};
 
-        DropTable(std::string tab_name_) : tab_name(std::move(tab_name_)) {}
-    };
+	struct DescTable : public TreeNode
+	{
+		std::string tab_name;
 
-    struct DescTable : public TreeNode
-    {
-        std::string tab_name;
+		explicit DescTable(std::string tab_name_) : tab_name(std::move(tab_name_))
+		{
+		}
+	};
 
-        DescTable(std::string tab_name_) : tab_name(std::move(tab_name_)) {}
-    };
+	struct CreateIndex : public TreeNode
+	{
+		std::string tab_name;
+		std::vector<std::string> col_names;
 
-    struct CreateIndex : public TreeNode
-    {
-        std::string tab_name;
-        std::vector<std::string> col_names;
+		CreateIndex(std::string tab_name_, std::vector<std::string> col_names_)
+			: tab_name(std::move(tab_name_)), col_names(std::move(col_names_))
+		{
+		}
+	};
 
-        CreateIndex(std::string tab_name_, std::vector<std::string> col_names_) : tab_name(std::move(tab_name_)), col_names(std::move(col_names_)) {}
-    };
+	struct DropIndex : public TreeNode
+	{
+		std::string tab_name;
+		std::vector<std::string> col_names;
 
-    struct DropIndex : public TreeNode
-    {
-        std::string tab_name;
-        std::vector<std::string> col_names;
+		DropIndex(std::string tab_name_, std::vector<std::string> col_names_)
+			: tab_name(std::move(tab_name_)), col_names(std::move(col_names_))
+		{
+		}
+	};
 
-        DropIndex(std::string tab_name_, std::vector<std::string> col_names_) : tab_name(std::move(tab_name_)), col_names(std::move(col_names_)) {}
-    };
+	struct Expr : public TreeNode
+	{
+	};
 
-    struct Expr : public TreeNode
-    {
-    };
+	struct Value : public Expr
+	{
+	};
 
-    struct Value : public Expr
-    {
-    };
+	struct IntLit : public Value
+	{
+		int val;
 
-    struct IntLit : public Value
-    {
-        int val;
+		explicit IntLit(int val_) : val(val_)
+		{
+		}
+	};
 
-        IntLit(int val_) : val(val_) {}
-    };
+	struct FloatLit : public Value
+	{
+		float val;
 
-    struct FloatLit : public Value
-    {
-        float val;
+		explicit FloatLit(float val_) : val(val_)
+		{
+		}
+	};
+	struct InvalidLit : public Value
+	{
+		bool val;
 
-        FloatLit(float val_) : val(val_) {}
-    };
-    struct InvalidLit : public Value
-    {
-        bool val;
+		explicit InvalidLit(bool val_) : val(val_)
+		{
+		}
+	};
+	struct BigintLit : public Value
+	{
+		int64_t val;
 
-        InvalidLit(bool val_) : val(val_) {}
-    };
-    struct BigintLit : public Value
-    {
-        int64_t val;
+		explicit BigintLit(int64_t val_) : val(val_)
+		{
+		}
+	};
+	struct DatetimeLit : public Value
+	{
+		std::string val;
+		explicit DatetimeLit(std::string val_) : val(std::move(val_))
+		{
+		}
+	};
 
-        BigintLit(int64_t val_) : val(val_) {}
-    };
-    struct DatetimeLit : public Value
-    {
-        std::string val;
-        DatetimeLit(std::string val_) : val(std::move(val_)) {}
-    };
+	struct StringLit : public Value
+	{
+		std::string val;
 
-    struct StringLit : public Value
-    {
-        std::string val;
+		explicit StringLit(std::string val_) : val(std::move(val_))
+		{
+		}
+	};
 
-        StringLit(std::string val_) : val(std::move(val_)) {}
-    };
+	struct Col : public Expr
+	{
+		std::string tab_name;
+		std::string col_name;
+		Col() = default;
+		Col(std::string tab_name_, std::string col_name_)
+			: tab_name(std::move(tab_name_)), col_name(std::move(col_name_))
+		{
+		}
+	};
+	struct GroupValue : public Col
+	{
+		std::string func_name;
+		std::string as_name;
+		bool all = false;
+		GroupValue(std::string Func_, std::string as_name_, std::shared_ptr<Col>& col)
+			: Col(*std::move(col)), func_name(std::move(Func_)), as_name(std::move(as_name_))
+		{
+		}
+		GroupValue(std::string Func_, std::string as_name_, bool all_)
+			: func_name(std::move(Func_)), as_name(std::move(as_name_)), all(all_)
+		{
+		}
+	};
 
-    struct Col : public Expr
-    {
-        std::string tab_name;
-        std::string col_name;
-        Col() {}
-        Col(std::string tab_name_, std::string col_name_) : tab_name(std::move(tab_name_)), col_name(std::move(col_name_)) {}
-    };
-    struct GroupValue : public Col
-    {
-        std::string func_name;
-        std::string as_name;
-        bool all = false;
-        GroupValue(std::string Func_, std::string as_name_, std::shared_ptr<Col> &col) : Col(*std::move(col)), func_name(std::move(Func_)), as_name(std::move(as_name_)) {}
-        GroupValue(std::string Func_, std::string as_name_, bool all_) : func_name(std::move(Func_)), as_name(std::move(as_name_)), all(all_) {}
-    };
+	struct SetClause : public TreeNode
+	{
+		std::string col_name;
+		std::shared_ptr<Value> val;
+		SvArithmeticOp op;
+		bool is_update_col = false;
+		SetClause(std::string col_name_, std::shared_ptr<Value> val_)
+			: col_name(std::move(col_name_)), val(std::move(val_))
+		{
+		}
+		SetClause(std::string col_name_, std::shared_ptr<Value> val_, SvArithmeticOp op_)
+			: col_name(std::move(col_name_)), val(std::move(val_)), op(op_)
+		{
+			is_update_col = true;
+		}
+	};
 
-    struct SetClause : public TreeNode
-    {
-        std::string col_name;
-        std::shared_ptr<Value> val;
+	struct BinaryExpr : public TreeNode
+	{
+		std::shared_ptr<Col> lhs;
+		SvCompOp op;
+		std::shared_ptr<Expr> rhs;
 
-        SetClause(std::string col_name_, std::shared_ptr<Value> val_) : col_name(std::move(col_name_)), val(std::move(val_)) {}
-    };
+		BinaryExpr(std::shared_ptr<Col> lhs_, SvCompOp op_, std::shared_ptr<Expr> rhs_)
+			: lhs(std::move(lhs_)), op(op_), rhs(std::move(rhs_))
+		{
+		}
+	};
 
-    struct BinaryExpr : public TreeNode
-    {
-        std::shared_ptr<Col> lhs;
-        SvCompOp op;
-        std::shared_ptr<Expr> rhs;
+	struct OrderBy : public TreeNode
+	{
+		std::shared_ptr<Col> col;
+		OrderByDir orderby_dir;
+		OrderBy(std::shared_ptr<Col> col_, OrderByDir orderby_dir_) : col(std::move(col_)), orderby_dir(orderby_dir_)
+		{
+		}
+	};
+	struct OrderClause : public TreeNode
+	{
+		int limit;
+		std::vector<std::shared_ptr<OrderBy>> orders;
+		explicit OrderClause(std::vector<std::shared_ptr<OrderBy>> orders_) : limit(-1), orders(std::move(orders_))
+		{
+		}
+		OrderClause(std::vector<std::shared_ptr<OrderBy>> orders_, int limit_)
+			: limit(limit_), orders(std::move(orders_))
+		{
+		}
+	};
 
-        BinaryExpr(std::shared_ptr<Col> lhs_, SvCompOp op_, std::shared_ptr<Expr> rhs_) : lhs(std::move(lhs_)), op(op_), rhs(std::move(rhs_)) {}
-    };
+	struct InsertStmt : public TreeNode
+	{
+		std::string tab_name;
+		std::vector<std::shared_ptr<Value>> vals;
 
-    struct OrderBy : public TreeNode
-    {
-        std::shared_ptr<Col> col;
-        OrderByDir orderby_dir;
-        OrderBy(std::shared_ptr<Col> col_, OrderByDir orderby_dir_) : col(std::move(col_)), orderby_dir(std::move(orderby_dir_)) {}
-    };
-    struct OrderClause : public TreeNode
-    {
-        int limit;
-        std::vector<std::shared_ptr<OrderBy>> orders;
-        OrderClause(std::vector<std::shared_ptr<OrderBy>> orders_) : orders(std::move(orders_)), limit(-1) {}
-        OrderClause(std::vector<std::shared_ptr<OrderBy>> orders_, int limit_) : orders(std::move(orders_)), limit(limit_) {}
-    };
+		InsertStmt(std::string tab_name_, std::vector<std::shared_ptr<Value>> vals_)
+			: tab_name(std::move(tab_name_)), vals(std::move(vals_))
+		{
+		}
+	};
 
-    struct InsertStmt : public TreeNode
-    {
-        std::string tab_name;
-        std::vector<std::shared_ptr<Value>> vals;
+	struct DeleteStmt : public TreeNode
+	{
+		std::string tab_name;
+		std::vector<std::shared_ptr<BinaryExpr>> conds;
 
-        InsertStmt(std::string tab_name_, std::vector<std::shared_ptr<Value>> vals_) : tab_name(std::move(tab_name_)), vals(std::move(vals_)) {}
-    };
+		DeleteStmt(std::string tab_name_, std::vector<std::shared_ptr<BinaryExpr>> conds_) : tab_name(std::move(
+			tab_name_)), conds(std::move(conds_))
+		{
+		}
+	};
 
-    struct DeleteStmt : public TreeNode
-    {
-        std::string tab_name;
-        std::vector<std::shared_ptr<BinaryExpr>> conds;
+	struct ShowIndex : public TreeNode
+	{
+		std::string tab_name;
+		explicit ShowIndex(std::string tab_name_) : tab_name(std::move(tab_name_))
+		{
+		}
+	};
+	struct LoadData : public TreeNode
+	{
+		std::string tab_name;
+		std::string file_name;
+		LoadData(std::string tab_name_, std::string file_name_)
+			: tab_name(std::move(tab_name_)), file_name(std::move(file_name_))
+		{
+		}
+	};
+	struct UpdateStmt : public TreeNode
+	{
+		std::string tab_name;
+		std::vector<std::shared_ptr<SetClause>> set_clauses;
+		std::vector<std::shared_ptr<BinaryExpr>> conds;
 
-        DeleteStmt(std::string tab_name_, std::vector<std::shared_ptr<BinaryExpr>> conds_) : tab_name(std::move(tab_name_)), conds(std::move(conds_)) {}
-    };
+		UpdateStmt(std::string tab_name_,
+			std::vector<std::shared_ptr<SetClause>> set_clauses_,
+			std::vector<std::shared_ptr<BinaryExpr>> conds_)
+			: tab_name(std::move(tab_name_)), set_clauses(std::move(set_clauses_)), conds(std::move(conds_))
+		{
+		}
+	};
 
-    struct ShowIndex : public TreeNode
-    {
-        std::string tab_name;
-        ShowIndex(std::string tab_name_) : tab_name(std::move(tab_name_)) {}
-    };
-    struct LoadData : public TreeNode
-    {
-        std::string tab_name;
-        std::string file_name;
-        LoadData(std::string tab_name_, std::string file_name_) : tab_name(std::move(tab_name_)), file_name(std::move(file_name_)) {}
-    };
-    struct UpdateStmt : public TreeNode
-    {
-        std::string tab_name;
-        std::vector<std::shared_ptr<SetClause>> set_clauses;
-        std::vector<std::shared_ptr<BinaryExpr>> conds;
+	struct JoinExpr : public TreeNode
+	{
+		std::string left;
+		std::string right;
+		std::vector<std::shared_ptr<BinaryExpr>> conds;
+		JoinType type;
 
-        UpdateStmt(std::string tab_name_,
-                   std::vector<std::shared_ptr<SetClause>> set_clauses_,
-                   std::vector<std::shared_ptr<BinaryExpr>> conds_) : tab_name(std::move(tab_name_)), set_clauses(std::move(set_clauses_)), conds(std::move(conds_)) {}
-    };
+		JoinExpr(std::string left_, std::string right_,
+			std::vector<std::shared_ptr<BinaryExpr>> conds_, JoinType type_)
+			: left(std::move(left_)), right(std::move(right_)), conds(std::move(conds_)), type(type_)
+		{
+		}
+	};
 
-    struct JoinExpr : public TreeNode
-    {
-        std::string left;
-        std::string right;
-        std::vector<std::shared_ptr<BinaryExpr>> conds;
-        JoinType type;
+	struct SelectStmt : public TreeNode
+	{
+		std::vector<std::shared_ptr<Col>> cols;
+		std::shared_ptr<GroupValue> group;
+		std::vector<std::string> tabs;
+		std::vector<std::shared_ptr<BinaryExpr>> conds;
+		std::vector<std::shared_ptr<JoinExpr>> jointree;
+		bool is_limit = false;
+		bool has_sort = false;
+		bool group_func = false;
+		std::shared_ptr<OrderClause> order_clause;
 
-        JoinExpr(std::string left_, std::string right_,
-                 std::vector<std::shared_ptr<BinaryExpr>> conds_, JoinType type_) : left(std::move(left_)), right(std::move(right_)), conds(std::move(conds_)), type(type_) {}
-    };
+		SelectStmt(std::vector<std::shared_ptr<Col>> cols_,
+			std::vector<std::string> tabs_,
+			std::vector<std::shared_ptr<BinaryExpr>> conds_,
+			std::shared_ptr<OrderClause> order_clause_)
+			: cols(std::move(cols_)), tabs(std::move(tabs_)), conds(std::move(conds_)),
+			  order_clause(std::move(order_clause_))
+		{
+			if (auto orderclause = std::dynamic_pointer_cast<ast::OrderClause>(order_clause))
+			{
+				has_sort = (bool)(!order_clause->orders.empty());
+				is_limit = order_clause->limit != -1;
+			}
+		}
+		SelectStmt(std::shared_ptr<GroupValue> group_,
+			std::vector<std::string> tabs_,
+			std::vector<std::shared_ptr<BinaryExpr>> conds_) : group(std::move(group_)), tabs(std::move(tabs_)),
+															   conds(std::move(conds_))
+		{
+			group_func = true;
+		}
+	};
 
-    struct SelectStmt : public TreeNode
-    {
-        std::vector<std::shared_ptr<Col>> cols;
-        std::shared_ptr<GroupValue> group;
-        std::vector<std::string> tabs;
-        std::vector<std::shared_ptr<BinaryExpr>> conds;
-        std::vector<std::shared_ptr<JoinExpr>> jointree;
-        bool is_limit = false;
-        bool has_sort = false;
-        bool group_func = false;
-        std::shared_ptr<OrderClause> order_clause;
+	// Semantic value
+	struct SemValue
+	{
+		int sv_int;
+		bool sv_invalid;
+		int64_t sv_bigint;
+		float sv_float;
+		std::string sv_str;
+		std::string sv_datetime;
+		OrderByDir sv_orderby_dir;
+		std::vector<std::string> sv_strs;
 
-        SelectStmt(std::vector<std::shared_ptr<Col>> cols_,
-                   std::vector<std::string> tabs_,
-                   std::vector<std::shared_ptr<BinaryExpr>> conds_,
-                   std::shared_ptr<OrderClause> order_clause_) : cols(std::move(cols_)), tabs(std::move(tabs_)), conds(std::move(conds_)),
-                                                                 order_clause(std::move(order_clause_))
-        {
-            if (auto orderclause = std::dynamic_pointer_cast<ast::OrderClause>(order_clause))
-            {
-                has_sort = (bool)(order_clause->orders.size() > 0);
-                is_limit = order_clause->limit != -1;
-            }
-        }
-        SelectStmt(std::shared_ptr<GroupValue> group_,
-                   std::vector<std::string> tabs_,
-                   std::vector<std::shared_ptr<BinaryExpr>> conds_) : tabs(std::move(tabs_)), conds(std::move(conds_)),
-                                                                      group(std::move(group_))
-        {
-            group_func = true;
-        }
-    };
+		std::shared_ptr<TreeNode> sv_node;
 
-    // Semantic value
-    struct SemValue
-    {
-        int sv_int;
-        bool sv_invalid;
-        int64_t sv_bigint;
-        float sv_float;
-        std::string sv_str;
-        std::string sv_datetime;
-        OrderByDir sv_orderby_dir;
-        std::vector<std::string> sv_strs;
+		SvCompOp sv_comp_op;
+		SvArithmeticOp sv_arithmetic_op;
+		std::shared_ptr<TypeLen> sv_type_len;
 
-        std::shared_ptr<TreeNode> sv_node;
+		std::shared_ptr<Field> sv_field;
+		std::vector<std::shared_ptr<Field>> sv_fields;
 
-        SvCompOp sv_comp_op;
+		std::shared_ptr<Expr> sv_expr;
 
-        std::shared_ptr<TypeLen> sv_type_len;
+		std::shared_ptr<Value> sv_val;
+		std::vector<std::shared_ptr<Value>> sv_vals;
 
-        std::shared_ptr<Field> sv_field;
-        std::vector<std::shared_ptr<Field>> sv_fields;
+		std::shared_ptr<Col> sv_col;
+		std::shared_ptr<GroupValue> sv_group_val;
+		std::vector<std::shared_ptr<Col>> sv_cols;
+		std::vector<std::shared_ptr<OrderBy>> sv_orders;
 
-        std::shared_ptr<Expr> sv_expr;
+		std::shared_ptr<SetClause> sv_set_clause;
+		std::shared_ptr<OrderClause> sv_order_clause;
+		std::vector<std::shared_ptr<SetClause>> sv_set_clauses;
 
-        std::shared_ptr<Value> sv_val;
-        std::vector<std::shared_ptr<Value>> sv_vals;
+		std::shared_ptr<BinaryExpr> sv_cond;
+		std::vector<std::shared_ptr<BinaryExpr>> sv_conds;
 
-        std::shared_ptr<Col> sv_col;
-        std::shared_ptr<GroupValue> sv_group_val;
-        std::vector<std::shared_ptr<Col>> sv_cols;
-        std::vector<std::shared_ptr<OrderBy>> sv_orders;
+		std::shared_ptr<OrderBy> sv_orderby;
+	};
 
-        std::shared_ptr<SetClause> sv_set_clause;
-        std::shared_ptr<OrderClause> sv_order_clause;
-        std::vector<std::shared_ptr<SetClause>> sv_set_clauses;
-
-        std::shared_ptr<BinaryExpr> sv_cond;
-        std::vector<std::shared_ptr<BinaryExpr>> sv_conds;
-
-        std::shared_ptr<OrderBy> sv_orderby;
-    };
-
-    extern std::shared_ptr<ast::TreeNode> parse_tree;
+	extern std::shared_ptr<ast::TreeNode> parse_tree;
 }
 
 #define YYSTYPE ast::SemValue

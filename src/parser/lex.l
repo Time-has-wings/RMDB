@@ -102,6 +102,7 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 "<=" { return LEQ; }
 "<>" { return NEQ; }
 {single_op} { return yytext[0]; }
+{sign} {return yytext[0];}
     /* id */
 {identifier} {
     yylval->sv_str = yytext;
