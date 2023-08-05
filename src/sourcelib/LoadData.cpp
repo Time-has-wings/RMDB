@@ -5,9 +5,9 @@
 #include "LoadData.h"
 #include "common/common.h"
 #include "errors.h"
-void LoadData::trans(const char* s, ColMeta& col, char* desrc, size_t off_set, size_t size)
+void LoadData::trans(const char* s, ColMeta& col, char* desrc, size_t size)
 {
-	char* t = desrc + off_set;
+	char* t = desrc + col.offset;
 	switch (col.type)
 	{
 	case TYPE_INT:
