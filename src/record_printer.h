@@ -101,10 +101,10 @@ class RecordPrinter
 		{
 			std::memset(this->rec + 1, ' ', 18);
 			make_str(COL_WIDTH,col);
-			if (!context->ellipsis_ && *context->offset_ + RECORD_COUNT_LENGTH + 20 < BUFFER_LENGTH)
+			if (!context->ellipsis_ && *context->offset_ + RECORD_COUNT_LENGTH + 19 < BUFFER_LENGTH)
 			{
-				memcpy(context->data_send_ + *(context->offset_), rec, 20);
-				*(context->offset_) = *(context->offset_) + 20;
+				memcpy(context->data_send_ + *(context->offset_), rec, 19);
+				*(context->offset_) = *(context->offset_) + 19;
 			}
 			else
 			{
@@ -115,8 +115,8 @@ class RecordPrinter
 		std::string str = "|\n";
 		if (!context->ellipsis_ && *context->offset_ + RECORD_COUNT_LENGTH + str.length() < BUFFER_LENGTH)
 		{
-			memcpy(context->data_send_ + *(context->offset_), str.c_str(), str.length());
-			*(context->offset_) = *(context->offset_) + str.length();
+			memcpy(context->data_send_ + *(context->offset_), "|\n", 2);
+			*(context->offset_) = *(context->offset_) + 2;
 		}
 	}
 
