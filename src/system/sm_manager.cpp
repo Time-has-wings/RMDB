@@ -475,25 +475,25 @@ void SmManager::rollback_update(const std::string& tab_name,
 void SmManager::load_data_into_table(std::string& tab_name, std::string& file_name)
 {
 	FILE* fp = fopen(file_name.c_str(), "r");
-	const size_t buffer_size = 512, buffer_len = 80960;
-	char* buffer = new char[buffer_len + buffer_size];
-	char* buffer_pool = new char[buffer_size];
+	const size_t buffer_size = 512, buffer_len = 50000;
+	char buffer [buffer_len + buffer_size];
+	char buffer_pool[buffer_size];
 	auto& tab = db_.get_table(tab_name);
 	auto& fh_ = fhs_.at(tab_name);
+	auto &cols = tab.cols;
 	size_t rec_size = fh_->get_file_hdr().record_size;
 	char str[rec_size];
 	RmPageHandle pagehdr = fh_->init_load_pagehandle();
-	size_t read_bytes, end_ = 0, front_ = 0, last_n, num = 0;
+	size_t read_bytes, end_ = buffer_size, front_ = 0, last_n, num = 0;
 	fgets(buffer, 1024, fp);
-	read_bytes = fread(buffer, 1, buffer_size + buffer_len, fp);
-	read_bytes = buffer_len;
+	read_bytes =fread(buffer+buffer_size, 1,  buffer_len, fp);
 	while (read_bytes > 0)
 	{
 		while (end_ < buffer_size + read_bytes)
 		{
 			if (buffer[end_] == ',' || buffer[end_] == '\n')
 			{
-				LoadData::trans(buffer + front_, tab.cols[num], str, end_ - front_);
+				LoadData::trans(buffer + front_, cols[num], str, end_ - front_);
 				num++;
 				if (buffer[end_] == '\n')
 				{
@@ -524,6 +524,4 @@ void SmManager::load_data_into_table(std::string& tab_name, std::string& file_na
 	}
 	fclose(fp);
 	fh_->unpin_page_handle(pagehdr, true);
-	delete[]buffer_pool;
-	delete[]buffer;
 }
