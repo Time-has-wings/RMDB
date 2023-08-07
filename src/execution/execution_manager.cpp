@@ -150,14 +150,13 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			captions.emplace_back(sel_col.col_name);
 	}
 	// Print header into buffer
-
 	std::fstream outfile;
 	RecordPrinter rec_printer(sel_cols.size());
+	rec_printer.print_separator(context);
+	rec_printer.print_record(captions, context);
+	rec_printer.print_separator(context);
 	if (Output_file)
 	{
-		rec_printer.print_separator(context);
-		rec_printer.print_record(captions, context);
-		rec_printer.print_separator(context);
 		// print header into file
 		outfile.open("output.txt", std::ios::out | std::ios::app);
 		outfile << "|";
@@ -167,7 +166,6 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 		}
 		outfile << "\n";
 	}
-
 	// Print records
 	size_t num_rec = 0;
 	std::vector<std::string> columns;
@@ -183,27 +181,27 @@ void QlManager::select_from(std::unique_ptr<AbstractExecutor> executorTreeRoot, 
 			columns.emplace_back(To_string(rec_buf, col));
 			if (col.type == TYPE_STRING)columns.back().resize(strlen(columns.back().c_str()));
 		}
+		rec_printer.print_record(columns, context);
+		// print record into file
+		num_rec++;
 		if (Output_file)
 		{
-			rec_printer.print_record(columns, context);
-			// print record into file
 			outfile << "|";
 			for (const auto& column : columns)
 			{
 				outfile << " " << column << " |";
 			}
 			outfile << "\n";
-			num_rec++;
 		}
 	}
 	if (Output_file)
 	{
 		outfile.close();
-		// Print footer into buffer
-		rec_printer.print_separator(context);
-		// Print record count into buffer
-		RecordPrinter::print_record_count(num_rec, context);
 	}
+	// Print footer into buffer
+	rec_printer.print_separator(context);
+	// Print record count into buffer
+	RecordPrinter::print_record_count(num_rec, context);
 }
 
 // 执行DML语句
