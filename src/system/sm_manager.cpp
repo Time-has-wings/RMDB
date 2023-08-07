@@ -484,7 +484,7 @@ void SmManager::load_data_into_table(std::string& tab_name, std::string& file_na
 	size_t rec_size = fh_->get_file_hdr().record_size;
 	char str[rec_size];
 	RmPageHandle pagehdr = fh_->init_load_pagehandle();
-	size_t read_bytes, end_ = buffer_size, front_ = 0, last_n, num = 0;
+	size_t read_bytes, end_ = buffer_size, front_ = buffer_size, last_n, num = 0;
 	fgets(buffer, 1024, fp);
 	read_bytes =fread(buffer+buffer_size, 1,  buffer_len, fp);
 	while (read_bytes > 0)
