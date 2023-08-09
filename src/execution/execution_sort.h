@@ -42,10 +42,10 @@ class SortExecutor : public AbstractExecutor
 {
 private:
     std::unique_ptr<AbstractExecutor> prev_;
-    std::vector<ColMeta> cols_; // 框架中只支持一个键排序，需要自行修改数据结构支持多个键排序
+    std::vector<ColMeta> cols_; // 支持多个键排序
     size_t tuple_num;
     std::vector<bool> is_descs_;
-    std::vector<std::unique_ptr<RmRecord>> sorted_tuples;
+    std::vector<std::unique_ptr<RmRecord>> sorted_tuples;  // 排序后tuples
     size_t idx = 0;
 
 public:
@@ -88,6 +88,7 @@ public:
     void sort()
     {
         std::vector<value_id> v;
+        // 获取所有record & 其排序字段值
         prev_->beginTuple();
         while (!prev_->is_end())
         {
@@ -102,6 +103,7 @@ public:
             v.push_back({vec, std::move(rec)});
             prev_->nextTuple();
         }
+        // 排序后 存入结果
         std::sort(v.begin(), v.end());
 		for (auto& i : v)
         {

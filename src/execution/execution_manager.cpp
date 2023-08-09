@@ -69,7 +69,7 @@ void QlManager::run_mutli_query(const std::shared_ptr<Plan>& plan, Context* cont
 	}
 }
 
-// 执行help; show tables; desc table; begin; commit; abort;语句
+// 执行help; show tables; desc table; show index; load data; begin; commit; abort;语句
 void QlManager::run_cmd_utility(const std::shared_ptr<Plan>& plan, const txn_id_t* txn_id, Context* context)
 {
 	if (auto x = std::dynamic_pointer_cast<OtherPlan>(plan))

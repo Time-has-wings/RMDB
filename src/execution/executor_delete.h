@@ -46,7 +46,7 @@ public:
 	};
     std::unique_ptr<RmRecord> Next() override
     {
-        if (context_->txn_->get_txn_mode())
+        if (context_->txn_->get_txn_mode())  // 事务模式下
         {
             bool res = (context_->lock_mgr_->lock_exclusive_on_table(context_->txn_, fh_->GetFd()));
 			if (!res)
@@ -55,10 +55,12 @@ public:
         for (auto rid : rids_)
         {
             auto rec = fh_->get_record(rid, context_);
+            // delete日志
             DeleteLogRecord delete_log(context_->txn_->get_transaction_id(), *rec, rid, tab_name_);
             delete_log.prev_lsn_ = context_->txn_->get_prev_lsn();
             context_->log_mgr_->add_log_to_buffer(&delete_log);
             context_->txn_->set_prev_lsn(delete_log.lsn_);
+            // 删除与该record有关的index
             for (auto &index : tab_.indexes)
             {
 				auto ihs = sm_manager_->ihs_.at(IxManager::get_index_name(tab_.name, index.cols)).get();
@@ -71,9 +73,10 @@ public:
                 }
                 ihs->delete_entry(key, context_->txn_);
             }
+            // 事务写操作存储
             RmRecord delete_record(rec->size);
             memcpy(delete_record.data, rec->data, rec->size);
-            fh_->delete_record(rid, context_);
+            fh_->delete_record(rid, context_);  // record文件删除记录
 			auto* wrec = new WriteRecord(WType::DELETE_TUPLE, tab_name_, rid, delete_record);
             context_->txn_->append_write_record(wrec);
         }

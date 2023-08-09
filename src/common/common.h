@@ -21,9 +21,9 @@ See the Mulan PSL v2 for more details. */
 #include "parser/ast.h"
 struct TabCol
 {
-	std::string tab_name;
-	std::string col_name;
-	std::string as_name;
+	std::string tab_name;  // 表名
+	std::string col_name;  // 列名
+	std::string as_name;   // 别名
 	bool isGroup = false;
 	friend bool operator<(const TabCol& x, const TabCol& y)
 	{
@@ -38,7 +38,7 @@ struct Value
 	{
 		int int_val;     // int value
 		float float_val; // float value
-		int64_t bigint_val;
+		int64_t bigint_val;   // bigint 
 		int64_t datetime_val; // datetime
 		bool invalid_val;
 	};

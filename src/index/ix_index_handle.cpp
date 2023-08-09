@@ -22,11 +22,11 @@ int IxNodeHandle::lower_bound(const char *target) const
 {
     // Todo:
     // 查找当前节点中第一个大于等于target的key，并返回key的位置给上层
-    // 提示: 可以采用多种查找方式，如顺序遍历、二分查找等；使用ix_compare()函数进行比较
+    // 使用ix_compare()函数进行比较
     int l = 0, r = page_hdr->num_key - 1;
-    while (l <= r)
+    while (l <= r)  // 二分
     {
-        int mid = l + (r - l) / 2;
+        int mid = l + (r - l >> 1); // 使用位运算>>替代/
         char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
         if (state < 0)
@@ -51,11 +51,11 @@ int IxNodeHandle::upper_bound(const char *target) const
 {
     // Todo:
     // 查找当前节点中第一个大于target的key，并返回key的位置给上层
-    // 提示: 可以采用多种查找方式：顺序遍历、二分查找等；使用ix_compare()函数进行比较
+    // 使用ix_compare()函数进行比较
     int l = 1, r = page_hdr->num_key - 1;
-    while (l <= r)
+    while (l <= r)  // 二分
     {
-        int mid = l + (r - l) / 2;
+        int mid = l + (r - l >> 1); // 使用位运算>>替代/
         char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
         if (state <= 0)
@@ -67,7 +67,7 @@ int IxNodeHandle::upper_bound(const char *target) const
             r = mid - 1;
         }
     }
-    return l;
+    return l;  // 没有找到则返回num_key
 }
 
 /**
@@ -138,6 +138,7 @@ void IxNodeHandle::insert_pairs(int pos, const char *key, const Rid *rid, int n)
     if (mv_size > 0)
     {
         char *k = get_key(pos);
+        //memmove() 是比 memcpy() 更安全的方法。
         std::memmove(k + n * file_hdr->col_tot_len_, k, mv_size * file_hdr->col_tot_len_);
         Rid *r = get_rid(pos);
         std::memmove(r + n, r, mv_size * sizeof(Rid));
@@ -264,6 +265,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
     root_latch_.lock();
     IxNodeHandle *root = fetch_node(file_hdr_->root_page_);
     IxNodeHandle *ret = root;
+    // 对搜索的第一个结点所在page上锁
     if (operation == Operation::FIND)
     {
         ret->page->RLatch();
@@ -272,16 +274,20 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
     {
         ret->page->WLatch();
     }
+    // transaction对index_page上锁
     if (transaction != nullptr)
     {
         transaction->append_index_latch_page_set(ret->page);
     }
+    // 不断向下寻找
     page_id_t next_page_id;
     while (!ret->is_leaf_page())
     {
         IxNodeHandle *last_page = ret;
+        // 得出下一结点的page_id_t
         if (find_first)
         {
+            // 用于处理一种特殊情形
             auto s1 = ret->lower_bound(key);
             auto s2 = ret->upper_bound(key) - 1;
             int s = s1 <= s2 ? s1 : s2;
@@ -289,7 +295,9 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
         }
         else
             next_page_id = ret->internal_lookup(key);
+        // 下一结点
         ret = fetch_node(next_page_id);
+        // 对一下结点所在page上锁
         if (operation == Operation::FIND)
         {
             ret->page->RLatch();
@@ -298,6 +306,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
         {
             ret->page->WLatch();
         }
+        // transaction
         if (transaction != nullptr)
         {
             if (operation == Operation::FIND)
@@ -326,17 +335,22 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
     }
     return std::make_pair(ret, false);
 }
+
+/**
+ * @description: 判断结点是否需要coalesce(合并)||redistribute(重分配)
+ * @return: true->不需要  false->需要
+*/
 bool IxIndexHandle::is_safe(IxNodeHandle *node, Operation op)
 {
     if (op == Operation::FIND)
     {
         return true;
     }
-    else if (op == Operation::DELETE)
+    else if (op == Operation::DELETE)  // 待删除时
     {
         return node->get_size() > node->get_min_size();
     }
-    else if (op == Operation::INSERT)
+    else if (op == Operation::INSERT)  // 待插入时
     {
         return node->get_size() < node->get_max_size() - 1;
     }
@@ -362,6 +376,7 @@ bool IxIndexHandle::get_value(const char *key, std::vector<Rid> *result, Transac
         return false; // 没有包含key的叶子结点
     Rid *value = nullptr;
     bool re = leaf_node->leaf_lookup(key, &value);
+    // 找到
     if (re && result != nullptr)
     {
         result->push_back(*value);

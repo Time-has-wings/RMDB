@@ -46,13 +46,14 @@ public:
 
     std::unique_ptr<RmRecord> Next() override
     {
-        if (context_->txn_->get_txn_mode())
+        if (context_->txn_->get_txn_mode())  // 事务模式下
         {
             bool res = (context_->lock_mgr_->lock_exclusive_on_table(context_->txn_, fh_->GetFd()));
 			if (!res)
                 throw TransactionAbortException(context_->txn_->get_transaction_id(), AbortReason::DEADLOCK_PREVENTION);
         }
         RmRecord rec(fh_->get_file_hdr().record_size);
+        // 合法性检查
         for (size_t i = 0; i < values_.size(); i++)
         {
             auto &col = tab_.cols[i];
@@ -79,13 +80,17 @@ public:
             if (ih->get_value(s[i].data, nullptr, context_->txn_))
                 throw IndexEnrtyExistsError();
         }
+        // record文件插入记录
         rid_ = fh_->insert_record(rec.data, context_);
+        // 事务写操作
 		auto* wrec = new WriteRecord(WType::INSERT_TUPLE, tab_name_, rid_);
         context_->txn_->append_write_record(wrec);
+        // Insert日志
         InsertLogRecord insert_log(context_->txn_->get_transaction_id(), rec, rid_, tab_name_);
         insert_log.prev_lsn_ = context_->txn_->get_prev_lsn();
         context_->log_mgr_->add_log_to_buffer(&insert_log);
         context_->txn_->set_prev_lsn(insert_log.lsn_);
+        // index文件更新
         for (size_t i = 0; i < tab_.indexes.size(); ++i)
         {
             auto &index = tab_.indexes[i];

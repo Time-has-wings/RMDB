@@ -1,6 +1,6 @@
 #pragma once
 
-#include <climits>
+#include <climits>  // 包含各个数据类型的最大值与最小值
 #include <condition_variable>
 #include <mutex>
 

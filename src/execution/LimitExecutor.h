@@ -43,7 +43,7 @@ class LimitExecutor : public AbstractExecutor
 {
 private:
     std::unique_ptr<AbstractExecutor> prev_;
-    std::vector<ColMeta> cols_; // 框架中只支持一个键排序，需要自行修改数据结构支持多个键排序
+    std::vector<ColMeta> cols_;
     std::vector<bool> is_descs_;
     int limit;
     std::list<int> valid_tuples;
@@ -91,13 +91,14 @@ public:
             s_map[id] = std::move(rec);
             value_rec x{vec, id++};
             tuples.push(x);
-            if (tuples.size() > limit)
+            if (tuples.size() > limit)  // 超出limit个
             {
                 s_map.erase(tuples.top().id);
                 tuples.pop();
             }
             prev_->nextTuple();
         }
+        // 将priority_queue的结果存至list中
         while (!tuples.empty())
         {
             valid_tuples.push_front(tuples.top().id);

@@ -48,7 +48,7 @@ class UpdateExecutor : public AbstractExecutor
 	}
 	std::unique_ptr<RmRecord> Next() override
 	{
-		if (context_->txn_->get_txn_mode())
+		if (context_->txn_->get_txn_mode()) // 事务模式下
 		{
 			for (auto& rid : rids_)
 			{
@@ -58,6 +58,7 @@ class UpdateExecutor : public AbstractExecutor
 						AbortReason::DEADLOCK_PREVENTION);
 			}
 		}
+		// 合法性检查
 		for (auto& clause : set_clauses_)
 		{
 			auto col = tab_.get_col(clause.lhs.col_name);
@@ -151,10 +152,12 @@ class UpdateExecutor : public AbstractExecutor
 			auto& update_record = rm_vector[i];
 			auto& rid = rids_[i];
 			std::unique_ptr<RmRecord> rec = fh_->get_record(rid, context_);
+			// Update日志
 			UpdateLogRecord update_log(context_->txn_->get_transaction_id(), *(rec), update_record, rid, tab_name_);
 			update_log.prev_lsn_ = context_->txn_->get_prev_lsn();
 			context_->log_mgr_->add_log_to_buffer(&update_log);
 			context_->txn_->set_prev_lsn(update_log.lsn_);
+			// index文件更新
 			for (auto& index : index_queue)
 			{
 				auto ihs =
@@ -178,7 +181,9 @@ class UpdateExecutor : public AbstractExecutor
 					ihs->insert_entry(update, rid, context_->txn_);
 				}
 			}
+			// record文件update
 			fh_->update_record(rid, update_record.data, context_);
+			// 事务写操作
 			auto* wrec = new WriteRecord(WType::UPDATE_TUPLE, tab_name_, rid, *rec);
 			context_->txn_->append_write_record(wrec);
 		}

@@ -82,6 +82,7 @@ public:
         }
         else
         {
+            // 生成ddl和dml语句查询计划
             return planner_->do_planner(query, context);
         }
     }

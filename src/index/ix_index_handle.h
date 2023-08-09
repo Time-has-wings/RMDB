@@ -56,6 +56,10 @@ inline int ix_compare(const char *a, const char *b, ColType type, int col_len)
         throw InternalError("Unexpected data type");
     }
 }
+
+/**
+ * @description: 判断是否为空值
+*/
 inline bool check_null(const char *st, int len)
 {
     for (int i = 0; i < len; i++)
@@ -65,6 +69,10 @@ inline bool check_null(const char *st, int len)
     }
     return true;
 }
+
+/**
+ * @description: 比较索引大小(调用ix_compare重载函数 & 最左匹配原则:空值时停止比较)
+*/
 inline int ix_compare(const char *a, const char *b, const std::vector<ColType> &col_types, const std::vector<int> &col_lens)
 {
     int offset = 0;

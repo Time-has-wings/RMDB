@@ -13,15 +13,15 @@ enum func
 class GroupExecutor : public AbstractExecutor
 {
     std::unique_ptr<AbstractExecutor> prev_;
-    std::vector<ColMeta> cols_; // 框架中只支持一个键排序，需要自行修改数据结构支持多个键排序
+    std::vector<ColMeta> cols_;
     ColMeta col_;
-    bool all = false;
+    bool all = false;  // count(*)中的*
     func func_;
     bool isend_ = false;
     ColType type_;
-    Value res;
-    Value temp;
-    size_t cnt = 0;
+    Value res;  // res存储最终值 Next()函数
+    Value temp;  // temp存储临时值
+    size_t cnt = 0;  // count计数数量
     size_t len_;
     size_t offset;
 
@@ -67,11 +67,13 @@ public:
         prev_->beginTuple();
         if (prev_->is_end())
             return;
+        // all 表示 count(*) 中的*
         if (all)
         {
             work();
             return;
         }
+        // cnt自增, 并用beginTuple初始化第一个值, 以便work()函数比较值
         cnt += 1;
         auto rec = prev_->Next();
         char *rec_buf = rec->data + offset;
@@ -153,13 +155,16 @@ public:
     {
         while (!prev_->is_end())
         {
+            // 聚合函数为count时
             if (func_ == COUNT)
             {
                 cnt += 1;
                 prev_->nextTuple();
                 continue;
             }
+            // 聚合函数为min/max/sum时
             auto rec = prev_->Next();
+            // temp用以保存临时值
             char *rec_buf = rec->data + offset;
             switch (type_)
             {
@@ -184,6 +189,7 @@ public:
                 col_str.resize(strlen(col_str.c_str()));
                 temp.set_str(col_str);
             }
+            // temp与res进行比较
             switch (func_)
             {
             case MIN:
