@@ -6,63 +6,60 @@
 
 class node_mutex
 {
-    typedef std::mutex mutex_t;
-    typedef std::condition_variable cond_t;
-    static const uint32_t max_readers_ = UINT_MAX;
+	static const uint32_t MaxReaders = UINT_MAX;
 
-public:
-    node_mutex() : reader_count_(0), writer_entered_(false) {}
+ public:
+	node_mutex() : ReaderCount(0), WriterEntered(false)
+	{
+	}
 
-    ~node_mutex() { std::lock_guard<mutex_t> guard(mutex_); }
+	~node_mutex() = default;
 
-    node_mutex(const node_mutex &) = delete;
-    node_mutex &operator=(const node_mutex &) = delete;
+	void write_lock()
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		while (WriterEntered)
+			Reader.wait(lock);
+		WriterEntered = true;
+		while (ReaderCount > 0)
+			writer_.wait(lock);
+	}
 
-    void WLock()
-    {
-        std::unique_lock<mutex_t> lock(mutex_);
-        while (writer_entered_)
-            reader_.wait(lock);
-        writer_entered_ = true;
-        while (reader_count_ > 0)
-            writer_.wait(lock);
-    }
+	void write_unlock()
+	{
+		std::lock_guard<std::mutex> guard(mutex_);
+		WriterEntered = false;
+		Reader.notify_all();
+	}
 
-    void WUnlock()
-    {
-        std::lock_guard<mutex_t> guard(mutex_);
-        writer_entered_ = false;
-        reader_.notify_all();
-    }
+	void read_lock()
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		while (WriterEntered || ReaderCount == MaxReaders)
+			Reader.wait(lock);
+		ReaderCount++;
+	}
 
-    void RLock()
-    {
-        std::unique_lock<mutex_t> lock(mutex_);
-        while (writer_entered_ || reader_count_ == max_readers_)
-            reader_.wait(lock);
-        reader_count_++;
-    }
+	void read_unlock()
+	{
+		std::lock_guard<std::mutex> guard(mutex_);
+		ReaderCount--;
+		if (WriterEntered)
+		{
+			if (ReaderCount == 0)
+				writer_.notify_one();
+		}
+		else
+		{
+			if (ReaderCount == MaxReaders - 1)
+				Reader.notify_one();
+		}
+	}
 
-    void RUnlock()
-    {
-        std::lock_guard<mutex_t> guard(mutex_);
-        reader_count_--;
-        if (writer_entered_)
-        {
-            if (reader_count_ == 0)
-                writer_.notify_one();
-        }
-        else
-        {
-            if (reader_count_ == max_readers_ - 1)
-                reader_.notify_one();
-        }
-    }
-
-private:
-    mutex_t mutex_;
-    cond_t writer_;
-    cond_t reader_;
-    uint32_t reader_count_;
-    bool writer_entered_;
+ private:
+	std::mutex mutex_;
+	std::condition_variable writer_;
+	std::condition_variable Reader;
+	uint32_t ReaderCount;
+	bool WriterEntered;
 };
