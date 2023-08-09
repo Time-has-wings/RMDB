@@ -128,10 +128,10 @@ private:
         for (int i = 0; i < fed_conds_.size(); i++)
         {
             auto cond = fed_conds_.at(i);
-            if (compare_value(block.second.at(i), rVals.at(i), cond.op))
-                return true;
+            if (!compare_value(block.second.at(i), rVals.at(i), cond.op))
+                return false;
         }
-        return false;
+        return true;
     }
     void valid_tuple()
     {
