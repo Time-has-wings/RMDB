@@ -15,21 +15,21 @@ See the Mulan PSL v2 for more details. */
  * @brief 初始化file_handle和rid
  * @param file_handle
  */
-RmScan::RmScan(const RmFileHandle *file_handle) : file_handle_(file_handle)
+RmScan::RmScan(const RmFileHandle* file_handle) : file_handle_(file_handle)
 {
 	if (file_handle->file_hdr_.num_pages == 1)
 	{
 		rid_.slot_no = file_handle->file_hdr_.num_records_per_page;
 		rid_.page_no = 0;
+		cur_page = file_handle_->get_stable_page_handle(0);
 	}
 	else
 	{
-		rid_.slot_no = Bitmap::first_bit(true,
-			file_handle->fetch_page_handle(1).bitmap,
-			file_handle->file_hdr_.num_records_per_page);
+		cur_page = file_handle_->get_stable_page_handle(1);
+		rid_.slot_no = Bitmap::first_bit(true, cur_page->bitmap, file_handle->file_hdr_.num_records_per_page);
 		rid_.page_no = 1;
+
 	}
-	cur_page = file_handle_->get_stable_page_handle(rid_.page_no);
 	rec_size = file_handle_->file_hdr_.num_records_per_page;
 }
 

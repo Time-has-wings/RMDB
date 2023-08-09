@@ -23,7 +23,8 @@ void IxScan::next()
 		// go to next leaf
 		iid_.slot_no = 0;
 		iid_.page_no = node_->get_next_leaf();
-		bpm_->unpin_page(node_->get_page_id(), false); 
+		bpm_->unpin_page(node_->get_page_id(), false);
+		node_->page->RUnlatch();
 		delete node_;
 		node_ = ih_->fetch_node(iid_.page_no); // 取下一页
 	}
