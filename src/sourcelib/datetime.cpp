@@ -15,7 +15,7 @@ bool IsLeapYear(int year)
 
 bool CheckDate(int year, int month, int day)
 {
-	static int mon[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+	int mon[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 	if (year < 1000 || year > 9999 || month <= 0 || day <= 0)
 		return false;
 	if (IsLeapYear(year))
