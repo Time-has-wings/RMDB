@@ -75,6 +75,9 @@ public:
     }
 };
 
+/**
+ * begin操作的日志记录
+ */
 class BeginLogRecord : public LogRecord
 {
 public:
@@ -100,6 +103,7 @@ public:
     {
         LogRecord::deserialize(src);
     }
+    // used for debug
 	void format_print() override
     {
         std::cout << "log type in son_function: " << LogTypeStr[log_type_] << "\n";
@@ -108,7 +112,7 @@ public:
 };
 
 /**
- * TODO: commit操作的日志记录
+ * commit操作的日志记录
  */
 class CommitLogRecord : public LogRecord
 {
@@ -135,6 +139,7 @@ public:
     {
         LogRecord::deserialize(src);
     }
+    // used for debug
 	void format_print() override
     {
         std::cout << "log type in son_function: " << LogTypeStr[log_type_] << "\n";
@@ -143,7 +148,7 @@ public:
 };
 
 /**
- * TODO: abort操作的日志记录
+ * abort操作的日志记录
  */
 class AbortLogRecord : public LogRecord
 {
@@ -170,6 +175,7 @@ public:
     {
         LogRecord::deserialize(src);
     }
+    // used for debug
 	void format_print() override
     {
         std::cout << "log type in son_function: " << LogTypeStr[log_type_] << "\n";
@@ -177,6 +183,9 @@ public:
     }
 };
 
+/**
+ * insert操作的日志记录
+ */
 class InsertLogRecord : public LogRecord
 {
 public:
@@ -204,7 +213,7 @@ public:
         log_tot_len_ += sizeof(size_t) + table_name_size_;
     }
 
-    // 把insert日志记录序列化到dest中
+    // 把Insert日志记录序列化到dest中
     void serialize(char *dest) const override
     {
         LogRecord::serialize(dest);
@@ -232,6 +241,7 @@ public:
         table_name_ = new char[table_name_size_];
         memcpy(table_name_, src + offset, table_name_size_);
     }
+    // used for debug
     void format_print() override
     {
         printf("insert record\n");
@@ -245,14 +255,14 @@ public:
 
             delete[] table_name_;
     }
-    RmRecord insert_value_;  // 插入的记录
+    RmRecord insert_value_;    // 插入的记录
 	Rid rid_{};                // 记录插入的位置
-    char *table_name_;       // 插入记录的表名称
+    char *table_name_;         // 插入记录的表名称
 	size_t table_name_size_{}; // 表名称的大小
 };
 
 /**
- * TODO: delete操作的日志记录
+ * delete操作的日志记录
  */
 class DeleteLogRecord : public LogRecord
 {
@@ -281,7 +291,7 @@ public:
         log_tot_len_ += sizeof(size_t) + table_name_size_;
     }
 
-    // 把insert日志记录序列化到dest中
+    // 把Delete日志记录序列化到dest中
     void serialize(char *dest) const override
     {
         LogRecord::serialize(dest);
@@ -296,7 +306,7 @@ public:
         offset += sizeof(size_t);
         memcpy(dest + offset, table_name_, table_name_size_);
     }
-    // 从src中反序列化出一条Insert日志记录
+    // 从src中反序列化出一条Delete日志记录
     void deserialize(const char *src) override
     {
         LogRecord::deserialize(src);
@@ -309,6 +319,7 @@ public:
         table_name_ = new char[table_name_size_];
         memcpy(table_name_, src + offset, table_name_size_);
     }
+    // used for debug
     void format_print() override
     {
         printf("delete record\n");
@@ -322,14 +333,14 @@ public:
 
             delete[] table_name_;
     }
-    RmRecord delete_value_;  // 删除的记录
+    RmRecord delete_value_;    // 删除的记录
 	Rid rid_{};                // 记录删除的位置
-    char *table_name_;       // 删除记录的表名称
+    char *table_name_;         // 删除记录的表名称
 	size_t table_name_size_{}; // 表名称的大小
 };
 
 /**
- * TODO: update操作的日志记录
+ * update操作的日志记录
  */
 class UpdateLogRecord : public LogRecord
 {
@@ -365,7 +376,7 @@ public:
         log_tot_len_ += sizeof(size_t) + table_name_size_;
     }
 
-    // 把insert日志记录序列化到dest中
+    // 把Update日志记录序列化到dest中
     void serialize(char *dest) const override
     {
         LogRecord::serialize(dest);
@@ -384,7 +395,7 @@ public:
         offset += sizeof(size_t);
         memcpy(dest + offset, table_name_, table_name_size_);
     }
-    // 从src中反序列化出一条Insert日志记录
+    // 从src中反序列化出一条Update日志记录
     void deserialize(const char *src) override
     {
         LogRecord::deserialize(src);
@@ -398,6 +409,7 @@ public:
         table_name_ = new char[table_name_size_];
         memcpy(table_name_, src + offset, table_name_size_);
     }
+    // used for debug
     void format_print() override
     {
         printf("update record\n");
@@ -412,15 +424,14 @@ public:
 
             delete[] table_name_;
     }
-    RmRecord orign_value_;   // 更新的原始值
-    RmRecord update_value_;  // 更新的值
+    RmRecord orign_value_;     // 更新的原始值
+    RmRecord update_value_;    // 更新的值
 	Rid rid_{};                // 记录更新的位置
-    char *table_name_;       // 更新记录的表名称
+    char *table_name_;         // 更新记录的表名称
 	size_t table_name_size_{}; // 表名称的大小
 };
 
 /* 日志缓冲区，只有一个buffer，因此需要阻塞地去把日志写入缓冲区中 */
-
 class LogBuffer
 {
 public:

@@ -20,7 +20,7 @@ void RecoveryManager::analyze()
 	int log_length_min = (int)(sizeof(LogType) + sizeof(lsn_t) + sizeof(uint32_t) + sizeof(txn_id_t) + sizeof(lsn_t)); // 最短的记录的长度
 	int buffer_size = sizeof(buffer_);																				   // buffer_大小
 	int read_log_offset = 0;																						   // 仍旧按照一整个buffer_的大小进行读取,但是偏移量不再以page_id*sizeof(buffer_)为标准
-	int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);
+	int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);                        // 读取的数据量，若为-1说明读取数据的起始位置超过了文件大小
 	while (readbytes > 0)
 	{
 		int off_set = 0;															 // 在本buffer的偏移
@@ -45,9 +45,11 @@ void RecoveryManager::analyze()
 				InsertLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + off_set);
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_; // redo_lsn最开始在定义时便有了最大值 下同
+				// 如果修改的页号不在脏页表内则加入脏页表
 				if (std::find_if(DPT.begin(), DPT.end(), [&temp](const page_id_t& s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
 					DPT.emplace_back(temp.rid_.page_no);
+				// 如果执行该操作的事务在未完成事务列表则修改事务对应日志号
 				auto t_id = std::find_if(ATT.begin(), ATT.end(), [&temp](const std::pair<txn_id_t, lsn_t>& s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
@@ -58,9 +60,11 @@ void RecoveryManager::analyze()
 				DeleteLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + off_set);
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
+				// 如果修改的页号不在脏页表内则加入脏页表
 				if (std::find_if(DPT.begin(), DPT.end(), [&temp](const page_id_t& s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
 					DPT.emplace_back(temp.rid_.page_no);
+				// 如果执行该操作的事务在未完成事务列表则修改事务对应日志号
 				auto t_id = std::find_if(ATT.begin(), ATT.end(), [&temp](const std::pair<txn_id_t, lsn_t>& s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
@@ -71,9 +75,11 @@ void RecoveryManager::analyze()
 				UpdateLogRecord temp;
 				temp.deserialize(buffer_.buffer_ + off_set);
 				redo_lsn = redo_lsn < temp.lsn_ ? redo_lsn : temp.lsn_;
+				// 如果修改的页号不在脏页表内则加入脏页表
 				if (std::find_if(DPT.begin(), DPT.end(), [&temp](const page_id_t& s)
 								 { return s == temp.rid_.page_no; }) != DPT.end())
 					DPT.emplace_back(temp.rid_.page_no);
+				// 如果执行该操作的事务在未完成事务列表则修改事务对应日志号
 				auto t_id = std::find_if(ATT.begin(), ATT.end(), [&temp](const std::pair<txn_id_t, lsn_t>& s)
 										 { return s.first == temp.log_tid_; });
 				if (t_id != ATT.end())
@@ -100,7 +106,7 @@ void RecoveryManager::redo()
 	int log_length_min = (int)(sizeof(LogType) + sizeof(lsn_t) + sizeof(uint32_t) + sizeof(txn_id_t) + sizeof(lsn_t)); // 最短的记录的长度
 	int buffer_size = sizeof(buffer_);																				   // buffer_大小
 	int read_log_offset = 0;																						   // 仍旧按照一整个buffer_的大小进行读取,但是偏移量不再以page_id*sizeof(buffer_)为标准
-	int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);
+	int readbytes = disk_manager_->read_log(buffer_.buffer_, sizeof(buffer_), read_log_offset);                        // 读取的数据量，若为-1说明读取数据的起始位置超过了文件大小
 	while (readbytes > 0)
 	{
 		int off_set = 0;															 // 在本buffer的偏移
@@ -111,12 +117,12 @@ void RecoveryManager::redo()
 			t->deserialize(buffer_.buffer_ + off_set);
 			if (off_set + t->log_tot_len_ > read_real_size) // 日志跨缓冲区了
 				break;
-			if (t->lsn_ < redo_lsn)
+			if (t->lsn_ < redo_lsn)  // 跳过不需要重做的事务
 			{
 				off_set += t->log_tot_len_;
 				if (off_set == read_real_size)
 					break;
-				continue;
+				continue;  
 			}
 			if (t->log_type_ == INSERT)
 			{
@@ -202,6 +208,8 @@ void RecoveryManager::undo()
 		}
 	}
 }
+
+// 插入记录，用于回滚删除
 void RecoveryManager::insert_record(const char* tab_name, char* buf, Rid& rid)
 {
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);
@@ -220,6 +228,8 @@ void RecoveryManager::insert_record(const char* tab_name, char* buf, Rid& rid)
 		ih->recover_insert_entry(key, rid);
 	}
 }
+
+// 更新记录，用于回滚更新
 void RecoveryManager::update_record(const char* tab_name, char* buf, Rid& rid)
 {
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);
@@ -242,6 +252,8 @@ void RecoveryManager::update_record(const char* tab_name, char* buf, Rid& rid)
 	}
 	fh_->update_record(rid, buf, nullptr);
 }
+
+// 删除记录，用于回滚插入
 void RecoveryManager::delete_record(const char* tab_name, Rid& rid)
 {
 	auto &tab_ = sm_manager_->db_.get_table(tab_name);

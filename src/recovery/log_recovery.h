@@ -34,9 +34,9 @@ public:
         sm_manager_ = sm_manager;
     }
 
-    void analyze();
-    void redo();
-    void undo();
+    void analyze();  // 获得脏页表（DPT）和未完成的事务列表（ATT）
+    void redo();  // 重做所有未落盘的操作
+    void undo();  // 回滚未完成的事务
 	void insert_record(const char*, char*, Rid&);
 	void delete_record(const char*, Rid&);
 	void update_record(const char*, char*, Rid&);
@@ -46,7 +46,7 @@ private:
     DiskManager *disk_manager_;              // 用来读写文件
     BufferPoolManager *buffer_pool_manager_; // 对页面进行读写
     SmManager *sm_manager_;                  // 访问数据库元数据
-    std::vector<std::pair<txn_id_t, lsn_t>> ATT;
-    std::vector<page_id_t> DPT;
-    lsn_t redo_lsn = INT32_MAX;
+    std::vector<std::pair<txn_id_t, lsn_t>> ATT;  // 未完成事务列表
+    std::vector<page_id_t> DPT;                   // 脏页表
+    lsn_t redo_lsn = INT32_MAX;                   // 需要重做的最小记录号
 };

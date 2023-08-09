@@ -19,7 +19,7 @@ See the Mulan PSL v2 for more details. */
 lsn_t LogManager::add_log_to_buffer(LogRecord *log_record)
 {
 	std::unique_lock<std::mutex> lock{latch_};		   // 互斥访问
-	if (log_buffer_.is_full(log_record->log_tot_len_)) // 日志缓冲区已满
+	if (log_buffer_.is_full(log_record->log_tot_len_)) // 日志缓冲区已满则刷入磁盘
 	{
 		disk_manager_->write_log(log_buffer_.buffer_, log_buffer_.offset_);
 		persist_lsn_ += log_buffer_.offset_;
