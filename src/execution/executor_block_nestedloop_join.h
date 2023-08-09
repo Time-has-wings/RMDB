@@ -15,6 +15,7 @@ See the Mulan PSL v2 for more details. */
 #include "index/ix.h"
 #include "system/sm.h"
 #include <queue>
+
 class NestedLoopJoinExecutor : public AbstractExecutor
 {
 private:
@@ -68,6 +69,7 @@ public:
 	{
 		return "BlockNestedLoopJoinExecutor";
 	};
+
     void nextBlock()
     {
         now_size = 0;
@@ -75,9 +77,9 @@ public:
         std::vector<Value> block;
         while (!left_->is_end())
         {
-            auto left_record = left_->Next();
+            auto left_record = left_->Next(); // 获取当前块的第一个记录
             now_size += rec_size;
-			for (const auto& cond : fed_conds_)
+			for (const auto& cond : fed_conds_) // 取出left_record的相应join字段的值(Value类型)
             {
                 auto left_col = left_->get_col(left_->cols(), cond.lhs_col);
                 auto left_value = get_value(*left_record, *left_col);
@@ -85,22 +87,24 @@ public:
             }
 			blocks.emplace_back(std::move(left_record), std::move(block));
             block.clear();
-            if (now_size > join_buffer_size - rec_size)
+            if (now_size > join_buffer_size - rec_size) // 超出join_buffer_size,结束
                 break;
             else
                 left_->nextTuple();
         }
     }
+
     void beginTuple() override
     {
         left_->beginTuple();
         right_->beginTuple();
         idx = 0;
         isend = false;
-        rec_size = left_->Next()->size;
+        rec_size = left_->Next()->size; // rec_size初始化
         nextBlock();
         valid_tuple();
     }
+
     void nextTuple() override
     {
         assert(!is_end());
@@ -121,17 +125,26 @@ public:
     Rid &rid() override { return _abstract_rid; }
 
 private:
+
+    /**
+     * @description:
+     * @parm:block pair<记录,该记录相应join字段的Value>
+    */
     bool eval_cond(const std::pair<std::unique_ptr<RmRecord>, std::vector<Value>> &block)
     {
 		if (fed_conds_.empty())
             return true;
-        for (int i = 0; i < fed_conds_.size(); i++)
+        for (int i = 0; i < fed_conds_.size(); i++) // 判断block的Value与rVals是否符合条件
         {
             if (!compare_value(block.second.at(i), rVals.at(i), fed_conds_[i].op))
                 return false;
         }
         return true;
     }
+
+    /**
+     * @description:idx控制left_的下标, 与此时的right_匹配
+    */
     void valid_tuple()
     {
 		while (!blocks.empty())
@@ -160,19 +173,19 @@ private:
                 auto left_rec = std::find_if(blocks.begin() + idx, blocks.end(), [&](const std::pair<std::unique_ptr<RmRecord>, std::vector<Value>> &block)
                                              { return eval_cond(block); });
 
-                if (left_rec != blocks.end())
+                if (left_rec != blocks.end()) // 能找到与rVals匹配的left_record, 则设置偏移量idx, 继续find_if
                 {
                     idx = left_rec - blocks.begin() + 1;
                     return;
                 }
-                else
+                else // 找不到与rVals匹配的left_record, 则重置偏移量idx为0, 生成下一个rVals
                 {
                     idx = 0;
                     rVals.clear();
                     right_->nextTuple();
                 }
             }
-            if (left_->is_end())
+            if (left_->is_end())  //left_已考虑完所有blocks
             {
                 isend = true;
                 return;
@@ -181,8 +194,8 @@ private:
             {
                 left_->nextTuple();
             }
-            nextBlock();
-            right_->beginTuple();
+            nextBlock(); // 获取下一块
+            right_->beginTuple(); // right_重置
         }
     }
 };

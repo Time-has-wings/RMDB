@@ -15,11 +15,12 @@ See the Mulan PSL v2 for more details. */
 #include "index/ix.h"
 #include "system/sm.h"
 #include <queue>
+
 struct value_id
 {
-    std::vector<std::pair<Value, bool>> v;
-    std::unique_ptr<RmRecord> id;
-    bool operator<(const value_id &t)
+    std::vector<std::pair<Value, bool>> v; // 排序字段
+    std::unique_ptr<RmRecord> id; // 记录id
+    bool operator < (const value_id &t) 
     {
         size_t s = 0;
         while (s != v.size())
@@ -43,7 +44,7 @@ class SortExecutor : public AbstractExecutor
 private:
     std::unique_ptr<AbstractExecutor> prev_;
     std::vector<ColMeta> cols_; // 支持多个键排序
-    size_t tuple_num;
+    size_t tuple_num; 
     std::vector<bool> is_descs_;
     std::vector<std::unique_ptr<RmRecord>> sorted_tuples;  // 排序后tuples
     size_t idx = 0;
@@ -63,14 +64,17 @@ public:
         tuple_num = 0;
         sort();
     }
+
 	[[nodiscard]] const std::vector<ColMeta>& cols() const override
     {
         return prev_->cols();
     };
+
 	[[nodiscard]] bool is_end() const override
     {
         return idx >tuple_num;
     }
+
     void beginTuple() override
     {
         idx++;
@@ -85,6 +89,7 @@ public:
     {
         return std::move(sorted_tuples.at(idx-1));
     }
+
     void sort()
     {
         std::vector<value_id> v;
@@ -110,5 +115,6 @@ public:
 			sorted_tuples.emplace_back(std::move(i.id));
         }
     }
+
     Rid &rid() override { return _abstract_rid; }
 };
