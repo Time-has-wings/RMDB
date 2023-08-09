@@ -27,6 +27,7 @@ void IxScan::next()
 		node_->page->RUnlatch();
 		delete node_;
 		node_ = ih_->fetch_node(iid_.page_no); // 取下一页
+		node_->page->RLatch();
 	}
 }
 

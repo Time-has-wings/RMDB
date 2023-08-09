@@ -30,8 +30,8 @@ class IxScan : public RecScan
 	IxScan(const IxIndexHandle* ih, const Iid& lower, const Iid& upper, BufferPoolManager* bpm)
 		: ih_(ih), iid_(lower), end_(upper), bpm_(bpm)
 	{
-		node_->page->RLatch();
 		node_ = ih_->fetch_node(iid_.page_no); // 获得索引文件的第一个结点
+		node_->page->RLatch();
 	}
 
 	void next() override;

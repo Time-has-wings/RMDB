@@ -25,7 +25,7 @@ int IxNodeHandle::lower_bound(const char *target) const
     int l = 0, r = page_hdr->num_key - 1;
     while (l <= r)  // 二分
     {
-        int mid = l + (r - l >> 1); // 使用位运算>>替代/
+        int mid = l + ((r - l) >> 1); // 使用位运算>>替代/
         char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
         if (state < 0)
@@ -54,7 +54,7 @@ int IxNodeHandle::upper_bound(const char *target) const
     int l = 1, r = page_hdr->num_key - 1;
     while (l <= r)  // 二分
     {
-        int mid = l + (r - l >> 1); // 使用位运算>>替代/
+        int mid = l + ((r - l) >> 1); // 使用位运算>>替代/
         char *key = get_key(mid);
         int state = ix_compare(key, target, file_hdr->col_types_, file_hdr->col_lens_);
         if (state <= 0)
