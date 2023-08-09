@@ -475,7 +475,7 @@ void SmManager::rollback_update(const std::string& tab_name,
 void SmManager::load_data_into_table(std::string& tab_name, std::string& file_name)
 {
 	FILE* fp = fopen(file_name.c_str(), "r");
-	const size_t buffer_size = 512, buffer_len = 50000;
+	const size_t buffer_size = 512, buffer_len = 51200;
 	char buffer [buffer_len + buffer_size];
 	char buffer_pool[buffer_size];
 	auto& tab = db_.get_table(tab_name);

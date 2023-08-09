@@ -127,8 +127,7 @@ private:
             return true;
         for (int i = 0; i < fed_conds_.size(); i++)
         {
-            auto cond = fed_conds_.at(i);
-            if (!compare_value(block.second.at(i), rVals.at(i), cond.op))
+            if (!compare_value(block.second.at(i), rVals.at(i), fed_conds_[i].op))
                 return false;
         }
         return true;
