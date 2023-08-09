@@ -22,6 +22,9 @@ enum class Operation
 
 static const bool binary_search = false;
 
+/**
+ * @description: 比较某一字段
+*/
 inline int ix_compare(const char *a, const char *b, ColType type, int col_len)
 {
     switch (type)
@@ -83,7 +86,7 @@ inline int ix_compare(const char *a, const char *b, const std::vector<ColType> &
             return res;
         if (i < col_types.size() - 1)
         {
-            if (check_null(b + offset + col_lens[i], col_lens[i + 1]))
+            if (check_null(b + offset + col_lens[i], col_lens[i + 1])) // 最左匹配原则:空值时停止比较
                 return res;
         }
         offset += col_lens[i];
@@ -152,7 +155,8 @@ public:
     void set_prev_leaf(page_id_t page_no) { page_hdr->prev_leaf = page_no; }
 
     void set_parent_page_no(page_id_t parent) { page_hdr->parent = parent; }
-	[[nodiscard]] char* get_key(int key_idx) const
+	
+    [[nodiscard]] char* get_key(int key_idx) const
 	{
 		return keys + key_idx * file_hdr->col_tot_len_;
 	}
@@ -178,14 +182,8 @@ public:
 
     bool leaf_lookup(const char *key, Rid **value);
 
-    bool leaf_lookup(const char *key)
-    { // 重载函数 用于
-        int idx = lower_bound(key);
-        if (idx == page_hdr->num_key || ix_compare(get_key(idx), key, file_hdr->col_types_, file_hdr->col_lens_) != 0)
-            return false;
-        else
-            return true;
-    }
+    bool leaf_lookup(const char *key); // 重载函数
+
     int insert(const char *key, const Rid &value);
 
     // 用于在结点中的指定位置插入单个键值对
@@ -248,11 +246,11 @@ public:
     // for search
     bool get_value(const char *key, std::vector<Rid> *result, Transaction *transaction);
 
-    std::pair<IxNodeHandle *, bool> find_leaf_page(const char *key, Operation operation, Transaction *transaction,
-                                                   bool find_first = false);
+    std::pair<IxNodeHandle *, bool> find_leaf_page(const char *key, Operation operation, Transaction *transaction, bool find_first = false);
 
     // for insert
     page_id_t insert_entry(const char *key, const Rid &value, Transaction *transaction);
+
     IxNodeHandle *split(IxNodeHandle *node);
 
     void insert_into_parent(IxNodeHandle *old_node, const char *key, IxNodeHandle *new_node, Transaction *transaction);
@@ -260,14 +258,13 @@ public:
     // for delete
     bool delete_entry(const char *key, Transaction *transaction);
 
-    bool coalesce_or_redistribute(IxNodeHandle *node, Transaction *transaction = nullptr,
-                                  bool *root_is_latched = nullptr);
+    bool coalesce_or_redistribute(IxNodeHandle *node, Transaction *transaction = nullptr, bool *root_is_latched = nullptr);
+
     bool adjust_root(IxNodeHandle *old_root_node);
 
     void redistribute(IxNodeHandle *neighbor_node, IxNodeHandle *node, IxNodeHandle *parent, int index);
 
-    bool coalesce(IxNodeHandle **neighbor_node, IxNodeHandle **node, IxNodeHandle **parent, int index,
-                  Transaction *transaction, bool *root_is_latched);
+    bool coalesce(IxNodeHandle **neighbor_node, IxNodeHandle **node, IxNodeHandle **parent, int index, Transaction *transaction, bool *root_is_latched);
 
     Iid lower_bound(const char *key);
 
@@ -276,10 +273,15 @@ public:
 	[[nodiscard]] Iid leaf_end() const;
 
 	[[nodiscard]] Iid leaf_begin() const;
+
     void recover_insert_entry(const char *key, const Rid &value);
+    
     void recover_delete_entry(const char *key);
+
     IxNodeHandle * recover_leaf_page(const char *key);
+
     ~IxIndexHandle();
+
 private:
     // 辅助函数
     void update_root_page_no(page_id_t root) { file_hdr_->root_page_ = root; }
@@ -289,7 +291,9 @@ private:
 		return file_hdr_->root_page_ == IX_NO_PAGE;
 	}
 	static bool is_safe(IxNodeHandle* node, Operation op);
+
     void unlatch_and_unpin_pageset(Transaction *transation, Operation operation);
+    
     // for get/create node
 	[[nodiscard]] IxNodeHandle* fetch_node(int page_no) const;
 

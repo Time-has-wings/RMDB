@@ -13,18 +13,19 @@ See the Mulan PSL v2 for more details. */
 /**
  * @brief
  * @todo 加上读锁（需要使用缓冲池得到page）
+ * @note: 修改了赛题原先提供的代码实现, fetch_node开销太大
  */
 void IxScan::next()
 {
-	iid_.slot_no++;
+	iid_.slot_no++; // slot后移
 	if (iid_.page_no != ih_->file_hdr_->last_leaf_ && iid_.slot_no == node_->get_size())
 	{
 		// go to next leaf
 		iid_.slot_no = 0;
 		iid_.page_no = node_->get_next_leaf();
-		bpm_->unpin_page(node_->get_page_id(), false);
+		bpm_->unpin_page(node_->get_page_id(), false); 
 		delete node_;
-		node_ = ih_->fetch_node(iid_.page_no);
+		node_ = ih_->fetch_node(iid_.page_no); // 取下一页
 	}
 }
 

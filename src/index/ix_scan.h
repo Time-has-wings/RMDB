@@ -24,13 +24,13 @@ class IxScan : public RecScan
 	Iid iid_; // 初始为lower（用于遍历的指针）
 	Iid end_; // 初始为upper
 	BufferPoolManager* bpm_;
-	IxNodeHandle* node_;
+	IxNodeHandle* node_; // important-> 复用
 
  public:
 	IxScan(const IxIndexHandle* ih, const Iid& lower, const Iid& upper, BufferPoolManager* bpm)
 		: ih_(ih), iid_(lower), end_(upper), bpm_(bpm)
 	{
-		node_ = ih_->fetch_node(iid_.page_no);
+		node_ = ih_->fetch_node(iid_.page_no); // 获得索引文件的第一个结点
 	}
 
 	void next() override;
@@ -46,6 +46,7 @@ class IxScan : public RecScan
 	{
 		return iid_;
 	}
+
 	~IxScan() override
 	{
 		bpm_->unpin_page(node_->get_page_id(), false);

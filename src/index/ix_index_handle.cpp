@@ -9,7 +9,6 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
 #include "ix_index_handle.h"
-
 #include "ix_scan.h"
 
 /**
@@ -93,6 +92,21 @@ bool IxNodeHandle::leaf_lookup(const char *key, Rid **value)
         *value = get_rid(idx);
         return true;
     }
+}
+
+/**
+ * @brief 重载函数(便于调用)
+ *
+ * @param key 目标key
+ * @return 目标key是否存在
+ */
+bool IxNodeHandle::leaf_lookup(const char *key)
+{ 
+    int idx = lower_bound(key);
+    if (idx == page_hdr->num_key || ix_compare(get_key(idx), key, file_hdr->col_types_, file_hdr->col_lens_) != 0)
+        return false;
+    else
+        return true;
 }
 
 /**
@@ -191,8 +205,7 @@ void IxNodeHandle::erase_pair(int pos)
     // 1. 删除该位置的key
     // 2. 删除该位置的rid
     // 3. 更新结点的键值对数量
-    // 合法性判断 不做任何处理
-    if (pos < 0 || pos >= page_hdr->num_key)
+    if (pos < 0 || pos >= page_hdr->num_key) // 合法性判断 不做任何处理
         return;
     int mv_size = page_hdr->num_key - pos - 1;
     if (mv_size > 0)
@@ -254,8 +267,7 @@ IxIndexHandle::~IxIndexHandle()
  * @note need to Unlatch and unpin the leaf node outside!
  * 注意：用了FindLeafPage之后一定要unlatch叶结点，否则下次latch该结点会堵塞！
  */
-std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, Operation operation,
-                                                              Transaction *transaction, bool find_first)
+std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, Operation operation, Transaction *transaction, bool find_first)
 {
     // Todo:
     // 1. 获取根节点
@@ -990,6 +1002,7 @@ void IxIndexHandle::maintain_child(IxNodeHandle *node, int child_idx)
         delete child;
     }
 }
+
 void IxIndexHandle::unlatch_and_unpin_pageset(Transaction *transaction, Operation op)
 {
     while (!transaction->get_index_latch_page_set()->empty())
@@ -1012,6 +1025,7 @@ void IxIndexHandle::unlatch_and_unpin_pageset(Transaction *transaction, Operatio
         buffer_pool_manager_->unpin_page(front->get_page_id(), true);
     }
 }
+
 void IxIndexHandle::recover_insert_entry(const char *key, const Rid &value)
 {
     std::scoped_lock lock{root_latch_};
@@ -1030,6 +1044,7 @@ void IxIndexHandle::recover_insert_entry(const char *key, const Rid &value)
     buffer_pool_manager_->unpin_page(leaf_node->get_page_id(), true);
     delete leaf_node;
 }
+
 void IxIndexHandle::recover_delete_entry(const char *key)
 {
     std::scoped_lock lock{root_latch_};
@@ -1042,6 +1057,7 @@ void IxIndexHandle::recover_delete_entry(const char *key)
     buffer_pool_manager_->unpin_page(leaf_page->get_page_id(), re);
     delete leaf_page;
 }
+
 IxNodeHandle *IxIndexHandle::recover_leaf_page(const char *key)
 {
     IxNodeHandle *root = fetch_node(file_hdr_->root_page_);
