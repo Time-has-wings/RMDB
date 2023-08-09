@@ -24,8 +24,7 @@ class LoadData
 		: file_name(std::move(file_name_)), tab_name(std::move(tab_name_))
 	{
 	}
-
-	static void trans(const char* s, ColMeta& col, char* desrc, size_t off_set, size_t size);
+	static void trans(const char* s, ColMeta& col, char* desrc, size_t size);
 };
 
 int get_int(const char* s, size_t size);

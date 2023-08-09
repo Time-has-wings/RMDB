@@ -12,9 +12,9 @@
  * @param {desrc} 数据目标地址
  * @param {off_set} 数据字段偏移
  */
-void LoadData::trans(const char* s, ColMeta& col, char* desrc, size_t off_set, size_t size)
+void LoadData::trans(const char* s, ColMeta& col, char* desrc, size_t size)
 {
-	char* t = desrc + off_set; // 数据起始地址
+	char* t = desrc + col.offset;
 	switch (col.type)
 	{
 	case TYPE_INT:
