@@ -61,7 +61,7 @@ void TransactionManager::commit(Transaction *txn, LogManager *log_manager)
     auto write_set = txn->get_write_set();
     for (auto &rec : *write_set)
     {
-        delete rec;
+        delete rec; // 释放内存
     }
     write_set->clear();
     // 释放所有锁

@@ -40,6 +40,10 @@ class LockManager {
         std::list<LockRequest> request_queue_;  // 加锁队列
         std::condition_variable cv_;            // 条件变量，用于唤醒正在等待加锁的申请，在no-wait策略下无需使用
         GroupLockMode group_lock_mode_ = GroupLockMode::NON_LOCK;   // 加锁队列的锁模式
+        txn_id_t oldest_txn_id = 1e9; // 优先级最高的事务id(初始化为一个较大值)
+        std::unordered_map<txn_id_t, LockMode>lock_txn; // (事务id, lock类型)
+        bool IX_exist = false; // 加锁队列中是否存在IX锁
+        bool S_exist = false; // 加锁队列中是否存在S锁
     };
 
 public:
