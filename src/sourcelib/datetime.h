@@ -2,10 +2,19 @@
 #include <cstdint>
 #include "errors.h"
 #include <string>
+
 void strim(std::string&, char);
+
 int64_t check_invalidate(std::string& s);
+
 bool IsLeapYear(int);
+
 bool CheckDate(int, int, int);
+
+std::string trans_datetime(int64_t val_);
+
+int64_t datetime_trans(const char* str, size_t size);
+
 struct datetime
 {
 	static int64_t datetime_trans(std::string& val_)
@@ -19,5 +28,3 @@ struct datetime
 		return res;
 	}
 };
-std::string trans_datetime(int64_t val_);
-int64_t datetime_trans(const char* str, size_t size);
