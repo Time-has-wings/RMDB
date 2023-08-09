@@ -26,7 +26,7 @@ class IndexScanExecutor : public AbstractExecutor
 	std::vector<Condition> conds_;     // 扫描条件
 	RmFileHandle* fh_;                 // 表的数据文件句柄
 	std::vector<ColMeta> cols_;        // 需要读取的字段
-	size_t len_;                       // 选取出来的一条记录的长度
+	size_t len_, idx = 0;                       // 选取出来的一条记录的长度
 	std::vector<Condition> fed_conds_; // 扫描条件，和conds_字段相同
 
 	std::vector<std::string> index_col_names_; // index scan涉及到的索引包含的字段
@@ -104,7 +104,7 @@ class IndexScanExecutor : public AbstractExecutor
 	bool eval_conds(const RmRecord& target)
 	{
 		bool flag = true;
-		for (size_t i = 0; i < conds_.size(); i++)
+		for (size_t i = idx; i < conds_.size(); i++)
 		{
 			auto& lhs_col = l_cols[i];
 			auto& cond = conds_[i];
@@ -142,9 +142,10 @@ class IndexScanExecutor : public AbstractExecutor
 		int off_set = 0;
 		for (int i = 0; i < fed_conds_.size(); i++)
 		{
-			auto cond = fed_conds_[i];
+			auto &cond = fed_conds_[i];
 			if (cond.is_rhs_val && cond.op != OP_NE && cond.lhs_col.col_name == index_col_names_[i])
 			{
+				idx++;
 				std::memcpy(rhs_key + off_set, cond.rhs_val.raw->data, cond.rhs_val.raw->size);
 				off_set += cond.rhs_val.raw->size;
 				switch (cond.op)
