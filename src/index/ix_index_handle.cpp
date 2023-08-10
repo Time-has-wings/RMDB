@@ -303,7 +303,7 @@ std::pair<IxNodeHandle *, bool> IxIndexHandle::find_leaf_page(const char *key, O
             auto s1 = ret->lower_bound(key);
             auto s2 = ret->upper_bound(key) - 1;
             int s = s1 <= s2 ? s1 : s2;
-            next_page_id = ret->value_at(s);
+            next_page_id = ret->value_at(s==0?s:s-1);
         }
         else
             next_page_id = ret->internal_lookup(key);
