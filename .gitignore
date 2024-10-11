@@ -1,0 +1,9 @@
+/build
+/.vscode
+/database
+/test
+/test.py
+/data
+/table_data
+/test.sh
+/check_memory.sh
