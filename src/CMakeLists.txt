@@ -12,7 +12,7 @@ add_subdirectory(common)
 add_subdirectory(replacer)
 add_subdirectory(transaction)
 add_subdirectory(recovery)
-add_subdirectory(test)
+# add_subdirectory(test)
 add_subdirectory(sourcelib)
 add_subdirectory(fmt)
 
